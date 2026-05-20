@@ -1,0 +1,12 @@
+node_modules
+.DS_Store
+.next
+out
+dist
+coverage
+.env
+.env.local
+*.db
+*.db-shm
+*.db-wal
+data/

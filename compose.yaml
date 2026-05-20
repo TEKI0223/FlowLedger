@@ -1,0 +1,12 @@
+services:
+  flowledger:
+    build: .
+    container_name: flowledger
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "file:/app/data/flowledger.db"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
