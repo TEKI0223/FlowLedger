@@ -13,7 +13,7 @@ import {
   transactionTypes,
   type Currency,
   type Transaction,
-  type TransactionType
+  type TransactionType,
 } from "@/domain/finance";
 import { nowIso, todayIsoDate } from "@/lib/dates";
 
@@ -26,7 +26,7 @@ const transactionSchema = z.object({
   sourceAccountId: z.string().trim().optional(),
   targetAccountId: z.string().trim().optional(),
   paymentMethodId: z.string().trim().optional(),
-  note: z.string().trim().optional()
+  note: z.string().trim().optional(),
 });
 
 export async function createTransaction(formData: FormData) {
@@ -34,22 +34,24 @@ export async function createTransaction(formData: FormData) {
   const timestamp = nowIso();
 
   db.transaction((tx) => {
-    tx.insert(transactions).values({
-      id: transaction.id,
-      occurredOn: transaction.occurredOn,
-      type: transaction.type,
-      amountMinor: transaction.money.amountMinor,
-      currency: transaction.money.currency,
-      categoryId: transaction.categoryId,
-      sourceAccountId: transaction.sourceAccountId,
-      targetAccountId: transaction.targetAccountId,
-      paymentMethodId: transaction.paymentMethodId,
-      includeInExpenseStats: transaction.type === "expense",
-      includeInCashflowStats: transaction.type !== "adjustment",
-      note: transaction.note,
-      createdAt: timestamp,
-      updatedAt: timestamp
-    }).run();
+    tx.insert(transactions)
+      .values({
+        id: transaction.id,
+        occurredOn: transaction.occurredOn,
+        type: transaction.type,
+        amountMinor: transaction.money.amountMinor,
+        currency: transaction.money.currency,
+        categoryId: transaction.categoryId,
+        sourceAccountId: transaction.sourceAccountId,
+        targetAccountId: transaction.targetAccountId,
+        paymentMethodId: transaction.paymentMethodId,
+        includeInExpenseStats: transaction.type === "expense",
+        includeInCashflowStats: transaction.type !== "adjustment",
+        note: transaction.note,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      })
+      .run();
 
     applyBalanceImpacts(tx, getTransactionBalanceImpacts(transaction), timestamp);
   });
@@ -66,8 +68,7 @@ export async function updateTransaction(id: string, formData: FormData) {
   db.transaction((tx) => {
     applyBalanceImpacts(tx, invertImpacts(getTransactionBalanceImpacts(previous)), timestamp);
 
-    tx
-      .update(transactions)
+    tx.update(transactions)
       .set({
         occurredOn: next.occurredOn,
         type: next.type,
@@ -80,7 +81,7 @@ export async function updateTransaction(id: string, formData: FormData) {
         includeInExpenseStats: next.type === "expense",
         includeInCashflowStats: next.type !== "adjustment",
         note: next.note,
-        updatedAt: timestamp
+        updatedAt: timestamp,
       })
       .where(eq(transactions.id, id))
       .run();
@@ -111,7 +112,11 @@ function normalizeOptional(value: FormDataEntryValue | null) {
   return normalized.length > 0 ? normalized : undefined;
 }
 
-async function parseTransactionForm(formData: FormData, id: string, errorPath: string): Promise<Transaction> {
+async function parseTransactionForm(
+  formData: FormData,
+  id: string,
+  errorPath: string,
+): Promise<Transaction> {
   const result = transactionSchema.safeParse({
     occurredOn: formData.get("occurredOn") || todayIsoDate(),
     type: formData.get("type"),
@@ -121,7 +126,7 @@ async function parseTransactionForm(formData: FormData, id: string, errorPath: s
     sourceAccountId: normalizeOptional(formData.get("sourceAccountId")),
     targetAccountId: normalizeOptional(formData.get("targetAccountId")),
     paymentMethodId: normalizeOptional(formData.get("paymentMethodId")),
-    note: normalizeOptional(formData.get("note"))
+    note: normalizeOptional(formData.get("note")),
   });
 
   if (!result.success) {
@@ -156,13 +161,13 @@ async function parseTransactionForm(formData: FormData, id: string, errorPath: s
     type: parsed.type,
     money: {
       amountMinor,
-      currency: parsed.currency
+      currency: parsed.currency,
     },
     categoryId: parsed.categoryId,
     sourceAccountId: parsed.sourceAccountId,
     targetAccountId: parsed.targetAccountId,
     paymentMethodId: parsed.paymentMethodId,
-    note: parsed.note
+    note: parsed.note,
   };
 }
 
@@ -175,11 +180,17 @@ function assertRequiredAccounts(transaction: z.infer<typeof transactionSchema>) 
     throw new Error("支出需要选择付款账户");
   }
 
-  if (transaction.type === "transfer" && (!transaction.sourceAccountId || !transaction.targetAccountId)) {
+  if (
+    transaction.type === "transfer" &&
+    (!transaction.sourceAccountId || !transaction.targetAccountId)
+  ) {
     throw new Error("转账需要选择转出账户和转入账户");
   }
 
-  if (transaction.type === "transfer" && transaction.sourceAccountId === transaction.targetAccountId) {
+  if (
+    transaction.type === "transfer" &&
+    transaction.sourceAccountId === transaction.targetAccountId
+  ) {
     throw new Error("转出账户和转入账户不能相同");
   }
 
@@ -188,7 +199,11 @@ function assertRequiredAccounts(transaction: z.infer<typeof transactionSchema>) 
   }
 }
 
-async function assertAccountCurrencies(sourceAccountId: string | undefined, targetAccountId: string | undefined, currency: Currency) {
+async function assertAccountCurrencies(
+  sourceAccountId: string | undefined,
+  targetAccountId: string | undefined,
+  currency: Currency,
+) {
   const ids = [sourceAccountId, targetAccountId].filter((id): id is string => Boolean(id));
 
   if (ids.length === 0) {
@@ -241,27 +256,26 @@ function rowToTransaction(row: {
     type: row.type,
     money: {
       amountMinor: row.amountMinor,
-      currency: row.currency
+      currency: row.currency,
     },
     categoryId: row.categoryId ?? undefined,
     sourceAccountId: row.sourceAccountId ?? undefined,
     targetAccountId: row.targetAccountId ?? undefined,
     paymentMethodId: row.paymentMethodId ?? undefined,
-    note: row.note ?? undefined
+    note: row.note ?? undefined,
   };
 }
 
 function applyBalanceImpacts(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
   impacts: Array<{ accountId: string; amountMinor: number }>,
-  timestamp: string
+  timestamp: string,
 ) {
   for (const impact of impacts) {
-    tx
-      .update(accounts)
+    tx.update(accounts)
       .set({
         balanceMinor: sql`${accounts.balanceMinor} + ${impact.amountMinor}`,
-        updatedAt: timestamp
+        updatedAt: timestamp,
       })
       .where(eq(accounts.id, impact.accountId))
       .run();
@@ -271,7 +285,7 @@ function applyBalanceImpacts(
 function invertImpacts(impacts: Array<{ accountId: string; amountMinor: number }>) {
   return impacts.map((impact) => ({
     ...impact,
-    amountMinor: -impact.amountMinor
+    amountMinor: -impact.amountMinor,
   }));
 }
 

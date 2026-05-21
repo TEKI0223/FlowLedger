@@ -9,7 +9,6 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     background_color: "#f6f1e8",
     theme_color: "#f6f1e8",
-    orientation: "portrait-primary"
+    orientation: "portrait-primary",
   };
 }
-

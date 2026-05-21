@@ -10,30 +10,50 @@ const tasks = [
   {
     title: "信用卡 A",
     badge: "账单",
-    text: "本期消费 ¥82,340，预计下月 10 日从日本银行账户扣款。"
+    text: "本期消费 ¥82,340，预计下月 10 日从日本银行账户扣款。",
   },
   {
     title: "电费",
     badge: "待填",
     tone: "warn",
-    text: "周期项目已生成，等待录入本月实际金额。"
+    text: "周期项目已生成，等待录入本月实际金额。",
   },
   {
     title: "退款",
     badge: "追踪",
     tone: "gold",
-    text: "Amazon 退款 ¥3,980，预计 3 个工作日内回到信用卡。"
-  }
+    text: "Amazon 退款 ¥3,980，预计 3 个工作日内回到信用卡。",
+  },
 ];
 
 export default async function Home() {
-  const [summary, accounts, transactions] = await Promise.all([getDashboardSummary(), listAccounts(), listTransactions(6)]);
+  const [summary, accounts, transactions] = await Promise.all([
+    getDashboardSummary(),
+    listAccounts(),
+    listTransactions(6),
+  ]);
 
   const metrics = [
-    { label: "本月收入", value: formatMoney({ amountMinor: summary.income.JPY, currency: "JPY" }), note: "JPY 收入" },
-    { label: "本月支出", value: formatMoney({ amountMinor: summary.expense.JPY, currency: "JPY" }), note: "不含转账和调整" },
-    { label: "JPY 资产", value: formatMoney({ amountMinor: summary.assets.JPY, currency: "JPY" }), note: "含现金和钱包余额" },
-    { label: "CNY 资产", value: formatMoney({ amountMinor: summary.assets.CNY, currency: "CNY" }), note: "未折算为日元" }
+    {
+      label: "本月收入",
+      value: formatMoney({ amountMinor: summary.income.JPY, currency: "JPY" }),
+      note: "JPY 收入",
+    },
+    {
+      label: "本月支出",
+      value: formatMoney({ amountMinor: summary.expense.JPY, currency: "JPY" }),
+      note: "不含转账和调整",
+    },
+    {
+      label: "JPY 资产",
+      value: formatMoney({ amountMinor: summary.assets.JPY, currency: "JPY" }),
+      note: "含现金和钱包余额",
+    },
+    {
+      label: "CNY 资产",
+      value: formatMoney({ amountMinor: summary.assets.CNY, currency: "CNY" }),
+      note: "未折算为日元",
+    },
   ];
 
   return (
@@ -89,7 +109,11 @@ export default async function Home() {
                 transactions.map((transaction) => (
                   <article className="record" key={transaction.id}>
                     <div className="record-main">
-                      <strong>{transaction.category?.name ?? transaction.note ?? transactionTypeLabels[transaction.type]}</strong>
+                      <strong>
+                        {transaction.category?.name ??
+                          transaction.note ??
+                          transactionTypeLabels[transaction.type]}
+                      </strong>
                       <span>
                         {transactionTypeLabels[transaction.type]} · {transaction.occurredOn}
                         {transaction.sourceAccount ? ` · ${transaction.sourceAccount.name}` : ""}
@@ -97,7 +121,10 @@ export default async function Home() {
                       </span>
                     </div>
                     <span className={`amount ${transaction.type}`}>
-                      {formatMoney({ amountMinor: transaction.amountMinor, currency: transaction.currency })}
+                      {formatMoney({
+                        amountMinor: transaction.amountMinor,
+                        currency: transaction.currency,
+                      })}
                     </span>
                   </article>
                 ))
@@ -126,7 +153,12 @@ export default async function Home() {
               {accounts.slice(0, 6).map((account) => (
                 <div className="account-row" key={account.id}>
                   <span>{account.name}</span>
-                  <strong>{formatMoney({ amountMinor: account.balanceMinor, currency: account.currency })}</strong>
+                  <strong>
+                    {formatMoney({
+                      amountMinor: account.balanceMinor,
+                      currency: account.currency,
+                    })}
+                  </strong>
                 </div>
               ))}
             </div>

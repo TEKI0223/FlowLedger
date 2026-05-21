@@ -3,7 +3,12 @@ import { notFound } from "next/navigation";
 import { updateTransaction } from "@/app/actions/transactions";
 import { getTransactionLookups } from "@/features/lookups/data";
 import { getTransaction } from "@/features/transactions/data";
-import { currencies, currencyLabels, formatMinorForInput, transactionTypeLabels } from "@/domain/finance";
+import {
+  currencies,
+  currencyLabels,
+  formatMinorForInput,
+  transactionTypeLabels,
+} from "@/domain/finance";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +21,10 @@ type TransactionEditPageProps = {
   }>;
 };
 
-export default async function TransactionEditPage({ params, searchParams }: TransactionEditPageProps) {
+export default async function TransactionEditPage({
+  params,
+  searchParams,
+}: TransactionEditPageProps) {
   const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const [transaction, lookups] = await Promise.all([getTransaction(id), getTransactionLookups()]);
 
@@ -63,7 +71,10 @@ export default async function TransactionEditPage({ params, searchParams }: Tran
               name="amount"
               inputMode="decimal"
               required
-              defaultValue={formatMinorForInput({ amountMinor: transaction.amountMinor, currency: transaction.currency })}
+              defaultValue={formatMinorForInput({
+                amountMinor: transaction.amountMinor,
+                currency: transaction.currency,
+              })}
             />
           </label>
 

@@ -31,7 +31,7 @@ const accounts = [
   ["cny-bank-main", "人民币银行卡", "bank", "CNY", 0, 1, "人民币主账户"],
   ["wechat-balance", "微信余额", "wallet", "CNY", 0, 1, "人民币余额型账户"],
   ["alipay-balance", "支付宝余额", "wallet", "CNY", 0, 1, "人民币余额型账户"],
-  ["cny-cash", "人民币现金", "cash", "CNY", 0, 1, "现金账户"]
+  ["cny-cash", "人民币现金", "cash", "CNY", 0, 1, "现金账户"],
 ];
 
 const paymentMethods = [
@@ -44,7 +44,7 @@ const paymentMethods = [
   ["jpy-cash", "日元现金", "jpy-cash"],
   ["cny-cash", "人民币现金", "cny-cash"],
   ["jp-bank-transfer", "日本银行转账", "jp-bank-main"],
-  ["cny-bank-transfer", "人民币银行卡", "cny-bank-main"]
+  ["cny-bank-transfer", "人民币银行卡", "cny-bank-main"],
 ];
 
 const categories = [
@@ -68,23 +68,114 @@ const categories = [
   ["fees-tax", "手续费和税费", null],
   ["income-salary", "工资", null],
   ["refund", "退款", null],
-  ["other", "其他", null]
+  ["other", "其他", null],
 ];
 
 const quickEntryTemplates = [
-  ["grocery", "超市", "expense", "JPY", null, "grocery", "jp-bank-main", null, "apple-pay", null, 10, 1],
-  ["convenience-store", "便利店", "expense", "JPY", null, "convenience-store", "paypay", null, "paypay", null, 20, 1],
-  ["dining", "外食", "expense", "JPY", null, "dining", "jpy-credit-card-a", null, "credit-card-a", null, 30, 1],
+  [
+    "grocery",
+    "超市",
+    "expense",
+    "JPY",
+    null,
+    "grocery",
+    "jp-bank-main",
+    null,
+    "apple-pay",
+    null,
+    10,
+    1,
+  ],
+  [
+    "convenience-store",
+    "便利店",
+    "expense",
+    "JPY",
+    null,
+    "convenience-store",
+    "paypay",
+    null,
+    "paypay",
+    null,
+    20,
+    1,
+  ],
+  [
+    "dining",
+    "外食",
+    "expense",
+    "JPY",
+    null,
+    "dining",
+    "jpy-credit-card-a",
+    null,
+    "credit-card-a",
+    null,
+    30,
+    1,
+  ],
   ["coffee", "咖啡", "expense", "JPY", null, "coffee", "paypay", null, "paypay", null, 40, 1],
-  ["transport", "交通", "expense", "JPY", null, "transport", "jpy-cash", null, "jpy-cash", null, 50, 1],
-  ["online-shopping", "网购", "expense", "JPY", null, "shopping", "jpy-credit-card-a", null, "credit-card-a", "平台标签待补充", 60, 1],
-  ["paypay-expense", "PayPay 消费", "expense", "JPY", null, "other", "paypay", null, "paypay", null, 70, 1],
-  ["cash-expense", "现金消费", "expense", "JPY", null, "other", "jpy-cash", null, "jpy-cash", null, 80, 1]
+  [
+    "transport",
+    "交通",
+    "expense",
+    "JPY",
+    null,
+    "transport",
+    "jpy-cash",
+    null,
+    "jpy-cash",
+    null,
+    50,
+    1,
+  ],
+  [
+    "online-shopping",
+    "网购",
+    "expense",
+    "JPY",
+    null,
+    "shopping",
+    "jpy-credit-card-a",
+    null,
+    "credit-card-a",
+    "平台标签待补充",
+    60,
+    1,
+  ],
+  [
+    "paypay-expense",
+    "PayPay 消费",
+    "expense",
+    "JPY",
+    null,
+    "other",
+    "paypay",
+    null,
+    "paypay",
+    null,
+    70,
+    1,
+  ],
+  [
+    "cash-expense",
+    "现金消费",
+    "expense",
+    "JPY",
+    null,
+    "other",
+    "jpy-cash",
+    null,
+    "jpy-cash",
+    null,
+    80,
+    1,
+  ],
 ];
 
 const creditCards = [
   ["credit-card-a", "jpy-credit-card-a", 25, 10, "jp-bank-main", 1],
-  ["credit-card-b", "jpy-credit-card-b", 25, 10, "jp-bank-main", 1]
+  ["credit-card-b", "jpy-credit-card-b", 25, 10, "jp-bank-main", 1],
 ];
 
 const insertAccount = db.prepare(`

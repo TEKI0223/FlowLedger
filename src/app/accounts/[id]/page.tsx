@@ -34,7 +34,8 @@ export default async function AccountEditPage({ params, searchParams }: AccountE
           </Link>
           <h1 className="brand-title">编辑账户</h1>
           <p className="brand-subtitle">
-            当前余额：{formatMoney({ amountMinor: account.balanceMinor, currency: account.currency })}
+            当前余额：
+            {formatMoney({ amountMinor: account.balanceMinor, currency: account.currency })}
           </p>
         </div>
       </header>
@@ -70,7 +71,11 @@ export default async function AccountEditPage({ params, searchParams }: AccountE
           </label>
 
           <label className="checkbox-row">
-            <input name="includeInNetWorth" type="checkbox" defaultChecked={account.includeInNetWorth} />
+            <input
+              name="includeInNetWorth"
+              type="checkbox"
+              defaultChecked={account.includeInNetWorth}
+            />
             <span>计入净资产</span>
           </label>
 

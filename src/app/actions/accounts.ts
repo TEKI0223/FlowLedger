@@ -15,7 +15,7 @@ const accountSchema = z.object({
   currency: z.enum(currencies),
   includeInNetWorth: z.boolean(),
   initialBalance: z.string().trim().optional(),
-  note: z.string().trim().optional()
+  note: z.string().trim().optional(),
 });
 
 export async function createAccount(formData: FormData) {
@@ -25,7 +25,7 @@ export async function createAccount(formData: FormData) {
     currency: formData.get("currency"),
     includeInNetWorth: formData.get("includeInNetWorth") === "on",
     initialBalance: formData.get("initialBalance") || "0",
-    note: formData.get("note") || undefined
+    note: formData.get("note") || undefined,
   });
 
   if (!result.success) {
@@ -42,17 +42,19 @@ export async function createAccount(formData: FormData) {
     redirectWithError("/accounts", error instanceof Error ? error.message : "初始余额格式不正确");
   }
 
-  db.insert(accounts).values({
-    id: crypto.randomUUID(),
-    name: parsed.name,
-    type: parsed.type,
-    currency: parsed.currency,
-    balanceMinor,
-    includeInNetWorth: parsed.includeInNetWorth,
-    note: parsed.note,
-    createdAt: timestamp,
-    updatedAt: timestamp
-  }).run();
+  db.insert(accounts)
+    .values({
+      id: crypto.randomUUID(),
+      name: parsed.name,
+      type: parsed.type,
+      currency: parsed.currency,
+      balanceMinor,
+      includeInNetWorth: parsed.includeInNetWorth,
+      note: parsed.note,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    })
+    .run();
 
   revalidatePath("/");
   revalidatePath("/accounts");
@@ -65,7 +67,7 @@ export async function updateAccount(id: string, formData: FormData) {
     type: formData.get("type"),
     currency: formData.get("currency"),
     includeInNetWorth: formData.get("includeInNetWorth") === "on",
-    note: formData.get("note") || undefined
+    note: formData.get("note") || undefined,
   });
 
   if (!result.success) {
@@ -82,7 +84,7 @@ export async function updateAccount(id: string, formData: FormData) {
       currency: parsed.currency,
       includeInNetWorth: parsed.includeInNetWorth,
       note: parsed.note,
-      updatedAt: nowIso()
+      updatedAt: nowIso(),
     })
     .where(eq(accounts.id, id))
     .run();

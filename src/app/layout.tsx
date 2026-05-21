@@ -8,18 +8,18 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "FlowLedger",
-    statusBarStyle: "default"
-  }
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {
   themeColor: "#f6f1e8",
   width: "device-width",
-  initialScale: 1
+  initialScale: 1,
 };
 
 export default function RootLayout({
-  children
+  children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
@@ -29,4 +29,3 @@ export default function RootLayout({
     </html>
   );
 }
-

@@ -15,7 +15,10 @@ type TransactionsPageProps = {
 
 export default async function TransactionsPage({ searchParams }: TransactionsPageProps) {
   const { error } = await searchParams;
-  const [lookups, transactions] = await Promise.all([getTransactionLookups(), listTransactions(40)]);
+  const [lookups, transactions] = await Promise.all([
+    getTransactionLookups(),
+    listTransactions(40),
+  ]);
 
   return (
     <main className="shell">
@@ -46,7 +49,11 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
               transactions.map((transaction) => (
                 <article className="record" key={transaction.id}>
                   <div className="record-main">
-                    <strong>{transaction.category?.name ?? transaction.note ?? transactionTypeLabels[transaction.type]}</strong>
+                    <strong>
+                      {transaction.category?.name ??
+                        transaction.note ??
+                        transactionTypeLabels[transaction.type]}
+                    </strong>
                     <span>
                       {transactionTypeLabels[transaction.type]} · {transaction.occurredOn}
                       {transaction.sourceAccount ? ` · ${transaction.sourceAccount.name}` : ""}
@@ -56,7 +63,10 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
                   </div>
                   <span className={`amount ${transaction.type}`}>
                     {transaction.type === "transfer" ? "转账 " : ""}
-                    {formatMoney({ amountMinor: transaction.amountMinor, currency: transaction.currency })}
+                    {formatMoney({
+                      amountMinor: transaction.amountMinor,
+                      currency: transaction.currency,
+                    })}
                   </span>
                   <div className="record-actions row-actions">
                     <Link className="text-link" href={`/transactions/${transaction.id}`}>

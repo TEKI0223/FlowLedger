@@ -3,7 +3,10 @@ import { db } from "@/db/client";
 import { accounts } from "@/db/schema";
 
 export async function listAccounts() {
-  return db.select().from(accounts).orderBy(asc(accounts.currency), asc(accounts.type), asc(accounts.name));
+  return db
+    .select()
+    .from(accounts)
+    .orderBy(asc(accounts.currency), asc(accounts.type), asc(accounts.name));
 }
 
 export async function getAccount(id: string) {

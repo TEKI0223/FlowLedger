@@ -8,26 +8,26 @@ export type AccountType = (typeof accountTypes)[number];
 
 export const currencyMinorUnits: Record<Currency, number> = {
   JPY: 0,
-  CNY: 2
+  CNY: 2,
 };
 
 export const currencyLabels: Record<Currency, string> = {
   JPY: "日元",
-  CNY: "人民币"
+  CNY: "人民币",
 };
 
 export const transactionTypeLabels: Record<TransactionType, string> = {
   income: "收入",
   expense: "支出",
   transfer: "转账",
-  adjustment: "调整"
+  adjustment: "调整",
 };
 
 export const accountTypeLabels: Record<AccountType, string> = {
   cash: "现金",
   bank: "银行",
   credit_card: "信用卡",
-  wallet: "余额账户"
+  wallet: "余额账户",
 };
 
 export type Money = {
@@ -67,7 +67,7 @@ export function formatMoney({ amountMinor, currency }: Money): string {
     style: "currency",
     currency,
     maximumFractionDigits: currencyMinorUnits[currency],
-    minimumFractionDigits: currencyMinorUnits[currency]
+    minimumFractionDigits: currencyMinorUnits[currency],
   }).format(amountMinor / 10 ** currencyMinorUnits[currency]);
 }
 
@@ -103,9 +103,13 @@ export function getTransactionBalanceImpacts(transaction: Transaction): AccountB
 
   switch (transaction.type) {
     case "income":
-      return transaction.targetAccountId ? [{ accountId: transaction.targetAccountId, amountMinor }] : [];
+      return transaction.targetAccountId
+        ? [{ accountId: transaction.targetAccountId, amountMinor }]
+        : [];
     case "expense":
-      return transaction.sourceAccountId ? [{ accountId: transaction.sourceAccountId, amountMinor: -amountMinor }] : [];
+      return transaction.sourceAccountId
+        ? [{ accountId: transaction.sourceAccountId, amountMinor: -amountMinor }]
+        : [];
     case "transfer": {
       const impacts: AccountBalanceImpact[] = [];
 
@@ -120,6 +124,8 @@ export function getTransactionBalanceImpacts(transaction: Transaction): AccountB
       return impacts;
     }
     case "adjustment":
-      return transaction.targetAccountId ? [{ accountId: transaction.targetAccountId, amountMinor: transaction.money.amountMinor }] : [];
+      return transaction.targetAccountId
+        ? [{ accountId: transaction.targetAccountId, amountMinor: transaction.money.amountMinor }]
+        : [];
   }
 }

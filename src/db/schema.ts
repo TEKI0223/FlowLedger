@@ -9,7 +9,7 @@ export const accounts = sqliteTable("accounts", {
   includeInNetWorth: integer("include_in_net_worth", { mode: "boolean" }).notNull().default(true),
   note: text("note"),
   createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull()
+  updatedAt: text("updated_at").notNull(),
 });
 
 export const paymentMethods = sqliteTable("payment_methods", {
@@ -17,7 +17,7 @@ export const paymentMethods = sqliteTable("payment_methods", {
   name: text("name").notNull(),
   defaultAccountId: text("default_account_id").references(() => accounts.id),
   createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull()
+  updatedAt: text("updated_at").notNull(),
 });
 
 export const categories = sqliteTable("categories", {
@@ -25,7 +25,7 @@ export const categories = sqliteTable("categories", {
   name: text("name").notNull(),
   parentId: text("parent_id"),
   createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull()
+  updatedAt: text("updated_at").notNull(),
 });
 
 export const transactions = sqliteTable("transactions", {
@@ -39,17 +39,23 @@ export const transactions = sqliteTable("transactions", {
   sourceAccountId: text("source_account_id").references(() => accounts.id),
   targetAccountId: text("target_account_id").references(() => accounts.id),
   paymentMethodId: text("payment_method_id").references(() => paymentMethods.id),
-  includeInExpenseStats: integer("include_in_expense_stats", { mode: "boolean" }).notNull().default(true),
-  includeInCashflowStats: integer("include_in_cashflow_stats", { mode: "boolean" }).notNull().default(true),
+  includeInExpenseStats: integer("include_in_expense_stats", { mode: "boolean" })
+    .notNull()
+    .default(true),
+  includeInCashflowStats: integer("include_in_cashflow_stats", { mode: "boolean" })
+    .notNull()
+    .default(true),
   note: text("note"),
   createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull()
+  updatedAt: text("updated_at").notNull(),
 });
 
 export const quickEntryTemplates = sqliteTable("quick_entry_templates", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
-  type: text("type", { enum: ["income", "expense", "transfer", "adjustment"] }).notNull().default("expense"),
+  type: text("type", { enum: ["income", "expense", "transfer", "adjustment"] })
+    .notNull()
+    .default("expense"),
   currency: text("currency", { enum: ["JPY", "CNY"] }).notNull(),
   amountMinor: integer("amount_minor"),
   categoryId: text("category_id").references(() => categories.id),
@@ -60,18 +66,20 @@ export const quickEntryTemplates = sqliteTable("quick_entry_templates", {
   sortOrder: integer("sort_order").notNull().default(0),
   enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull()
+  updatedAt: text("updated_at").notNull(),
 });
 
 export const creditCards = sqliteTable("credit_cards", {
   id: text("id").primaryKey(),
-  accountId: text("account_id").notNull().references(() => accounts.id),
+  accountId: text("account_id")
+    .notNull()
+    .references(() => accounts.id),
   closingDay: integer("closing_day").notNull(),
   paymentDay: integer("payment_day").notNull(),
   repaymentAccountId: text("repayment_account_id").references(() => accounts.id),
   enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull()
+  updatedAt: text("updated_at").notNull(),
 });
 
 export const recurringItems = sqliteTable("recurring_items", {
@@ -87,12 +95,14 @@ export const recurringItems = sqliteTable("recurring_items", {
   targetAccountId: text("target_account_id").references(() => accounts.id),
   paymentMethodId: text("payment_method_id").references(() => paymentMethods.id),
   createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull()
+  updatedAt: text("updated_at").notNull(),
 });
 
 export const refundTrackers = sqliteTable("refund_trackers", {
   id: text("id").primaryKey(),
-  originalTransactionId: text("original_transaction_id").notNull().references(() => transactions.id),
+  originalTransactionId: text("original_transaction_id")
+    .notNull()
+    .references(() => transactions.id),
   amountMinor: integer("amount_minor").notNull(),
   currency: text("currency", { enum: ["JPY", "CNY"] }).notNull(),
   expectedAccountId: text("expected_account_id").references(() => accounts.id),
@@ -101,12 +111,14 @@ export const refundTrackers = sqliteTable("refund_trackers", {
   status: text("status", { enum: ["pending", "partial", "received", "cancelled"] }).notNull(),
   note: text("note"),
   createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull()
+  updatedAt: text("updated_at").notNull(),
 });
 
 export const installmentPlans = sqliteTable("installment_plans", {
   id: text("id").primaryKey(),
-  originalTransactionId: text("original_transaction_id").notNull().references(() => transactions.id),
+  originalTransactionId: text("original_transaction_id")
+    .notNull()
+    .references(() => transactions.id),
   totalAmountMinor: integer("total_amount_minor").notNull(),
   currency: text("currency", { enum: ["JPY", "CNY"] }).notNull(),
   periods: integer("periods").notNull(),
@@ -116,5 +128,5 @@ export const installmentPlans = sqliteTable("installment_plans", {
   status: text("status", { enum: ["active", "completed", "cancelled"] }).notNull(),
   feeAmountMinor: integer("fee_amount_minor"),
   createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull()
+  updatedAt: text("updated_at").notNull(),
 });

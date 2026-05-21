@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+dist
+coverage
+data
+*.db
+*.db-shm
+*.db-wal
+package-lock.json
+src/db/migrations/*.sql

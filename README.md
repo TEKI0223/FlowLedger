@@ -1,8 +1,10 @@
 # FlowLedger
 
-FlowLedger is a personal finance dashboard for fast manual entry, multi-currency account tracking, recurring bills, credit card billing cycles, wallet balances, refunds, installments, and cash.
+FlowLedger is a personal finance dashboard for fast manual entry, multi-currency account tracking,
+recurring bills, credit card billing cycles, wallet balances, refunds, installments, and cash.
 
-The first version is planned as a mobile-first Next.js app backed by SQLite. It should work well on a phone browser today and remain easy to deploy on a NAS later.
+The first version is planned as a mobile-first Next.js app backed by SQLite. It should work well on
+a phone browser today and remain easy to deploy on a NAS later.
 
 ## Planned Stack
 
@@ -56,12 +58,16 @@ npm run build
 
 ## Database
 
-Local development uses `./data/flowledger.db`, which is ignored by git. The schema is defined in `src/db/schema.ts`, migrations live in `src/db/migrations`, and the default accounts, categories, payment methods, credit cards, and quick entry templates are seeded by `scripts/seed.mjs`.
+Local development uses `./data/flowledger.db`, which is ignored by git. The schema is defined in
+`src/db/schema.ts`, migrations live in `src/db/migrations`, and the default accounts, categories,
+payment methods, credit cards, and quick entry templates are seeded by `scripts/seed.mjs`.
 
 Money is stored as integer minor units. JPY values are whole yen, while CNY values are fen.
 
 ## Documentation
 
-The current product requirements are in [docs/requirements.md](docs/requirements.md).
-The development plan is in [docs/development-plan.md](docs/development-plan.md).
-Development progress is tracked in [docs/progress.md](docs/progress.md).
+The current product requirements are in [docs/requirements.md](docs/requirements.md). The
+development plan is in [docs/development-plan.md](docs/development-plan.md). Development progress is
+tracked in [docs/progress.md](docs/progress.md). Code guidelines are in
+[docs/code-guidelines.md](docs/code-guidelines.md). The UI direction is in
+[docs/ui-direction.md](docs/ui-direction.md).

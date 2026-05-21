@@ -9,7 +9,7 @@ function monthBounds(now = new Date()) {
 
   return {
     start: start.toISOString().slice(0, 10),
-    next: next.toISOString().slice(0, 10)
+    next: next.toISOString().slice(0, 10),
   };
 }
 
@@ -18,39 +18,56 @@ export async function getDashboardSummary() {
 
   const [incomeRows, expenseRows, assetRows] = await Promise.all([
     db
-      .select({ currency: transactions.currency, totalMinor: sql<number>`coalesce(sum(${transactions.amountMinor}), 0)` })
+      .select({
+        currency: transactions.currency,
+        totalMinor: sql<number>`coalesce(sum(${transactions.amountMinor}), 0)`,
+      })
       .from(transactions)
-      .where(and(eq(transactions.type, "income"), gte(transactions.occurredOn, start), lt(transactions.occurredOn, next)))
+      .where(
+        and(
+          eq(transactions.type, "income"),
+          gte(transactions.occurredOn, start),
+          lt(transactions.occurredOn, next),
+        ),
+      )
       .groupBy(transactions.currency),
     db
-      .select({ currency: transactions.currency, totalMinor: sql<number>`coalesce(sum(${transactions.amountMinor}), 0)` })
+      .select({
+        currency: transactions.currency,
+        totalMinor: sql<number>`coalesce(sum(${transactions.amountMinor}), 0)`,
+      })
       .from(transactions)
       .where(
         and(
           eq(transactions.type, "expense"),
           eq(transactions.includeInExpenseStats, true),
           gte(transactions.occurredOn, start),
-          lt(transactions.occurredOn, next)
-        )
+          lt(transactions.occurredOn, next),
+        ),
       )
       .groupBy(transactions.currency),
     db
-      .select({ currency: accounts.currency, totalMinor: sql<number>`coalesce(sum(${accounts.balanceMinor}), 0)` })
+      .select({
+        currency: accounts.currency,
+        totalMinor: sql<number>`coalesce(sum(${accounts.balanceMinor}), 0)`,
+      })
       .from(accounts)
       .where(eq(accounts.includeInNetWorth, true))
-      .groupBy(accounts.currency)
+      .groupBy(accounts.currency),
   ]);
 
   return {
     income: totalsByCurrency(incomeRows),
     expense: totalsByCurrency(expenseRows),
-    assets: totalsByCurrency(assetRows)
+    assets: totalsByCurrency(assetRows),
   };
 }
 
-function totalsByCurrency(rows: Array<{ currency: Currency; totalMinor: number }>): Record<Currency, number> {
+function totalsByCurrency(
+  rows: Array<{ currency: Currency; totalMinor: number }>,
+): Record<Currency, number> {
   return {
     JPY: rows.find((row) => row.currency === "JPY")?.totalMinor ?? 0,
-    CNY: rows.find((row) => row.currency === "CNY")?.totalMinor ?? 0
+    CNY: rows.find((row) => row.currency === "CNY")?.totalMinor ?? 0,
   };
 }

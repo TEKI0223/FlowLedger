@@ -47,7 +47,9 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
                   </span>
                 </div>
                 <div className="record-actions">
-                  <strong>{formatMoney({ amountMinor: account.balanceMinor, currency: account.currency })}</strong>
+                  <strong>
+                    {formatMoney({ amountMinor: account.balanceMinor, currency: account.currency })}
+                  </strong>
                   <Link className="text-link" href={`/accounts/${account.id}`}>
                     编辑
                   </Link>

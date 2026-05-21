@@ -5,7 +5,6 @@ export default defineConfig({
   out: "./src/db/migrations",
   dialect: "sqlite",
   dbCredentials: {
-    url: "./data/flowledger.db"
-  }
+    url: "./data/flowledger.db",
+  },
 });
-
