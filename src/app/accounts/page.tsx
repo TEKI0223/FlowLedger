@@ -5,7 +5,14 @@ import { accountTypeLabels, currencies, currencyLabels, formatMoney } from "@/do
 
 export const dynamic = "force-dynamic";
 
-export default async function AccountsPage() {
+type AccountsPageProps = {
+  searchParams: Promise<{
+    error?: string;
+  }>;
+};
+
+export default async function AccountsPage({ searchParams }: AccountsPageProps) {
+  const { error } = await searchParams;
   const accounts = await listAccounts();
 
   return (
@@ -56,6 +63,7 @@ export default async function AccountsPage() {
               <h2 className="task-title">新建账户</h2>
               <span className="pill">M1</span>
             </div>
+            {error ? <p className="form-error">{error}</p> : null}
             <form action={createAccount} className="form-grid">
               <label>
                 <span>账户名称</span>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createTransaction } from "@/app/actions/transactions";
+import { createTransaction, deleteTransaction } from "@/app/actions/transactions";
 import { getTransactionLookups } from "@/features/lookups/data";
 import { listTransactions } from "@/features/transactions/data";
 import { currencies, currencyLabels, formatMoney, transactionTypeLabels } from "@/domain/finance";
@@ -7,7 +7,14 @@ import { todayIsoDate } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
 
-export default async function TransactionsPage() {
+type TransactionsPageProps = {
+  searchParams: Promise<{
+    error?: string;
+  }>;
+};
+
+export default async function TransactionsPage({ searchParams }: TransactionsPageProps) {
+  const { error } = await searchParams;
   const [lookups, transactions] = await Promise.all([getTransactionLookups(), listTransactions(40)]);
 
   return (
@@ -31,6 +38,7 @@ export default async function TransactionsPage() {
             <h2>最近交易</h2>
             <span className="small">{transactions.length} 条</span>
           </div>
+          {error ? <p className="form-error">{error}</p> : null}
           <div className="records">
             {transactions.length === 0 ? (
               <p className="empty-state">还没有交易。先从右侧创建一笔收入、支出、转账或调整。</p>
@@ -50,6 +58,16 @@ export default async function TransactionsPage() {
                     {transaction.type === "transfer" ? "转账 " : ""}
                     {formatMoney({ amountMinor: transaction.amountMinor, currency: transaction.currency })}
                   </span>
+                  <div className="record-actions row-actions">
+                    <Link className="text-link" href={`/transactions/${transaction.id}`}>
+                      编辑
+                    </Link>
+                    <form action={deleteTransaction.bind(null, transaction.id)}>
+                      <button className="danger-link" type="submit">
+                        删除
+                      </button>
+                    </form>
+                  </div>
                 </article>
               ))
             )}

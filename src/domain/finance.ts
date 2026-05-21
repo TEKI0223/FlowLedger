@@ -71,6 +71,10 @@ export function formatMoney({ amountMinor, currency }: Money): string {
   }).format(amountMinor / 10 ** currencyMinorUnits[currency]);
 }
 
+export function formatMinorForInput({ amountMinor, currency }: Money): string {
+  return (amountMinor / 10 ** currencyMinorUnits[currency]).toFixed(currencyMinorUnits[currency]);
+}
+
 export function parseMoneyToMinor(amount: string, currency: Currency): number {
   const normalized = amount.trim().replaceAll(",", "");
 

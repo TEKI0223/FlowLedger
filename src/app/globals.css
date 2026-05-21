@@ -241,6 +241,13 @@ a {
   text-align: right;
 }
 
+.row-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+}
+
 .amount {
   flex: 0 0 auto;
   font-weight: 750;
@@ -379,6 +386,25 @@ a {
   padding: 16px;
   color: var(--muted);
   background: var(--panel);
+}
+
+.danger-link {
+  border: 0;
+  padding: 0;
+  color: var(--rose);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.form-error {
+  margin: 0 0 12px;
+  border: 1px solid var(--rose-soft);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--rose);
+  background: #fff4f6;
+  font-size: 13px;
 }
 
 @media (max-width: 820px) {

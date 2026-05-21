@@ -1,9 +1,22 @@
-import { desc, inArray } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, categories, paymentMethods, transactions } from "@/db/schema";
 
 export async function listTransactions(limit = 50) {
   const transactionRows = await db.select().from(transactions).orderBy(desc(transactions.occurredOn), desc(transactions.createdAt)).limit(limit);
+
+  return hydrateTransactions(transactionRows);
+}
+
+export async function getTransaction(id: string) {
+  const transactionRows = await db.select().from(transactions).where(eq(transactions.id, id)).limit(1);
+
+  const [transaction] = await hydrateTransactions(transactionRows);
+
+  return transaction ?? null;
+}
+
+async function hydrateTransactions(transactionRows: Array<typeof transactions.$inferSelect>) {
 
   const accountIds = new Set<string>();
   const categoryIds = new Set<string>();

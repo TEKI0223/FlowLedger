@@ -10,10 +10,13 @@ type AccountEditPageProps = {
   params: Promise<{
     id: string;
   }>;
+  searchParams: Promise<{
+    error?: string;
+  }>;
 };
 
-export default async function AccountEditPage({ params }: AccountEditPageProps) {
-  const { id } = await params;
+export default async function AccountEditPage({ params, searchParams }: AccountEditPageProps) {
+  const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const account = await getAccount(id);
 
   if (!account) {
@@ -37,6 +40,7 @@ export default async function AccountEditPage({ params }: AccountEditPageProps) 
       </header>
 
       <section className="task">
+        {error ? <p className="form-error">{error}</p> : null}
         <form action={action} className="form-grid">
           <label>
             <span>账户名称</span>
