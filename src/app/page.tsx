@@ -1,48 +1,61 @@
 import Link from "next/link";
+import { InlineAlert } from "@/components/ui/inline-alert";
+import { MetricCell } from "@/components/ui/metric-cell";
 import { getDashboardSummary } from "@/features/dashboard/data";
 import { listAccounts } from "@/features/accounts/data";
+import {
+  listQuickEntryTemplates,
+  type HydratedQuickEntryTemplate,
+} from "@/features/quick-entry/data";
+import {
+  QuickEntryModal,
+  type QuickEntryModalTemplate,
+} from "@/features/quick-entry/quick-entry-modal";
 import { listTransactions } from "@/features/transactions/data";
 import { formatMoney, transactionTypeLabels } from "@/domain/finance";
 
 export const dynamic = "force-dynamic";
 
-const tasks = [
-  {
-    title: "信用卡 A",
-    badge: "账单",
-    text: "本期消费 ¥82,340，预计下月 10 日从日本银行账户扣款。",
-  },
-  {
-    title: "电费",
-    badge: "待填",
-    tone: "warn",
-    text: "周期项目已生成，等待录入本月实际金额。",
-  },
-  {
-    title: "退款",
-    badge: "追踪",
-    tone: "gold",
-    text: "Amazon 退款 ¥3,980，预计 3 个工作日内回到信用卡。",
-  },
-];
+type HomeProps = {
+  searchParams: Promise<{
+    error?: string;
+    saved?: string;
+  }>;
+};
 
-export default async function Home() {
-  const [summary, accounts, transactions] = await Promise.all([
-    getDashboardSummary(),
-    listAccounts(),
-    listTransactions(6),
-  ]);
+type MetricTone = "income" | "expense" | "transfer" | "adjustment";
 
-  const metrics = [
+export default async function Home({ searchParams }: HomeProps) {
+  const [{ error, saved }, summary, accounts, quickEntryTemplates, transactions] =
+    await Promise.all([
+      searchParams,
+      getDashboardSummary(),
+      listAccounts(),
+      listQuickEntryTemplates(),
+      listTransactions(6),
+    ]);
+
+  const metrics: Array<{ label: string; value: string; note: string; tone?: MetricTone }> = [
     {
       label: "本月收入",
       value: formatMoney({ amountMinor: summary.income.JPY, currency: "JPY" }),
       note: "JPY 收入",
+      tone: "income" as const,
     },
     {
       label: "本月支出",
       value: formatMoney({ amountMinor: summary.expense.JPY, currency: "JPY" }),
       note: "不含转账和调整",
+      tone: "expense" as const,
+    },
+    {
+      label: "本月结余",
+      value: formatMoney({
+        amountMinor: summary.income.JPY - summary.expense.JPY,
+        currency: "JPY",
+      }),
+      note: "JPY 收入减支出",
+      tone: "transfer" as const,
     },
     {
       label: "JPY 资产",
@@ -54,6 +67,21 @@ export default async function Home() {
       value: formatMoney({ amountMinor: summary.assets.CNY, currency: "CNY" }),
       note: "未折算为日元",
     },
+  ];
+  const quickEntryModalTemplates = [
+    ...quickEntryTemplates.map(toQuickEntryModalTemplate),
+    {
+      id: "temp",
+      title: "临时记录",
+      meta: "其他 / 日元现金",
+      context: "默认 JPY 支出，保存后可以去交易页补充分类、账户和支付方式",
+      amountHint: "待补全",
+      badge: "TMP",
+      theme: "temporary",
+      typeLabel: "待补全",
+      type: "temporary",
+      currency: "JPY",
+    } satisfies QuickEntryModalTemplate,
   ];
 
   return (
@@ -68,13 +96,18 @@ export default async function Home() {
         </Link>
       </header>
 
+      {saved ? <InlineAlert>已保存，首页数据和最近记录已更新。</InlineAlert> : null}
+      {error ? <InlineAlert tone="danger">{error}</InlineAlert> : null}
+
       <section className="summary-grid" aria-label="财务概览">
         {metrics.map((metric) => (
-          <article className="metric" key={metric.label}>
-            <p className="metric-label">{metric.label}</p>
-            <p className="metric-value">{metric.value}</p>
-            <p className="metric-note">{metric.note}</p>
-          </article>
+          <MetricCell
+            label={metric.label}
+            value={metric.value}
+            note={metric.note}
+            tone={metric.tone}
+            key={metric.label}
+          />
         ))}
       </section>
 
@@ -82,19 +115,10 @@ export default async function Home() {
         <div>
           <section className="section">
             <div className="section-heading">
-              <h2>开始使用</h2>
-              <span className="small">M1 基础闭环</span>
+              <h2>快捷记账</h2>
+              <span className="small">来自数据库模板</span>
             </div>
-            <div className="quick-grid">
-              <Link className="quick-button link-card" href="/transactions">
-                <strong>记一笔</strong>
-                <span>收入、支出、转账、调整</span>
-              </Link>
-              <Link className="quick-button link-card" href="/accounts">
-                <strong>账户</strong>
-                <span>创建、编辑、查看余额</span>
-              </Link>
-            </div>
+            <QuickEntryModal templates={quickEntryModalTemplates} />
           </section>
 
           <section className="section">
@@ -134,16 +158,6 @@ export default async function Home() {
         </div>
 
         <aside className="side-panel" aria-label="待处理事项和账户">
-          {tasks.map((task) => (
-            <article className="task" key={task.title}>
-              <div className="task-top">
-                <h2 className="task-title">{task.title}</h2>
-                <span className={`pill ${task.tone ?? ""}`}>{task.badge}</span>
-              </div>
-              <p>{task.text}</p>
-            </article>
-          ))}
-
           <section className="task">
             <div className="task-top">
               <h2 className="task-title">账户余额</h2>
@@ -163,8 +177,128 @@ export default async function Home() {
               ))}
             </div>
           </section>
+
+          <section className="task">
+            <div className="task-top">
+              <h2 className="task-title">完整录入</h2>
+              <span className="pill gold">高级</span>
+            </div>
+            <p>收入、转账、调整和需要改账户的复杂记录，继续从完整交易页处理。</p>
+            <div className="task-action">
+              <Link className="secondary-action" href="/transactions">
+                打开交易页
+              </Link>
+            </div>
+          </section>
         </aside>
       </div>
     </main>
   );
+}
+
+function toQuickEntryModalTemplate(template: HydratedQuickEntryTemplate): QuickEntryModalTemplate {
+  return {
+    id: template.id,
+    title: template.name,
+    meta: templateMeta(template),
+    context: templateContext(template),
+    amountHint: amountHint(template),
+    badge: templateBadge(template),
+    theme: templateTheme(template),
+    typeLabel: transactionTypeLabels[template.type],
+    type: template.type,
+    currency: template.currency,
+  };
+}
+
+function templateMeta(template: HydratedQuickEntryTemplate) {
+  const primary = template.category?.name ?? transactionTypeLabels[template.type];
+  const secondary =
+    template.paymentMethod?.name ?? template.sourceAccount?.name ?? template.targetAccount?.name;
+
+  return secondary ? `${primary} / ${secondary}` : primary;
+}
+
+function templateContext(template: HydratedQuickEntryTemplate) {
+  const context = [
+    template.category?.name,
+    template.paymentMethod?.name,
+    template.sourceAccount?.name,
+    template.targetAccount?.name,
+  ].filter(Boolean);
+
+  return context.length > 0 ? context.join(" / ") : transactionTypeLabels[template.type];
+}
+
+function amountHint(template: HydratedQuickEntryTemplate) {
+  if (template.amountMinor === null) {
+    return "自填";
+  }
+
+  return formatMoney({
+    amountMinor: template.amountMinor,
+    currency: template.currency,
+  });
+}
+
+function templateBadge(template: HydratedQuickEntryTemplate) {
+  const id = template.paymentMethodId ?? template.sourceAccountId ?? template.targetAccountId ?? "";
+
+  if (id.includes("apple")) {
+    return "AP";
+  }
+
+  if (id.includes("paypay")) {
+    return "PP";
+  }
+
+  if (id.includes("wechat")) {
+    return "WX";
+  }
+
+  if (id.includes("alipay")) {
+    return "AL";
+  }
+
+  if (id.includes("credit")) {
+    return "CC";
+  }
+
+  if (id.includes("cash")) {
+    return "CA";
+  }
+
+  if (id.includes("bank")) {
+    return "BK";
+  }
+
+  return template.type === "income" ? "IN" : "¥";
+}
+
+function templateTheme(
+  template: HydratedQuickEntryTemplate,
+): "bank" | "card" | "wallet" | "cash" | "income" | "transfer" {
+  if (template.type === "income") {
+    return "income";
+  }
+
+  if (template.type === "transfer") {
+    return "transfer";
+  }
+
+  const id = template.paymentMethodId ?? template.sourceAccountId ?? template.targetAccountId ?? "";
+
+  if (id.includes("credit") || id.includes("apple")) {
+    return "card";
+  }
+
+  if (id.includes("cash")) {
+    return "cash";
+  }
+
+  if (id.includes("bank")) {
+    return "bank";
+  }
+
+  return "wallet";
 }

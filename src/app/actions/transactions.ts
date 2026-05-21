@@ -8,6 +8,7 @@ import { db } from "@/db/client";
 import { accounts, transactions } from "@/db/schema";
 import {
   currencies,
+  formatMinorForInput,
   getTransactionBalanceImpacts,
   parseMoneyToMinor,
   transactionTypes,
@@ -15,6 +16,7 @@ import {
   type Transaction,
   type TransactionType,
 } from "@/domain/finance";
+import { getQuickEntryTemplate, getTemporaryEntryDefaults } from "@/features/quick-entry/data";
 import { nowIso, todayIsoDate } from "@/lib/dates";
 
 const transactionSchema = z.object({
@@ -31,6 +33,92 @@ const transactionSchema = z.object({
 
 export async function createTransaction(formData: FormData) {
   const transaction = await parseTransactionForm(formData, crypto.randomUUID(), "/transactions");
+
+  createTransactionRecord(transaction);
+
+  revalidateTransactionPaths(transaction.id);
+  redirect("/transactions");
+}
+
+export async function createQuickEntryTransaction(templateId: string, formData: FormData) {
+  const template = await getQuickEntryTemplate(templateId);
+
+  if (!template) {
+    redirectWithError("/", "快捷模板不存在或已停用");
+  }
+
+  const quickFormData = new FormData();
+  const amount = normalizeOptional(formData.get("amount"));
+
+  if (!amount && template.amountMinor === null) {
+    redirectWithError(`/quick-entry/${templateId}`, "请输入金额");
+  }
+
+  quickFormData.set("occurredOn", normalizeOptional(formData.get("occurredOn")) ?? todayIsoDate());
+  quickFormData.set("type", template.type);
+  quickFormData.set(
+    "amount",
+    amount ??
+      formatMinorForInput({
+        amountMinor: template.amountMinor ?? 0,
+        currency: template.currency,
+      }),
+  );
+  quickFormData.set("currency", template.currency);
+  setOptionalFormValue(quickFormData, "categoryId", template.categoryId);
+  setOptionalFormValue(quickFormData, "sourceAccountId", template.sourceAccountId);
+  setOptionalFormValue(quickFormData, "targetAccountId", template.targetAccountId);
+  setOptionalFormValue(quickFormData, "paymentMethodId", template.paymentMethodId);
+  setOptionalFormValue(
+    quickFormData,
+    "note",
+    normalizeOptional(formData.get("note")) ?? template.note,
+  );
+
+  const transaction = await parseTransactionForm(
+    quickFormData,
+    crypto.randomUUID(),
+    `/quick-entry/${templateId}`,
+  );
+
+  createTransactionRecord(transaction);
+
+  revalidateTransactionPaths(transaction.id);
+  redirect("/?saved=quick-entry");
+}
+
+export async function createTemporaryTransaction(formData: FormData) {
+  const defaults = await getTemporaryEntryDefaults();
+
+  if (!defaults) {
+    redirectWithError("/quick-entry/temp", "需要先创建一个 JPY 账户才能保存临时记录");
+  }
+
+  const quickFormData = new FormData();
+  const userNote = normalizeOptional(formData.get("note"));
+
+  quickFormData.set("occurredOn", normalizeOptional(formData.get("occurredOn")) ?? todayIsoDate());
+  quickFormData.set("type", "expense");
+  quickFormData.set("amount", normalizeOptional(formData.get("amount")) ?? "");
+  quickFormData.set("currency", "JPY");
+  setOptionalFormValue(quickFormData, "categoryId", defaults.categoryId);
+  setOptionalFormValue(quickFormData, "sourceAccountId", defaults.sourceAccountId);
+  setOptionalFormValue(quickFormData, "paymentMethodId", defaults.paymentMethodId);
+  quickFormData.set("note", userNote ? `临时记录，待补全：${userNote}` : "临时记录，待补全");
+
+  const transaction = await parseTransactionForm(
+    quickFormData,
+    crypto.randomUUID(),
+    "/quick-entry/temp",
+  );
+
+  createTransactionRecord(transaction);
+
+  revalidateTransactionPaths(transaction.id);
+  redirect("/?saved=temporary");
+}
+
+function createTransactionRecord(transaction: Transaction) {
   const timestamp = nowIso();
 
   db.transaction((tx) => {
@@ -55,9 +143,6 @@ export async function createTransaction(formData: FormData) {
 
     applyBalanceImpacts(tx, getTransactionBalanceImpacts(transaction), timestamp);
   });
-
-  revalidateTransactionPaths(transaction.id);
-  redirect("/transactions");
 }
 
 export async function updateTransaction(id: string, formData: FormData) {
@@ -110,6 +195,12 @@ function normalizeOptional(value: FormDataEntryValue | null) {
   const normalized = typeof value === "string" ? value.trim() : "";
 
   return normalized.length > 0 ? normalized : undefined;
+}
+
+function setOptionalFormValue(formData: FormData, name: string, value: string | null | undefined) {
+  if (value) {
+    formData.set(name, value);
+  }
 }
 
 async function parseTransactionForm(
