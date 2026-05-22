@@ -319,5 +319,15 @@ M1 验收标准：
 ## 与需求不一致，待修正
 
 - 调整交易当前实现为"输入差额"，需求 §5.4 / §7.3 / §8.3 已确定为"输入实际余额，系统算差额"。M5 余额校准开始前需要调整交易表单和领域函数。
-- 每个支付方式应有默认资金来源账户字段（需求 §4.4），当前 schema 是否已有该字段需要确认，没有则需要补迁移。
+- 每个支付方式应有默认资金来源账户字段（需求 §4.4），当前 schema 已存在 `payment_methods.defaultAccountId`，但 UI 尚未利用该字段做交易预填。M3-M4 完善快捷模板/交易表单时一起接上。
 - 首页 M2 验收包含折算净资产显示，但还没有汇率管理入口。需要在 M2 收尾或 M3 之前增加最低形态的"手动设置参考汇率"。
+- `assertAccountCurrencies` 强制交易币种与账户币种一致，阻断了需求 §11.3 的跨币种转账。M5 之前需要明确是否要支持，并相应放宽校验。
+
+## 已完成的地基与规范 (2026-05-22)
+
+- 引入 vitest，为 domain/finance 和 lib/dates 建立 26 个单元测试。
+- 引入 dayjs，扩展 src/lib/dates.ts 为 M3-M4 的日期运算铺路。
+- Server Action 全面切换到 React 19 useActionState 模式，错误内联展示且保留用户输入。
+- 所有表单提交按钮使用 useFormStatus，pending 状态可见、防双击。
+- globals.css 反转为 mobile-first，所有 :hover 包 @media (hover: hover)，modal 用 100dvh，shell 与 modal 加 safe-area-inset，表单 input font-size 16px 防 iOS 缩放，PWA manifest 与 viewport theme color 与设计 token 对齐。
+- 文档约定写入 ui-direction.md §9-§10（手机端策略、PWA 说明）与 code-guidelines.md §5/§8/§9/§10（Server Action、样式、测试、依赖）。
