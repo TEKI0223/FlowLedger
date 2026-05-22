@@ -94,37 +94,43 @@ FlowLedger 的录入体验应尽量避免“大表单感”：
 
 ## 8. 样式规范
 
-### 8.1 CSS 组织
+### 8.1 样式技术栈
 
-- `globals.css` 只放：reset、设计 token (CSS 变量)、字体声明、`html / body` 等全局基础样式。不再继续增长页面级或组件级样式。
-- 组件级样式用 **CSS Modules**，文件与组件同名同目录：`action-tile.tsx` 配 `action-tile.module.css`。
-- 页面级样式同上，放在路由目录下：`src/app/accounts/accounts.module.css`。
+样式层使用 **Tailwind CSS v4 + shadcn/ui（base-nova 风格） + Base UI primitives + lucide-react 图标**。设计 token 通过 `globals.css` 的 CSS 变量声明，所有组件样式通过 Tailwind utility class 写在 JSX 里。
 
-### 8.2 Mobile-first CSS
+- `globals.css` 只放：`@import "tailwindcss"`、设计 token (`:root` / `.dark` 下的 CSS 变量)、`@theme inline { ... }` 把变量暴露给 Tailwind、`@layer base` 的全局重置。**不再增长任何自定义业务 class**。
+- 通用 UI 原语在 `src/components/ui/`，由 shadcn CLI 生成或派生（Button、Card、Dialog、Input、Label、Textarea、Alert、Badge、Separator、Skeleton 等）。需要新组件时优先用 `npx shadcn@latest add <name>` 拉取。
+- 财务领域组件在 `src/components/finance/`，包装通用原语并加入业务语义。
+- 组合 class 用 `cn()`（位于 `src/lib/utils.ts`，clsx + tailwind-merge）。
+- 不写 CSS Modules、不写 SCSS、不写新的全局 class。
 
-所有新写的样式必须 **mobile-first**：默认是手机视图，桌面用 `@media (min-width)` 加宽。禁止 `@media (max-width)` 反向覆盖。
+### 8.2 Mobile-first
 
-```css
-/* 正确 */
-.summary-grid { grid-template-columns: 1fr; }
-@media (min-width: 820px) { .summary-grid { grid-template-columns: repeat(4, 1fr); } }
+Tailwind 的断点前缀本身就是 mobile-first：默认值是手机，`sm:`、`md:`、`lg:` 越往大屏越宽。**直接利用，不要反向覆盖**。
 
-/* 错误 */
-.summary-grid { grid-template-columns: repeat(4, 1fr); }
-@media (max-width: 820px) { .summary-grid { grid-template-columns: 1fr; } }
+```tsx
+// 正确：默认单列，md (≥768px) 开始铺开为 4 列
+<div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+
+// 错误：默认 4 列，反向收回到 1 列
+<div className="grid grid-cols-4 max-md:grid-cols-1">
 ```
+
+FlowLedger 使用 Tailwind 默认断点：`sm: 640px / md: 768px / lg: 1024px / xl: 1280px`。手机/桌面分界用 `md`。
 
 ### 8.3 触屏强制约束
 
-- `:hover` 必须包 `@media (hover: hover)`，否则触屏会"卡 hover"。
-- 视口高度用 `100dvh`，不用 `100vh`。
-- 主容器底部用 `max(20px, env(safe-area-inset-bottom))` 给 home indicator 留位。
-- 可点击区域最小 44×44，列表项最小 56px。
-- 表单 `input` / `textarea` / `select` 的 `font-size >= 16px`，防 iOS Safari 自动放大。
+- hover 效果用 Tailwind 自带的 `hover:`（Tailwind 默认就只在指针设备生效，等价于 `@media (hover: hover)`）。
+- 视口高度用 `h-dvh` / `min-h-dvh`，不用 `h-screen`。
+- 主容器底部用 `pb-[max(1rem,env(safe-area-inset-bottom))]` 给 home indicator 留位。
+- 可点击区域最小 44×44（`min-h-11 min-w-11`），列表项最小 56px。
+- 表单输入 `text-base` 起步（即 16px），防 iOS Safari 自动放大。shadcn 的 Input/Textarea 默认 `text-sm md:text-base` — 在 FlowLedger 里覆盖为 `text-base`。
 
-### 8.4 断点
+### 8.4 颜色与暗色模式
 
-只有两个断点：`480px`（手机内部密度）和 `820px`（手机/桌面分界）。不要随意增加。
+- 颜色用 shadcn 语义 token：`bg-background` / `text-foreground` / `text-muted-foreground` / `bg-card` / `border-border` / `bg-destructive` 等。**不要直接写 `bg-white` / `text-black` / `bg-gray-100`**，会在暗色模式下出问题。
+- 财务语义色用我们扩展的 token：`text-income` / `text-expense` / `text-transfer` / `text-adjustment`（在 globals.css `@theme` 里声明）。
+- 暗色模式通过 `next-themes` 注入到 `<html class="dark">`。组件代码默认不需要写 `dark:` 前缀，shadcn token 已经在 `.dark` 下重新映射；只在需要明暗差异化（比如某个特定的 hover 颜色）时才用 `dark:`。
 
 详细的手机端策略见 [ui-direction.md](ui-direction.md) §9。
 
@@ -169,11 +175,12 @@ npm run build
 
 ## 10. 依赖和工具
 
+- 样式用 **Tailwind v4**，组件用 **shadcn/ui (base-nova)**，primitives 用 **@base-ui/react**，图标用 **lucide-react**，暗色模式用 **next-themes**，动画用 **tw-animate-css**。
+- class 组合用 `cn()`（位于 `src/lib/utils.ts`）。
 - 日期运算用 `dayjs`，不要手写 `Date` 加减。`src/lib/dates.ts` 是统一入口。
 - 表单校验用 `zod`，在 Server Action 边界一次性校验。
 - ORM 用 `drizzle-orm`，迁移用 `drizzle-kit`。所有写操作显式 `.run()`。
-- 单元测试用 `vitest`，与 Next.js 共用 TS 配置。
-- 不引入 UI 组件库（Tailwind / shadcn / MUI 等），保持 CSS 自有可控。
+- 单元测试用 `vitest`。
 
 ## 11. Git 规范
 

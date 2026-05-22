@@ -1,6 +1,16 @@
 # FlowLedger UI 方向
 
-最后更新：2026-05-21
+最后更新：2026-05-23
+
+## 0. 技术栈
+
+样式层：**Tailwind CSS v4 + shadcn/ui（base-nova 风格） + Base UI primitives + lucide-react + next-themes**。
+
+- 设计 token：通过 `src/app/globals.css` 的 CSS 变量声明（oklch 色彩空间）。
+- 组件原语：`src/components/ui/` 下的 Button / Card / Dialog / Input / Label / Textarea / Alert / Badge / Separator / Skeleton 等，由 shadcn CLI 生成。
+- 财务领域组件：`src/components/finance/`，包装通用原语并加入业务语义。
+- class 组合：`cn()` from `src/lib/utils.ts`。
+- 暗色模式：跟随系统，通过 `next-themes` 注入 `.dark` class。
 
 ## 1. 设计目标
 
