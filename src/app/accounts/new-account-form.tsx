@@ -2,11 +2,15 @@
 
 import { useActionState } from "react";
 import { createAccount, type AccountActionState } from "@/app/actions/accounts";
+import { InlineAlert } from "@/components/ui/inline-alert";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { Textarea } from "@/components/ui/textarea";
+import { accountTypeLabels, currencies, currencyLabels } from "@/domain/finance";
 
 const initialState: AccountActionState = {};
-import { InlineAlert } from "@/components/ui/inline-alert";
-import { SubmitButton } from "@/components/ui/submit-button";
-import { accountTypeLabels, currencies, currencyLabels } from "@/domain/finance";
 
 export function NewAccountForm() {
   const [state, formAction] = useActionState<AccountActionState, FormData>(
@@ -18,62 +22,79 @@ export function NewAccountForm() {
   return (
     <>
       {state.error ? <InlineAlert tone="danger">{state.error}</InlineAlert> : null}
-      <form action={formAction} className="form-grid">
-        <label>
-          <span>账户名称</span>
-          <input
+      <form action={formAction} className="grid gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="name">账户名称</Label>
+          <Input
+            id="name"
             name="name"
             required
             placeholder="例如：日本银行账户"
             defaultValue={values?.name ?? ""}
+            className="h-11 text-base"
           />
-        </label>
+        </div>
 
-        <label>
-          <span>账户类型</span>
-          <select name="type" required defaultValue={values?.type ?? "bank"}>
+        <div className="grid gap-2">
+          <Label htmlFor="type">账户类型</Label>
+          <NativeSelect id="type" name="type" required defaultValue={values?.type ?? "bank"}>
             {Object.entries(accountTypeLabels).map(([value, label]) => (
               <option value={value} key={value}>
                 {label}
               </option>
             ))}
-          </select>
-        </label>
+          </NativeSelect>
+        </div>
 
-        <label>
-          <span>币种</span>
-          <select name="currency" required defaultValue={values?.currency ?? "JPY"}>
+        <div className="grid gap-2">
+          <Label htmlFor="currency">币种</Label>
+          <NativeSelect
+            id="currency"
+            name="currency"
+            required
+            defaultValue={values?.currency ?? "JPY"}
+          >
             {currencies.map((currency) => (
               <option value={currency} key={currency}>
                 {currency} · {currencyLabels[currency]}
               </option>
             ))}
-          </select>
-        </label>
+          </NativeSelect>
+        </div>
 
-        <label>
-          <span>初始余额</span>
-          <input
+        <div className="grid gap-2">
+          <Label htmlFor="initialBalance">初始余额</Label>
+          <Input
+            id="initialBalance"
             name="initialBalance"
             inputMode="decimal"
             placeholder="0"
             defaultValue={values?.initialBalance ?? "0"}
+            className="h-11 text-base tabular-nums"
           />
-        </label>
+        </div>
 
-        <label className="checkbox-row">
+        <label className="flex items-center gap-2 text-sm">
           <input
             name="includeInNetWorth"
             type="checkbox"
             defaultChecked={values?.includeInNetWorth ?? true}
+            className="size-4 rounded border-input accent-primary"
           />
           <span>计入净资产</span>
         </label>
 
-        <label>
-          <span>备注</span>
-          <textarea name="note" rows={3} placeholder="可选" defaultValue={values?.note ?? ""} />
-        </label>
+        <div className="grid gap-2">
+          <Label htmlFor="note">备注</Label>
+          <Textarea
+            id="note"
+            name="note"
+            rows={3}
+            placeholder="可选"
+            defaultValue={values?.note ?? ""}
+            className="text-base"
+          />
+        </div>
 
         <SubmitButton>保存账户</SubmitButton>
       </form>
