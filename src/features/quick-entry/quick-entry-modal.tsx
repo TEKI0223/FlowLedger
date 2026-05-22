@@ -1,17 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ActionTile } from "@/components/ui/action-tile";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ActionTile, type ActionTileTheme } from "@/components/ui/action-tile";
 import { QuickEntryForm } from "./quick-entry-form";
-
-type QuickEntryTileTheme =
-  | "bank"
-  | "card"
-  | "wallet"
-  | "cash"
-  | "income"
-  | "transfer"
-  | "temporary";
 
 export type QuickEntryModalTemplate = {
   id: string;
@@ -19,8 +17,7 @@ export type QuickEntryModalTemplate = {
   meta: string;
   context: string;
   amountHint: string;
-  badge: string;
-  theme: QuickEntryTileTheme;
+  theme: ActionTileTheme;
   typeLabel: string;
   type: "income" | "expense" | "transfer" | "adjustment" | "temporary";
   currency: "JPY" | "CNY";
@@ -33,37 +30,14 @@ type QuickEntryModalProps = {
 export function QuickEntryModal({ templates }: QuickEntryModalProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<QuickEntryModalTemplate | null>(null);
 
-  useEffect(() => {
-    if (!selectedTemplate) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setSelectedTemplate(null);
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [selectedTemplate]);
-
   return (
     <>
-      <div className="action-grid">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         {templates.map((template) => (
           <ActionTile
             title={template.title}
             meta={template.meta}
             amountHint={template.amountHint}
-            badge={template.badge}
             theme={template.theme}
             onClick={() => setSelectedTemplate(template)}
             key={template.id}
@@ -71,52 +45,38 @@ export function QuickEntryModal({ templates }: QuickEntryModalProps) {
         ))}
       </div>
 
-      {selectedTemplate ? (
-        <div className="modal-backdrop" onMouseDown={() => setSelectedTemplate(null)}>
-          <section
-            className="quick-entry-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="quick-entry-modal-title"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <div className="modal-topbar">
-              <div>
-                <span className={`quick-entry-type ${selectedTemplate.type}`}>
+      <Dialog
+        open={!!selectedTemplate}
+        onOpenChange={(open) => {
+          if (!open) setSelectedTemplate(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md max-h-[calc(100dvh-2rem)] overflow-auto">
+          {selectedTemplate ? (
+            <>
+              <DialogHeader>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {selectedTemplate.typeLabel}
-                </span>
-                <h2 id="quick-entry-modal-title">{selectedTemplate.title}</h2>
-                <p>{selectedTemplate.context}</p>
-              </div>
-              <button
-                className="modal-close"
-                type="button"
-                aria-label="关闭"
-                onClick={() => setSelectedTemplate(null)}
-              >
-                X
-              </button>
-            </div>
+                </p>
+                <DialogTitle className="text-xl">{selectedTemplate.title}</DialogTitle>
+                <DialogDescription>{selectedTemplate.context}</DialogDescription>
+              </DialogHeader>
 
-            {selectedTemplate.id === "temp" ? (
-              <QuickEntryForm
-                key={selectedTemplate.id}
-                mode="temporary"
-                autoFocusAmount
-                submitLabel="保存"
-              />
-            ) : (
-              <QuickEntryForm
-                key={selectedTemplate.id}
-                mode="template"
-                templateId={selectedTemplate.id}
-                currency={selectedTemplate.currency}
-                autoFocusAmount
-              />
-            )}
-          </section>
-        </div>
-      ) : null}
+              {selectedTemplate.id === "temp" ? (
+                <QuickEntryForm key={selectedTemplate.id} mode="temporary" autoFocusAmount />
+              ) : (
+                <QuickEntryForm
+                  key={selectedTemplate.id}
+                  mode="template"
+                  templateId={selectedTemplate.id}
+                  currency={selectedTemplate.currency}
+                  autoFocusAmount
+                />
+              )}
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

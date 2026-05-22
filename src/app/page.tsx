@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { ArrowRightIcon, PlusIcon, WalletIcon } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { MetricCell } from "@/components/ui/metric-cell";
+import { Separator } from "@/components/ui/separator";
+import { formatMoney, transactionTypeLabels } from "@/domain/finance";
 import { getDashboardSummary } from "@/features/dashboard/data";
 import { listAccounts } from "@/features/accounts/data";
 import {
@@ -12,7 +17,8 @@ import {
   type QuickEntryModalTemplate,
 } from "@/features/quick-entry/quick-entry-modal";
 import { listTransactions } from "@/features/transactions/data";
-import { formatMoney, transactionTypeLabels } from "@/domain/finance";
+import { cn } from "@/lib/utils";
+import type { ActionTileTheme } from "@/components/ui/action-tile";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +30,13 @@ type HomeProps = {
 
 type MetricTone = "income" | "expense" | "transfer" | "adjustment";
 
+const transactionToneClass: Record<string, string> = {
+  income: "text-income",
+  expense: "text-expense",
+  transfer: "text-transfer",
+  adjustment: "text-adjustment",
+};
+
 export default async function Home({ searchParams }: HomeProps) {
   const [{ saved }, summary, accounts, quickEntryTemplates, transactions] = await Promise.all([
     searchParams,
@@ -33,18 +46,18 @@ export default async function Home({ searchParams }: HomeProps) {
     listTransactions(6),
   ]);
 
-  const metrics: Array<{ label: string; value: string; note: string; tone?: MetricTone }> = [
+  const metrics: Array<{ label: string; value: string; note?: string; tone?: MetricTone }> = [
     {
       label: "本月收入",
       value: formatMoney({ amountMinor: summary.income.JPY, currency: "JPY" }),
-      note: "JPY 收入",
-      tone: "income" as const,
+      note: "JPY",
+      tone: "income",
     },
     {
       label: "本月支出",
       value: formatMoney({ amountMinor: summary.expense.JPY, currency: "JPY" }),
       note: "不含转账和调整",
-      tone: "expense" as const,
+      tone: "expense",
     },
     {
       label: "本月结余",
@@ -52,21 +65,20 @@ export default async function Home({ searchParams }: HomeProps) {
         amountMinor: summary.income.JPY - summary.expense.JPY,
         currency: "JPY",
       }),
-      note: "JPY 收入减支出",
-      tone: "transfer" as const,
+      note: "收入 − 支出",
+      tone: "transfer",
     },
     {
       label: "JPY 资产",
       value: formatMoney({ amountMinor: summary.assets.JPY, currency: "JPY" }),
-      note: "含现金和钱包余额",
     },
     {
       label: "CNY 资产",
       value: formatMoney({ amountMinor: summary.assets.CNY, currency: "CNY" }),
-      note: "未折算为日元",
     },
   ];
-  const quickEntryModalTemplates = [
+
+  const quickEntryModalTemplates: QuickEntryModalTemplate[] = [
     ...quickEntryTemplates.map(toQuickEntryModalTemplate),
     {
       id: "temp",
@@ -74,29 +86,32 @@ export default async function Home({ searchParams }: HomeProps) {
       meta: "其他 / 日元现金",
       context: "默认 JPY 支出，保存后可以去交易页补充分类、账户和支付方式",
       amountHint: "待补全",
-      badge: "TMP",
       theme: "temporary",
       typeLabel: "待补全",
       type: "temporary",
       currency: "JPY",
-    } satisfies QuickEntryModalTemplate,
+    },
   ];
 
   return (
-    <main className="shell">
-      <header className="topbar">
-        <div className="brand">
-          <h1 className="brand-title">FlowLedger</h1>
-          <p className="brand-subtitle">个人现金流与账户面板</p>
+    <main className="mx-auto w-full max-w-6xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
+      <header className="flex flex-col gap-3 pb-5 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">FlowLedger</h1>
+          <p className="text-sm text-muted-foreground">个人现金流与账户面板</p>
         </div>
-        <Link className="primary-action link-button" href="/transactions">
+        <Link
+          href="/transactions"
+          className={cn(buttonVariants({ variant: "default", size: "lg" }), "h-11 gap-2")}
+        >
+          <PlusIcon className="size-4" />
           记一笔
         </Link>
       </header>
 
       {saved ? <InlineAlert>已保存，首页数据和最近记录已更新。</InlineAlert> : null}
 
-      <section className="summary-grid" aria-label="财务概览">
+      <section aria-label="财务概览" className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {metrics.map((metric) => (
           <MetricCell
             label={metric.label}
@@ -108,85 +123,117 @@ export default async function Home({ searchParams }: HomeProps) {
         ))}
       </section>
 
-      <div className="workspace">
-        <div>
-          <section className="section">
-            <div className="section-heading">
-              <h2>快捷记账</h2>
-              <span className="small">来自数据库模板</span>
+      <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-6">
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">快捷记账</h2>
+              <span className="text-xs text-muted-foreground">点击进入快捷录入</span>
             </div>
             <QuickEntryModal templates={quickEntryModalTemplates} />
           </section>
 
-          <section className="section">
-            <div className="section-heading">
-              <h2>最近记录</h2>
-              <span className="small">消费和转账分开统计</span>
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">最近记录</h2>
+              <Link
+                href="/transactions"
+                className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                查看全部
+                <ArrowRightIcon className="size-3" />
+              </Link>
             </div>
-            <div className="records">
-              {transactions.length === 0 ? (
-                <p className="empty-state">还没有真实交易。先点击“记一笔”创建第一条记录。</p>
-              ) : (
-                transactions.map((transaction) => (
-                  <article className="record" key={transaction.id}>
-                    <div className="record-main">
-                      <strong>
+            {transactions.length === 0 ? (
+              <Card size="sm" className="px-4 py-6 text-center text-sm text-muted-foreground">
+                还没有真实交易。点击上方「记一笔」或快捷卡片创建第一条记录。
+              </Card>
+            ) : (
+              <Card size="sm" className="divide-y divide-border py-0">
+                {transactions.map((transaction) => (
+                  <article
+                    key={transaction.id}
+                    className="flex items-start justify-between gap-4 px-4 py-3"
+                  >
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <p className="truncate text-sm font-medium">
                         {transaction.category?.name ??
                           transaction.note ??
                           transactionTypeLabels[transaction.type]}
-                      </strong>
-                      <span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
                         {transactionTypeLabels[transaction.type]} · {transaction.occurredOn}
                         {transaction.sourceAccount ? ` · ${transaction.sourceAccount.name}` : ""}
                         {transaction.targetAccount ? ` → ${transaction.targetAccount.name}` : ""}
-                      </span>
+                      </p>
                     </div>
-                    <span className={`amount ${transaction.type}`}>
+                    <span
+                      className={cn(
+                        "shrink-0 text-sm font-semibold tabular-nums",
+                        transactionToneClass[transaction.type],
+                      )}
+                    >
                       {formatMoney({
                         amountMinor: transaction.amountMinor,
                         currency: transaction.currency,
                       })}
                     </span>
                   </article>
-                ))
-              )}
-            </div>
+                ))}
+              </Card>
+            )}
           </section>
         </div>
 
-        <aside className="side-panel" aria-label="待处理事项和账户">
-          <section className="task">
-            <div className="task-top">
-              <h2 className="task-title">账户余额</h2>
-              <span className="pill">JPY / CNY</span>
-            </div>
-            <div className="account-grid">
-              {accounts.slice(0, 6).map((account) => (
-                <div className="account-row" key={account.id}>
-                  <span>{account.name}</span>
-                  <strong>
+        <aside className="space-y-4" aria-label="账户与高级操作">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <WalletIcon className="size-4 text-muted-foreground" />
+                账户余额
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-0">
+              {accounts.slice(0, 6).map((account, index) => (
+                <div
+                  key={account.id}
+                  className={cn(
+                    "flex items-center justify-between gap-3 py-2.5",
+                    index > 0 && "border-t border-border",
+                  )}
+                >
+                  <span className="truncate text-sm">{account.name}</span>
+                  <span className="shrink-0 text-sm font-semibold tabular-nums">
                     {formatMoney({
                       amountMinor: account.balanceMinor,
                       currency: account.currency,
                     })}
-                  </strong>
+                  </span>
                 </div>
               ))}
-            </div>
-          </section>
+            </CardContent>
+          </Card>
 
-          <section className="task">
-            <div className="task-top">
-              <h2 className="task-title">完整录入</h2>
-              <span className="pill gold">高级</span>
-            </div>
-            <p>收入、转账、调整和需要改账户的复杂记录，继续从完整交易页处理。</p>
-            <div className="task-action">
-              <Link className="secondary-action" href="/transactions">
+          <Card>
+            <CardHeader>
+              <CardTitle>完整录入</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                收入、转账、调整和需要改账户的复杂记录，从完整交易页处理。
+              </p>
+              <Separator />
+              <Link
+                href="/transactions"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "lg" }),
+                  "h-11 w-full text-base",
+                )}
+              >
                 打开交易页
               </Link>
-            </div>
-          </section>
+            </CardContent>
+          </Card>
         </aside>
       </div>
     </main>
@@ -200,7 +247,6 @@ function toQuickEntryModalTemplate(template: HydratedQuickEntryTemplate): QuickE
     meta: templateMeta(template),
     context: templateContext(template),
     amountHint: amountHint(template),
-    badge: templateBadge(template),
     theme: templateTheme(template),
     typeLabel: transactionTypeLabels[template.type],
     type: template.type,
@@ -238,43 +284,7 @@ function amountHint(template: HydratedQuickEntryTemplate) {
   });
 }
 
-function templateBadge(template: HydratedQuickEntryTemplate) {
-  const id = template.paymentMethodId ?? template.sourceAccountId ?? template.targetAccountId ?? "";
-
-  if (id.includes("apple")) {
-    return "AP";
-  }
-
-  if (id.includes("paypay")) {
-    return "PP";
-  }
-
-  if (id.includes("wechat")) {
-    return "WX";
-  }
-
-  if (id.includes("alipay")) {
-    return "AL";
-  }
-
-  if (id.includes("credit")) {
-    return "CC";
-  }
-
-  if (id.includes("cash")) {
-    return "CA";
-  }
-
-  if (id.includes("bank")) {
-    return "BK";
-  }
-
-  return template.type === "income" ? "IN" : "¥";
-}
-
-function templateTheme(
-  template: HydratedQuickEntryTemplate,
-): "bank" | "card" | "wallet" | "cash" | "income" | "transfer" {
+function templateTheme(template: HydratedQuickEntryTemplate): ActionTileTheme {
   if (template.type === "income") {
     return "income";
   }

@@ -7,12 +7,17 @@ import {
   createTemporaryTransaction,
   type TransactionActionState,
 } from "@/app/actions/transactions";
-
-const initialState: TransactionActionState = {};
+import { buttonVariants } from "@/components/ui/button";
 import { InlineAlert } from "@/components/ui/inline-alert";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { Textarea } from "@/components/ui/textarea";
 import type { Currency } from "@/domain/finance";
 import { todayIsoDate } from "@/lib/dates";
+
+const initialState: TransactionActionState = {};
 
 type QuickEntryFormProps =
   | {
@@ -64,50 +69,75 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
   return (
     <>
       {state.error ? <InlineAlert tone="danger">{state.error}</InlineAlert> : null}
-      <form action={formAction} className="quick-entry-form">
-        <label className="amount-field">
-          <span>金额</span>
-          <input
+      <form action={formAction} className="grid gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="quick-amount">金额</Label>
+          <Input
+            id="quick-amount"
             ref={amountInputRef}
             name="amount"
             inputMode="decimal"
             required
             placeholder={currency === "JPY" ? "1200" : "38.50"}
             defaultValue={amountDefault}
+            className="h-16 text-3xl font-semibold tabular-nums"
           />
-        </label>
-
-        <div className="compact-form-grid">
-          <label>
-            <span>日期</span>
-            <input name="occurredOn" type="date" required defaultValue={occurredOnDefault} />
-          </label>
-          <label>
-            <span>币种</span>
-            <input value={currency} readOnly aria-label="币种" />
-          </label>
         </div>
 
-        <label>
-          <span>备注</span>
-          <textarea
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid gap-2">
+            <Label htmlFor="quick-occurredOn">日期</Label>
+            <Input
+              id="quick-occurredOn"
+              name="occurredOn"
+              type="date"
+              required
+              defaultValue={occurredOnDefault}
+              className="h-11 text-base"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="quick-currency">币种</Label>
+            <Input
+              id="quick-currency"
+              value={currency}
+              readOnly
+              aria-label="币种"
+              className="h-11 text-base"
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor="quick-note">备注</Label>
+          <Textarea
+            id="quick-note"
             name="note"
             rows={3}
             placeholder={
               props.mode === "template" ? (props.noteHint ?? "可选") : "可选，例如店名或用途"
             }
             defaultValue={noteDefault}
+            className="text-base"
           />
-        </label>
+        </div>
 
         {props.mode === "temporary" ? (
-          <div className="quick-entry-preview">保存为 JPY 支出 · 待补全</div>
+          <p className="rounded-md border border-dashed border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            保存为 JPY 支出 · 待补全
+          </p>
         ) : null}
 
-        <div className="quick-entry-actions">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
           <SubmitButton>{submitLabel}</SubmitButton>
           {showFullEntryLink ? (
-            <Link className="secondary-action" href="/transactions">
+            <Link
+              href="/transactions"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "h-11 text-base",
+              )}
+            >
               完整录入
             </Link>
           ) : null}

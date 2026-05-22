@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react";
 import { useFormStatus } from "react-dom";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type SubmitButtonProps = {
   children: ReactNode;
@@ -12,13 +14,19 @@ type SubmitButtonProps = {
 export function SubmitButton({
   children,
   pendingLabel = "保存中…",
-  className = "primary-action",
+  className,
 }: SubmitButtonProps) {
   const { pending } = useFormStatus();
 
   return (
-    <button className={className} type="submit" disabled={pending} aria-busy={pending}>
+    <Button
+      type="submit"
+      size="lg"
+      disabled={pending}
+      aria-busy={pending}
+      className={cn("h-11 w-full text-base font-semibold", className)}
+    >
       {pending ? pendingLabel : children}
-    </button>
+    </Button>
   );
 }
