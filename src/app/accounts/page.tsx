@@ -1,18 +1,11 @@
 import Link from "next/link";
-import { createAccount } from "@/app/actions/accounts";
+import { NewAccountForm } from "./new-account-form";
 import { listAccounts } from "@/features/accounts/data";
-import { accountTypeLabels, currencies, currencyLabels, formatMoney } from "@/domain/finance";
+import { accountTypeLabels, currencyLabels, formatMoney } from "@/domain/finance";
 
 export const dynamic = "force-dynamic";
 
-type AccountsPageProps = {
-  searchParams: Promise<{
-    error?: string;
-  }>;
-};
-
-export default async function AccountsPage({ searchParams }: AccountsPageProps) {
-  const { error } = await searchParams;
+export default async function AccountsPage() {
   const accounts = await listAccounts();
 
   return (
@@ -65,54 +58,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
               <h2 className="task-title">新建账户</h2>
               <span className="pill">M1</span>
             </div>
-            {error ? <p className="form-error">{error}</p> : null}
-            <form action={createAccount} className="form-grid">
-              <label>
-                <span>账户名称</span>
-                <input name="name" required placeholder="例如：日本银行账户" />
-              </label>
-
-              <label>
-                <span>账户类型</span>
-                <select name="type" required defaultValue="bank">
-                  {Object.entries(accountTypeLabels).map(([value, label]) => (
-                    <option value={value} key={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                <span>币种</span>
-                <select name="currency" required defaultValue="JPY">
-                  {currencies.map((currency) => (
-                    <option value={currency} key={currency}>
-                      {currency} · {currencyLabels[currency]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                <span>初始余额</span>
-                <input name="initialBalance" inputMode="decimal" placeholder="0" defaultValue="0" />
-              </label>
-
-              <label className="checkbox-row">
-                <input name="includeInNetWorth" type="checkbox" defaultChecked />
-                <span>计入净资产</span>
-              </label>
-
-              <label>
-                <span>备注</span>
-                <textarea name="note" rows={3} placeholder="可选" />
-              </label>
-
-              <button className="primary-action" type="submit">
-                保存账户
-              </button>
-            </form>
+            <NewAccountForm />
           </section>
         </aside>
       </div>

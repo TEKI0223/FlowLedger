@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { updateAccount } from "@/app/actions/accounts";
+import { EditAccountForm } from "./edit-account-form";
 import { getAccount } from "@/features/accounts/data";
-import { accountTypeLabels, currencies, currencyLabels, formatMoney } from "@/domain/finance";
+import { formatMoney } from "@/domain/finance";
 
 export const dynamic = "force-dynamic";
 
@@ -10,20 +10,15 @@ type AccountEditPageProps = {
   params: Promise<{
     id: string;
   }>;
-  searchParams: Promise<{
-    error?: string;
-  }>;
 };
 
-export default async function AccountEditPage({ params, searchParams }: AccountEditPageProps) {
-  const [{ id }, { error }] = await Promise.all([params, searchParams]);
+export default async function AccountEditPage({ params }: AccountEditPageProps) {
+  const { id } = await params;
   const account = await getAccount(id);
 
   if (!account) {
     notFound();
   }
-
-  const action = updateAccount.bind(null, account.id);
 
   return (
     <main className="shell narrow-shell">
@@ -41,53 +36,7 @@ export default async function AccountEditPage({ params, searchParams }: AccountE
       </header>
 
       <section className="task">
-        {error ? <p className="form-error">{error}</p> : null}
-        <form action={action} className="form-grid">
-          <label>
-            <span>账户名称</span>
-            <input name="name" required defaultValue={account.name} />
-          </label>
-
-          <label>
-            <span>账户类型</span>
-            <select name="type" required defaultValue={account.type}>
-              {Object.entries(accountTypeLabels).map(([value, label]) => (
-                <option value={value} key={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            <span>币种</span>
-            <select name="currency" required defaultValue={account.currency}>
-              {currencies.map((currency) => (
-                <option value={currency} key={currency}>
-                  {currency} · {currencyLabels[currency]}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="checkbox-row">
-            <input
-              name="includeInNetWorth"
-              type="checkbox"
-              defaultChecked={account.includeInNetWorth}
-            />
-            <span>计入净资产</span>
-          </label>
-
-          <label>
-            <span>备注</span>
-            <textarea name="note" rows={4} defaultValue={account.note ?? ""} />
-          </label>
-
-          <button className="primary-action" type="submit">
-            保存修改
-          </button>
-        </form>
+        <EditAccountForm account={account} />
       </section>
     </main>
   );

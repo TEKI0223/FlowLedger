@@ -1,14 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import {
-  createQuickEntryTransaction,
-  createTemporaryTransaction,
-} from "@/app/actions/transactions";
+import { useEffect, useState } from "react";
 import { ActionTile } from "@/components/ui/action-tile";
-import { SubmitButton } from "@/components/ui/submit-button";
-import { todayIsoDate } from "@/lib/dates";
+import { QuickEntryForm } from "./quick-entry-form";
 
 type QuickEntryTileTheme =
   | "bank"
@@ -38,7 +32,6 @@ type QuickEntryModalProps = {
 
 export function QuickEntryModal({ templates }: QuickEntryModalProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<QuickEntryModalTemplate | null>(null);
-  const amountInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!selectedTemplate) {
@@ -47,7 +40,6 @@ export function QuickEntryModal({ templates }: QuickEntryModalProps) {
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    amountInputRef.current?.focus();
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -62,11 +54,6 @@ export function QuickEntryModal({ templates }: QuickEntryModalProps) {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [selectedTemplate]);
-
-  const saveAction =
-    selectedTemplate?.id === "temp" || !selectedTemplate
-      ? createTemporaryTransaction
-      : createQuickEntryTransaction.bind(null, selectedTemplate.id);
 
   return (
     <>
@@ -111,41 +98,22 @@ export function QuickEntryModal({ templates }: QuickEntryModalProps) {
               </button>
             </div>
 
-            <form action={saveAction} className="quick-entry-form">
-              <label className="amount-field">
-                <span>金额</span>
-                <input
-                  ref={amountInputRef}
-                  name="amount"
-                  inputMode="decimal"
-                  required
-                  placeholder={selectedTemplate.currency === "JPY" ? "1200" : "38.50"}
-                />
-              </label>
-
-              <div className="compact-form-grid">
-                <label>
-                  <span>日期</span>
-                  <input name="occurredOn" type="date" required defaultValue={todayIsoDate()} />
-                </label>
-                <label>
-                  <span>币种</span>
-                  <input value={selectedTemplate.currency} readOnly aria-label="币种" />
-                </label>
-              </div>
-
-              <label>
-                <span>备注</span>
-                <textarea name="note" rows={3} placeholder="可选" />
-              </label>
-
-              <div className="quick-entry-actions">
-                <SubmitButton>保存</SubmitButton>
-                <Link className="secondary-action" href="/transactions">
-                  完整录入
-                </Link>
-              </div>
-            </form>
+            {selectedTemplate.id === "temp" ? (
+              <QuickEntryForm
+                key={selectedTemplate.id}
+                mode="temporary"
+                autoFocusAmount
+                submitLabel="保存"
+              />
+            ) : (
+              <QuickEntryForm
+                key={selectedTemplate.id}
+                mode="template"
+                templateId={selectedTemplate.id}
+                currency={selectedTemplate.currency}
+                autoFocusAmount
+              />
+            )}
           </section>
         </div>
       ) : null}

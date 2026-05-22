@@ -18,7 +18,6 @@ export const dynamic = "force-dynamic";
 
 type HomeProps = {
   searchParams: Promise<{
-    error?: string;
     saved?: string;
   }>;
 };
@@ -26,14 +25,13 @@ type HomeProps = {
 type MetricTone = "income" | "expense" | "transfer" | "adjustment";
 
 export default async function Home({ searchParams }: HomeProps) {
-  const [{ error, saved }, summary, accounts, quickEntryTemplates, transactions] =
-    await Promise.all([
-      searchParams,
-      getDashboardSummary(),
-      listAccounts(),
-      listQuickEntryTemplates(),
-      listTransactions(6),
-    ]);
+  const [{ saved }, summary, accounts, quickEntryTemplates, transactions] = await Promise.all([
+    searchParams,
+    getDashboardSummary(),
+    listAccounts(),
+    listQuickEntryTemplates(),
+    listTransactions(6),
+  ]);
 
   const metrics: Array<{ label: string; value: string; note: string; tone?: MetricTone }> = [
     {
@@ -97,7 +95,6 @@ export default async function Home({ searchParams }: HomeProps) {
       </header>
 
       {saved ? <InlineAlert>已保存，首页数据和最近记录已更新。</InlineAlert> : null}
-      {error ? <InlineAlert tone="danger">{error}</InlineAlert> : null}
 
       <section className="summary-grid" aria-label="财务概览">
         {metrics.map((metric) => (

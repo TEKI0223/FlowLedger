@@ -18,29 +18,71 @@ const accountSchema = z.object({
   note: z.string().trim().optional(),
 });
 
-export async function createAccount(formData: FormData) {
-  const result = accountSchema.safeParse({
-    name: formData.get("name"),
-    type: formData.get("type"),
-    currency: formData.get("currency"),
+export type AccountFormValues = {
+  name?: string;
+  type?: string;
+  currency?: string;
+  includeInNetWorth?: boolean;
+  initialBalance?: string;
+  note?: string;
+};
+
+export type AccountActionState = {
+  error?: string;
+  values?: AccountFormValues;
+};
+
+function extractValues(formData: FormData): AccountFormValues {
+  return {
+    name: stringField(formData, "name"),
+    type: stringField(formData, "type"),
+    currency: stringField(formData, "currency"),
     includeInNetWorth: formData.get("includeInNetWorth") === "on",
-    initialBalance: formData.get("initialBalance") || "0",
-    note: formData.get("note") || undefined,
+    initialBalance: stringField(formData, "initialBalance"),
+    note: stringField(formData, "note"),
+  };
+}
+
+function stringField(formData: FormData, key: string): string | undefined {
+  const value = formData.get(key);
+  return typeof value === "string" ? value : undefined;
+}
+
+export async function createAccount(
+  _prev: AccountActionState,
+  formData: FormData,
+): Promise<AccountActionState> {
+  const values = extractValues(formData);
+
+  const result = accountSchema.safeParse({
+    name: values.name,
+    type: values.type,
+    currency: values.currency,
+    includeInNetWorth: values.includeInNetWorth,
+    initialBalance: values.initialBalance || "0",
+    note: values.note || undefined,
   });
 
   if (!result.success) {
-    redirectWithError("/accounts", result.error.issues[0]?.message ?? "账户内容不完整");
+    return {
+      error: result.error.issues[0]?.message ?? "账户内容不完整",
+      values,
+    };
   }
 
   const parsed = result.data;
-  const timestamp = nowIso();
   let balanceMinor: number;
 
   try {
     balanceMinor = parseMoneyToMinor(parsed.initialBalance ?? "0", parsed.currency);
   } catch (error) {
-    redirectWithError("/accounts", error instanceof Error ? error.message : "初始余额格式不正确");
+    return {
+      error: error instanceof Error ? error.message : "初始余额格式不正确",
+      values,
+    };
   }
+
+  const timestamp = nowIso();
 
   db.insert(accounts)
     .values({
@@ -61,17 +103,26 @@ export async function createAccount(formData: FormData) {
   redirect("/accounts");
 }
 
-export async function updateAccount(id: string, formData: FormData) {
+export async function updateAccount(
+  id: string,
+  _prev: AccountActionState,
+  formData: FormData,
+): Promise<AccountActionState> {
+  const values = extractValues(formData);
+
   const result = accountSchema.omit({ initialBalance: true }).safeParse({
-    name: formData.get("name"),
-    type: formData.get("type"),
-    currency: formData.get("currency"),
-    includeInNetWorth: formData.get("includeInNetWorth") === "on",
-    note: formData.get("note") || undefined,
+    name: values.name,
+    type: values.type,
+    currency: values.currency,
+    includeInNetWorth: values.includeInNetWorth,
+    note: values.note || undefined,
   });
 
   if (!result.success) {
-    redirectWithError(`/accounts/${id}`, result.error.issues[0]?.message ?? "账户内容不完整");
+    return {
+      error: result.error.issues[0]?.message ?? "账户内容不完整",
+      values,
+    };
   }
 
   const parsed = result.data;
@@ -93,8 +144,4 @@ export async function updateAccount(id: string, formData: FormData) {
   revalidatePath("/accounts");
   revalidatePath(`/accounts/${id}`);
   redirect("/accounts");
-}
-
-function redirectWithError(path: string, message: string): never {
-  redirect(`${path}?error=${encodeURIComponent(message)}`);
 }
