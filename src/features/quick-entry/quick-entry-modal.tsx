@@ -7,6 +7,7 @@ import {
   createTemporaryTransaction,
 } from "@/app/actions/transactions";
 import { ActionTile } from "@/components/ui/action-tile";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { todayIsoDate } from "@/lib/dates";
 
 type QuickEntryTileTheme =
@@ -139,9 +140,7 @@ export function QuickEntryModal({ templates }: QuickEntryModalProps) {
               </label>
 
               <div className="quick-entry-actions">
-                <button className="primary-action" type="submit">
-                  保存
-                </button>
+                <SubmitButton>保存</SubmitButton>
                 <Link className="secondary-action" href="/transactions">
                   完整录入
                 </Link>
