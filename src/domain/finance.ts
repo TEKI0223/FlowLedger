@@ -98,11 +98,7 @@ export function parseMoneyToMinor(amount: string, currency: Currency): number {
   return sign * amountMinor;
 }
 
-export function convertToCurrency(
-  source: Money,
-  targetCurrency: Currency,
-  rate: number,
-): number {
+export function convertToCurrency(source: Money, targetCurrency: Currency, rate: number): number {
   if (source.currency === targetCurrency) {
     return source.amountMinor;
   }

@@ -4,11 +4,14 @@
 
 ## 当前阶段
 
-M2 已收尾。首页快捷录入闭环、真实数据查询、临时记录、UI 整体迁移到 Tailwind v4 + shadcn (base-nova) 都已完成。折算净资产已用 seed 中的 `1 CNY = 21.5 JPY` 打通最低形态，后续做汇率编辑 UI 时再升级。
+M2 已收尾。首页快捷录入闭环、真实数据查询、临时记录、UI 整体迁移到 Tailwind v4 + shadcn
+(base-nova) 都已完成。折算净资产已用 seed 中的 `1 CNY = 21.5 JPY`
+打通最低形态，后续做汇率编辑 UI 时再升级。
 
 下一步进入 M3 周期项目和待确认流程。
 
-部署方向已确定为 Vercel + Turso，但安排在 M6 完成、schema 稳定之后（新增 M6.5）。开发期不连接 Turso，避免频繁迁移和清理云端测试数据。
+部署方向已确定为 Vercel +
+Turso，但安排在 M6 完成、schema 稳定之后（新增 M6.5）。开发期不连接 Turso，避免频繁迁移和清理云端测试数据。
 
 ## 里程碑状态
 
@@ -321,20 +324,29 @@ M1 验收标准：
 
 ## 与需求不一致，待修正
 
-- 调整交易当前实现为"输入差额"，需求 §5.4 / §7.3 / §8.3 已确定为"输入实际余额，系统算差额"。M5 余额校准开始前需要调整交易表单和领域函数。
-- 每个支付方式应有默认资金来源账户字段（需求 §4.4），当前 schema 已存在 `payment_methods.defaultAccountId`，但 UI 尚未利用该字段做交易预填。M3-M4 完善快捷模板/交易表单时一起接上。
-- 汇率当前写死在 seed（1 CNY = 21.5 JPY），需要在用户使用一段时间后做编辑 UI 让用户能更新。后续里程碑可以单独安排。
-- `assertAccountCurrencies` 强制交易币种与账户币种一致，阻断了需求 §11.3 的跨币种转账。M5 之前需要明确是否要支持，并相应放宽校验。
+- 调整交易当前实现为"输入差额"，需求 §5.4 / §7.3 /
+  §8.3 已确定为"输入实际余额，系统算差额"。M5 余额校准开始前需要调整交易表单和领域函数。
+- 每个支付方式应有默认资金来源账户字段（需求 §4.4），当前 schema 已存在
+  `payment_methods.defaultAccountId`，但 UI 尚未利用该字段做交易预填。M3-M4 完善快捷模板/交易表单时一起接上。
+- 汇率当前写死在 seed（1 CNY = 21.5
+  JPY），需要在用户使用一段时间后做编辑 UI 让用户能更新。后续里程碑可以单独安排。
+- `assertAccountCurrencies`
+  强制交易币种与账户币种一致，阻断了需求 §11.3 的跨币种转账。M5 之前需要明确是否要支持，并相应放宽校验。
 
 ## UI 迁移到 Tailwind v4 + shadcn (base-nova) (2026-05-23)
 
 视觉栈整体切换：
 
-- 安装 tailwindcss v4、@tailwindcss/postcss、@tailwindcss/typography、tw-animate-css、shadcn 配套（clsx、tailwind-merge、class-variance-authority）、lucide-react、next-themes、@base-ui/react。
-- shadcn CLI 拉取 10 个基础组件到 src/components/ui/：button / card / dialog / input / label / textarea / alert / badge / separator / skeleton。
-- src/lib/utils.ts 新增 cn() helper，src/components/theme-provider.tsx 接 next-themes 实现暗色模式跟随系统。
-- src/app/globals.css 整体重写为 Tailwind v4 + shadcn 设计 token（oklch），扩展财务语义色（income / expense / transfer / adjustment）。
-- 所有页面与组件迁移完成：首页 / 账户列表与编辑 / 交易列表与编辑 / 快捷录入模板与临时记录 / 快捷模板 modal / 所有表单。
+- 安装 tailwindcss
+  v4、@tailwindcss/postcss、@tailwindcss/typography、tw-animate-css、shadcn 配套（clsx、tailwind-merge、class-variance-authority）、lucide-react、next-themes、@base-ui/react。
+- shadcn CLI 拉取 10 个基础组件到 src/components/ui/：button / card / dialog / input / label /
+  textarea / alert / badge / separator / skeleton。
+- src/lib/utils.ts 新增 cn()
+  helper，src/components/theme-provider.tsx 接 next-themes 实现暗色模式跟随系统。
+- src/app/globals.css 整体重写为 Tailwind v4 + shadcn 设计 token（oklch），扩展财务语义色（income /
+  expense / transfer / adjustment）。
+- 所有页面与组件迁移完成：首页 / 账户列表与编辑 / 交易列表与编辑 / 快捷录入模板与临时记录 / 快捷模板 modal
+  / 所有表单。
 - 新增 src/components/ui/native-select.tsx：原生 select + Chevron 图标，保留手机原生 picker 体验。
 - 删除 src/app/design-demo：与新设计语言不兼容，原作用已被 shadcn 组件库取代。
 - 文档同步：ui-direction §0 技术栈，code-guidelines §8 样式 + §10 依赖。
@@ -345,5 +357,8 @@ M1 验收标准：
 - 引入 dayjs，扩展 src/lib/dates.ts 为 M3-M4 的日期运算铺路。
 - Server Action 全面切换到 React 19 useActionState 模式，错误内联展示且保留用户输入。
 - 所有表单提交按钮使用 useFormStatus，pending 状态可见、防双击。
-- globals.css 反转为 mobile-first，所有 :hover 包 @media (hover: hover)，modal 用 100dvh，shell 与 modal 加 safe-area-inset，表单 input font-size 16px 防 iOS 缩放，PWA manifest 与 viewport theme color 与设计 token 对齐。
-- 文档约定写入 ui-direction.md §9-§10（手机端策略、PWA 说明）与 code-guidelines.md §5/§8/§9/§10（Server Action、样式、测试、依赖）。
+- globals.css 反转为 mobile-first，所有 :hover 包 @media (hover:
+  hover)，modal 用 100dvh，shell 与 modal 加 safe-area-inset，表单 input font-size
+  16px 防 iOS 缩放，PWA manifest 与 viewport theme color 与设计 token 对齐。
+- 文档约定写入 ui-direction.md §9-§10（手机端策略、PWA 说明）与 code-guidelines.md
+  §5/§8/§9/§10（Server Action、样式、测试、依赖）。

@@ -63,8 +63,7 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
   const noteDefault = state.values?.note ?? "";
   const occurredOnDefault = state.values?.occurredOn ?? todayIsoDate();
   const showFullEntryLink = props.showFullEntryLink ?? true;
-  const submitLabel =
-    props.submitLabel ?? (props.mode === "temporary" ? "保存临时记录" : "保存");
+  const submitLabel = props.submitLabel ?? (props.mode === "temporary" ? "保存临时记录" : "保存");
 
   return (
     <>
@@ -133,10 +132,7 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
           {showFullEntryLink ? (
             <Link
               href="/transactions"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "lg" }),
-                "h-11 text-base",
-              )}
+              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 text-base")}
             >
               完整录入
             </Link>

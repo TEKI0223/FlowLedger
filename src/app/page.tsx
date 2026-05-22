@@ -122,7 +122,10 @@ export default async function Home({ searchParams }: HomeProps) {
 
       {saved ? <InlineAlert>已保存，首页数据和最近记录已更新。</InlineAlert> : null}
 
-      <section aria-label="财务概览" className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+      <section
+        aria-label="财务概览"
+        className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6"
+      >
         {metrics.map((metric) => (
           <MetricCell
             label={metric.label}

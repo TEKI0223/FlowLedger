@@ -38,10 +38,7 @@ type Defaults = {
 };
 
 type TransactionFormProps = {
-  action: (
-    prev: TransactionActionState,
-    formData: FormData,
-  ) => Promise<TransactionActionState>;
+  action: (prev: TransactionActionState, formData: FormData) => Promise<TransactionActionState>;
   lookups: Lookups;
   defaults: Defaults;
   submitLabel: string;

@@ -11,11 +11,7 @@ type SubmitButtonProps = {
   className?: string;
 };
 
-export function SubmitButton({
-  children,
-  pendingLabel = "保存中…",
-  className,
-}: SubmitButtonProps) {
+export function SubmitButton({ children, pendingLabel = "保存中…", className }: SubmitButtonProps) {
   const { pending } = useFormStatus();
 
   return (
