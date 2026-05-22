@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Personal finance dashboard",
     start_url: "/",
     display: "standalone",
-    background_color: "#f6f1e8",
-    theme_color: "#f6f1e8",
+    background_color: "#f7f8fb",
+    theme_color: "#f7f8fb",
     orientation: "portrait-primary",
   };
 }
