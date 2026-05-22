@@ -323,6 +323,19 @@ M1 验收标准：
 - 首页 M2 验收包含折算净资产显示，但还没有汇率管理入口。需要在 M2 收尾或 M3 之前增加最低形态的"手动设置参考汇率"。
 - `assertAccountCurrencies` 强制交易币种与账户币种一致，阻断了需求 §11.3 的跨币种转账。M5 之前需要明确是否要支持，并相应放宽校验。
 
+## UI 迁移到 Tailwind v4 + shadcn (base-nova) (2026-05-23)
+
+视觉栈整体切换：
+
+- 安装 tailwindcss v4、@tailwindcss/postcss、@tailwindcss/typography、tw-animate-css、shadcn 配套（clsx、tailwind-merge、class-variance-authority）、lucide-react、next-themes、@base-ui/react。
+- shadcn CLI 拉取 10 个基础组件到 src/components/ui/：button / card / dialog / input / label / textarea / alert / badge / separator / skeleton。
+- src/lib/utils.ts 新增 cn() helper，src/components/theme-provider.tsx 接 next-themes 实现暗色模式跟随系统。
+- src/app/globals.css 整体重写为 Tailwind v4 + shadcn 设计 token（oklch），扩展财务语义色（income / expense / transfer / adjustment）。
+- 所有页面与组件迁移完成：首页 / 账户列表与编辑 / 交易列表与编辑 / 快捷录入模板与临时记录 / 快捷模板 modal / 所有表单。
+- 新增 src/components/ui/native-select.tsx：原生 select + Chevron 图标，保留手机原生 picker 体验。
+- 删除 src/app/design-demo：与新设计语言不兼容，原作用已被 shadcn 组件库取代。
+- 文档同步：ui-direction §0 技术栈，code-guidelines §8 样式 + §10 依赖。
+
 ## 已完成的地基与规范 (2026-05-22)
 
 - 引入 vitest，为 domain/finance 和 lib/dates 建立 26 个单元测试。
