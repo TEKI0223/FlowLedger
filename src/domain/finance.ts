@@ -98,6 +98,24 @@ export function parseMoneyToMinor(amount: string, currency: Currency): number {
   return sign * amountMinor;
 }
 
+export function convertToCurrency(
+  source: Money,
+  targetCurrency: Currency,
+  rate: number,
+): number {
+  if (source.currency === targetCurrency) {
+    return source.amountMinor;
+  }
+
+  const sourceMinorUnits = currencyMinorUnits[source.currency];
+  const targetMinorUnits = currencyMinorUnits[targetCurrency];
+
+  const sourceMajor = source.amountMinor / 10 ** sourceMinorUnits;
+  const targetMajor = sourceMajor * rate;
+
+  return Math.round(targetMajor * 10 ** targetMinorUnits);
+}
+
 export function getTransactionBalanceImpacts(transaction: Transaction): AccountBalanceImpact[] {
   const amountMinor = Math.abs(transaction.money.amountMinor);
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  convertToCurrency,
   formatMinorForInput,
   formatMoney,
   getTransactionBalanceImpacts,
@@ -85,6 +86,30 @@ describe("formatMinorForInput", () => {
       const formatted = formatMinorForInput(money);
       expect(parseMoneyToMinor(formatted, money.currency)).toBe(money.amountMinor);
     }
+  });
+});
+
+describe("convertToCurrency", () => {
+  it("returns the same minor amount when source equals target", () => {
+    expect(convertToCurrency({ amountMinor: 1500, currency: "JPY" }, "JPY", 21.5)).toBe(1500);
+    expect(convertToCurrency({ amountMinor: 3850, currency: "CNY" }, "CNY", 21.5)).toBe(3850);
+  });
+
+  it("converts CNY to JPY using rate as JPY per 1 CNY", () => {
+    // 100.00 CNY → 100 * 21.5 = 2150 JPY
+    expect(convertToCurrency({ amountMinor: 10000, currency: "CNY" }, "JPY", 21.5)).toBe(2150);
+    // 38.50 CNY → 38.5 * 21.5 = 827.75 → rounded to 828 JPY
+    expect(convertToCurrency({ amountMinor: 3850, currency: "CNY" }, "JPY", 21.5)).toBe(828);
+  });
+
+  it("converts JPY to CNY using rate as CNY per 1 JPY", () => {
+    // 2150 JPY → 2150 * (1/21.5) ≈ 100.00 CNY = 10000 minor
+    const rate = 1 / 21.5;
+    expect(convertToCurrency({ amountMinor: 2150, currency: "JPY" }, "CNY", rate)).toBe(10000);
+  });
+
+  it("handles zero", () => {
+    expect(convertToCurrency({ amountMinor: 0, currency: "CNY" }, "JPY", 21.5)).toBe(0);
   });
 });
 

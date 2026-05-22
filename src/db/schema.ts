@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const accounts = sqliteTable("accounts", {
   id: text("id").primaryKey(),
@@ -111,6 +111,14 @@ export const refundTrackers = sqliteTable("refund_trackers", {
   status: text("status", { enum: ["pending", "partial", "received", "cancelled"] }).notNull(),
   note: text("note"),
   createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const exchangeRates = sqliteTable("exchange_rates", {
+  id: text("id").primaryKey(),
+  fromCurrency: text("from_currency", { enum: ["JPY", "CNY"] }).notNull(),
+  toCurrency: text("to_currency", { enum: ["JPY", "CNY"] }).notNull(),
+  rate: real("rate").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
 

@@ -1,7 +1,8 @@
 import { and, eq, gte, lt, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, transactions } from "@/db/schema";
-import type { Currency } from "@/domain/finance";
+import { convertToCurrency, type Currency } from "@/domain/finance";
+import { getExchangeRate } from "@/features/exchange-rates/data";
 
 function monthBounds(now = new Date()) {
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
@@ -13,10 +14,21 @@ function monthBounds(now = new Date()) {
   };
 }
 
-export async function getDashboardSummary() {
+export type DashboardSummary = {
+  income: Record<Currency, number>;
+  expense: Record<Currency, number>;
+  assets: Record<Currency, number>;
+  netWorth: {
+    baseCurrency: Currency;
+    amountMinor: number;
+    rateCnyToJpy: number | null;
+  };
+};
+
+export async function getDashboardSummary(): Promise<DashboardSummary> {
   const { start, next } = monthBounds();
 
-  const [incomeRows, expenseRows, assetRows] = await Promise.all([
+  const [incomeRows, expenseRows, assetRows, rateCnyToJpy] = await Promise.all([
     db
       .select({
         currency: transactions.currency,
@@ -54,12 +66,24 @@ export async function getDashboardSummary() {
       .from(accounts)
       .where(eq(accounts.includeInNetWorth, true))
       .groupBy(accounts.currency),
+    getExchangeRate("CNY", "JPY"),
   ]);
+
+  const assets = totalsByCurrency(assetRows);
+  const cnyAsJpyMinor =
+    rateCnyToJpy === null
+      ? 0
+      : convertToCurrency({ amountMinor: assets.CNY, currency: "CNY" }, "JPY", rateCnyToJpy);
 
   return {
     income: totalsByCurrency(incomeRows),
     expense: totalsByCurrency(expenseRows),
-    assets: totalsByCurrency(assetRows),
+    assets,
+    netWorth: {
+      baseCurrency: "JPY",
+      amountMinor: assets.JPY + cnyAsJpyMinor,
+      rateCnyToJpy,
+    },
   };
 }
 

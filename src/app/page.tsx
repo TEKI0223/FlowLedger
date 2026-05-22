@@ -76,6 +76,17 @@ export default async function Home({ searchParams }: HomeProps) {
       label: "CNY 资产",
       value: formatMoney({ amountMinor: summary.assets.CNY, currency: "CNY" }),
     },
+    {
+      label: "折算净资产",
+      value: formatMoney({
+        amountMinor: summary.netWorth.amountMinor,
+        currency: summary.netWorth.baseCurrency,
+      }),
+      note:
+        summary.netWorth.rateCnyToJpy === null
+          ? "缺少汇率"
+          : `1 CNY = ${summary.netWorth.rateCnyToJpy.toFixed(2)} JPY`,
+    },
   ];
 
   const quickEntryModalTemplates: QuickEntryModalTemplate[] = [
@@ -111,7 +122,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
       {saved ? <InlineAlert>已保存，首页数据和最近记录已更新。</InlineAlert> : null}
 
-      <section aria-label="财务概览" className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <section aria-label="财务概览" className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         {metrics.map((metric) => (
           <MetricCell
             label={metric.label}

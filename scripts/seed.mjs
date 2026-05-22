@@ -178,6 +178,12 @@ const creditCards = [
   ["credit-card-b", "jpy-credit-card-b", 25, 10, "jp-bank-main", 1],
 ];
 
+// 1 CNY = 21.5 JPY (手动参考汇率，后续做编辑 UI 时让用户更新)
+const exchangeRates = [
+  ["cny-to-jpy", "CNY", "JPY", 21.5],
+  ["jpy-to-cny", "JPY", "CNY", 1 / 21.5],
+];
+
 const insertAccount = db.prepare(`
   insert into accounts (id, name, type, currency, balance_minor, include_in_net_worth, note, created_at, updated_at)
   values (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -253,6 +259,16 @@ const insertCreditCard = db.prepare(`
     updated_at = excluded.updated_at
 `);
 
+const insertExchangeRate = db.prepare(`
+  insert into exchange_rates (id, from_currency, to_currency, rate, updated_at)
+  values (?, ?, ?, ?, ?)
+  on conflict(id) do update set
+    from_currency = excluded.from_currency,
+    to_currency = excluded.to_currency,
+    rate = excluded.rate,
+    updated_at = excluded.updated_at
+`);
+
 const seed = db.transaction(() => {
   for (const account of accounts) {
     insertAccount.run(...account, now, now);
@@ -272,6 +288,10 @@ const seed = db.transaction(() => {
 
   for (const creditCard of creditCards) {
     insertCreditCard.run(...creditCard, now, now);
+  }
+
+  for (const rate of exchangeRates) {
+    insertExchangeRate.run(...rate, now);
   }
 });
 
