@@ -206,7 +206,95 @@ Demo 阶段先用字母徽标表达图标位，例如
 
 不同支付方式的主题色应该稳定，不随页面变化。
 
-## 9. Demo
+## 9. 手机端策略
+
+### 9.1 单代码 + mobile-first
+
+FlowLedger 是一份代码、一套组件，通过 CSS 媒体查询适配手机和桌面。不做 UA 检测、不分离 `/m/` 路由、不维护两套组件。原因：单用户使用，复制一份 UI 会立刻面临"功能漂移"的风险。
+
+CSS 必须 **mobile-first**：默认样式就是手机视图，桌面通过 `@media (min-width)` 加宽。不要再写 `@media (max-width: 820px)` 反向覆盖。
+
+```css
+/* 正确写法 */
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 820px) {
+  .summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+```
+
+### 9.2 断点
+
+只有两个断点：
+
+- `480px`：小手机和大手机的分界，主要管字体密度和金额输入大小。
+- `820px`：手机和桌面的分界，主要管布局（单列 → 多列、侧栏出现）。
+
+不要随意增加断点，保持决策路径短。
+
+### 9.3 容器查询 (container queries)
+
+当组件需要根据"自己所在容器宽度"调整布局（不是根据屏幕宽度），优先使用 container queries 而不是媒体查询。典型场景：`MetricCell` 出现在主网格或窄侧栏；`TransactionListItem` 出现在主列表或抽屉。
+
+```css
+.metric-cell-container {
+  container-type: inline-size;
+}
+
+@container (min-width: 200px) {
+  .metric-cell { /* 横排版本 */ }
+}
+```
+
+Next.js 16 + 现代浏览器全支持。M5 以后组件复用变多时再用，初期不必强求。
+
+### 9.4 何时做"手机专属组件"
+
+只有一种情况开新组件：**桌面根本不需要**。当前 FlowLedger 预计有两个：
+
+- `BottomNav`：手机底部 4-5 个 tab（首页 / 交易 / 账户 / 报表 / 我的）。桌面用顶部或左侧导航，不需要底栏。
+- `FloatingActionButton`：手机屏幕右下浮动 "+"，永远可点开"快捷录入"。桌面用顶部按钮。
+
+这两个组件用 `@media (min-width: 820px) { display: none }` 在桌面隐藏。所有"密度不同的同一组件"（卡片、表单、列表）继续用 CSS 调整，不要拆。
+
+### 9.5 触屏体验细节
+
+强制约束：
+
+- 所有 `:hover` 样式必须包 `@media (hover: hover)`，否则触屏会"卡 hover"。
+- 视口高度用 `100dvh`，不用 `100vh`。键盘弹出时 `100vh` 会让输入被遮挡。
+- 主 shell 的底部 padding 用 `max(20px, env(safe-area-inset-bottom))`，避免 PWA 安装后被 home indicator 遮挡。
+- 所有可点击区域最小 44×44，列表项最小 56px，快捷卡片最小 88px。modal 关闭按钮也必须 44×44。
+- 表单输入 `font-size >= 16px`，否则 iOS Safari 聚焦时会自动放大页面。
+
+### 9.6 表单状态不丢失
+
+Server Action 的错误反馈必须用 React 19 `useActionState`，在表单内联展示，**保留已输入的字段**。禁止 `redirect(?error=...)` 这种把用户输入冲掉的写法（见 code-guidelines）。
+
+## 10. PWA Manifest 与安装
+
+[src/app/manifest.ts](src/app/manifest.ts) 定义"添加到主屏幕"后这个 App 的外观和行为：
+
+- `name` / `short_name`：图标下显示的名字。
+- `display: "standalone"`：从图标启动时没有浏览器地址栏，看上去像原生 App。
+- `theme_color` / `background_color`：状态栏和启动画面颜色，应与 [globals.css](src/app/globals.css) 的 `--background` 保持一致。
+- `start_url: "/"`：图标启动的入口。
+- `orientation: "portrait-primary"`：锁定竖屏。
+
+可选能力（后续考虑）：
+
+- `shortcuts`：长按 App 图标的快捷菜单（Android 支持好），例如长按直接弹"超市"、"便利店"、"临时记录"。
+- `icons`：完整的 PWA 图标集，包括 maskable icon。M8 完善。
+
+manifest **不负责**离线、推送、后台同步。这些需要单独的 Service Worker，M8 才考虑。
+
+## 11. Demo
 
 当前 UI 方向样板在：
 
