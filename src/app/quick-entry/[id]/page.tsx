@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeftIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { formatMinorForInput, transactionTypeLabels } from "@/domain/finance";
 import { getQuickEntryTemplate } from "@/features/quick-entry/data";
 import { QuickEntryForm } from "@/features/quick-entry/quick-entry-form";
@@ -34,64 +37,76 @@ export default async function QuickEntryPage({ params }: QuickEntryPageProps) {
         });
 
   return (
-    <main className="shell narrow-shell">
-      <header className="topbar">
-        <div className="brand">
-          <Link className="back-link" href="/">
-            ← 首页
-          </Link>
-          <h1 className="brand-title">{template.name}</h1>
-          <p className="brand-subtitle">快捷记账会使用模板里的账户、分类和支付方式</p>
-        </div>
+    <main className="mx-auto w-full max-w-xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
+      <header className="space-y-1 pb-5">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeftIcon className="size-3" />
+          首页
+        </Link>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{template.name}</h1>
+        <p className="text-sm text-muted-foreground">快捷记账会使用模板里的账户、分类和支付方式</p>
       </header>
 
-      <section className="quick-entry-panel">
-        <div className="quick-entry-context">
-          <span className={`quick-entry-type ${template.type}`}>
-            {transactionTypeLabels[template.type]}
-          </span>
-          <strong>{template.category?.name ?? "无分类"}</strong>
-          <span>
-            {template.paymentMethod?.name ?? template.sourceAccount?.name ?? "未设置支付方式"}
-            {template.sourceAccount ? ` · ${template.sourceAccount.name}` : ""}
-          </span>
-        </div>
+      <Card>
+        <CardContent className="space-y-4 py-4">
+          <div className="space-y-1.5">
+            <Badge variant="secondary" className="text-xs">
+              {transactionTypeLabels[template.type]}
+            </Badge>
+            <p className="text-base font-semibold">{template.category?.name ?? "无分类"}</p>
+            <p className="text-xs text-muted-foreground">
+              {template.paymentMethod?.name ?? template.sourceAccount?.name ?? "未设置支付方式"}
+              {template.sourceAccount ? ` · ${template.sourceAccount.name}` : ""}
+            </p>
+          </div>
 
-        <QuickEntryForm
-          mode="template"
-          templateId={template.id}
-          currency={template.currency}
-          amountDefault={amountDefault}
-          noteHint={template.note ?? "可选"}
-          autoFocusAmount
-        />
-      </section>
+          <QuickEntryForm
+            mode="template"
+            templateId={template.id}
+            currency={template.currency}
+            amountDefault={amountDefault}
+            noteHint={template.note ?? "可选"}
+            autoFocusAmount
+          />
+        </CardContent>
+      </Card>
     </main>
   );
 }
 
 function TemporaryEntryPage() {
   return (
-    <main className="shell narrow-shell">
-      <header className="topbar">
-        <div className="brand">
-          <Link className="back-link" href="/">
-            ← 首页
-          </Link>
-          <h1 className="brand-title">临时记录</h1>
-          <p className="brand-subtitle">先保存一笔待补全支出，稍后从交易页编辑细节</p>
-        </div>
+    <main className="mx-auto w-full max-w-xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
+      <header className="space-y-1 pb-5">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeftIcon className="size-3" />
+          首页
+        </Link>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">临时记录</h1>
+        <p className="text-sm text-muted-foreground">先保存一笔待补全支出，稍后从交易页编辑细节</p>
       </header>
 
-      <section className="quick-entry-panel">
-        <div className="quick-entry-context">
-          <span className="quick-entry-type adjustment">待补全</span>
-          <strong>其他</strong>
-          <span>默认 JPY 账户，保存后可编辑分类、账户和支付方式</span>
-        </div>
+      <Card>
+        <CardContent className="space-y-4 py-4">
+          <div className="space-y-1.5">
+            <Badge variant="secondary" className="text-xs">
+              待补全
+            </Badge>
+            <p className="text-base font-semibold">其他</p>
+            <p className="text-xs text-muted-foreground">
+              默认 JPY 账户，保存后可编辑分类、账户和支付方式
+            </p>
+          </div>
 
-        <QuickEntryForm mode="temporary" autoFocusAmount />
-      </section>
+          <QuickEntryForm mode="temporary" autoFocusAmount />
+        </CardContent>
+      </Card>
     </main>
   );
 }
