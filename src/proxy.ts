@@ -3,7 +3,7 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 
 const PUBLIC_PATHS = ["/login"];
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
@@ -23,6 +23,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // 排除静态资源 / Next.js 内部 / favicon / manifest，其余都受密码保护。
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.png|.*\\.svg).*)"],
+  // 排除：API、Next.js 内部资源、favicon、PWA manifest。其他全部经过 middleware。
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest).*)"],
 };

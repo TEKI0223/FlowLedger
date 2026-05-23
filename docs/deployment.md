@@ -90,7 +90,7 @@ echo 'FLOWLEDGER_PASSWORD=devpassword' >> .env.local
 
 ### 想要 OAuth / 多用户
 
-把内置密码门换 [Auth.js](https://authjs.dev/) + Turso adapter。第一版没做是因为对单用户记账过度。要换的时候删 `middleware.ts`、`src/app/login`、`src/app/actions/auth.ts`、`src/lib/auth.ts`，按 Auth.js 文档重新接入。
+把内置密码门换 [Auth.js](https://authjs.dev/) + Turso adapter。第一版没做是因为对单用户记账过度。要换的时候删 `src/proxy.ts`、`src/app/login`、`src/app/actions/auth.ts`、`src/lib/auth.ts`，按 Auth.js 文档重新接入。
 
 ## 4. 日常维护
 
