@@ -18,6 +18,7 @@ import {
 } from "@/domain/finance";
 import { getQuickEntryTemplate, getTemporaryEntryDefaults } from "@/features/quick-entry/data";
 import { nowIso, todayIsoDate } from "@/lib/dates";
+import { normalize, stringField } from "@/lib/form";
 
 const transactionSchema = z.object({
   occurredOn: z.string().trim().min(1),
@@ -48,11 +49,6 @@ export type TransactionActionState = {
   values?: TransactionFormValues;
 };
 
-function stringField(formData: FormData, key: string): string | undefined {
-  const value = formData.get(key);
-  return typeof value === "string" ? value : undefined;
-}
-
 function extractValues(formData: FormData): TransactionFormValues {
   return {
     occurredOn: stringField(formData, "occurredOn"),
@@ -65,11 +61,6 @@ function extractValues(formData: FormData): TransactionFormValues {
     paymentMethodId: stringField(formData, "paymentMethodId"),
     note: stringField(formData, "note"),
   };
-}
-
-function normalize(value: string | undefined): string | undefined {
-  const trimmed = (value ?? "").trim();
-  return trimmed.length > 0 ? trimmed : undefined;
 }
 
 export async function createTransaction(

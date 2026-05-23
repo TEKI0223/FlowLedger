@@ -15,6 +15,7 @@ import {
 } from "@/domain/finance";
 import { getNextOccurrence, recurringFrequencies } from "@/domain/recurring";
 import { nowIso } from "@/lib/dates";
+import { normalize, stringField as field } from "@/lib/form";
 
 const recurringSchema = z
   .object({
@@ -62,16 +63,6 @@ export type RecurringActionState = {
   error?: string;
   values?: RecurringFormValues;
 };
-
-function field(formData: FormData, key: string): string | undefined {
-  const value = formData.get(key);
-  return typeof value === "string" ? value : undefined;
-}
-
-function normalize(value: string | undefined): string | undefined {
-  const trimmed = (value ?? "").trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
 
 function extract(formData: FormData): RecurringFormValues {
   return {

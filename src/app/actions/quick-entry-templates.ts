@@ -8,6 +8,7 @@ import { db } from "@/db/client";
 import { quickEntryTemplates } from "@/db/schema";
 import { currencies, parseMoneyToMinor } from "@/domain/finance";
 import { nowIso } from "@/lib/dates";
+import { normalize, stringField as field } from "@/lib/form";
 
 const templateSchema = z.object({
   name: z.string().trim().min(1, "请输入名称"),
@@ -39,16 +40,6 @@ export type QuickEntryTemplateActionState = {
   error?: string;
   values?: QuickEntryTemplateFormValues;
 };
-
-function field(formData: FormData, key: string): string | undefined {
-  const value = formData.get(key);
-  return typeof value === "string" ? value : undefined;
-}
-
-function normalize(value: string | undefined): string | undefined {
-  const trimmed = (value ?? "").trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
 
 function extract(formData: FormData): QuickEntryTemplateFormValues {
   return {

@@ -6,8 +6,9 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts } from "@/db/schema";
-import { accountTypes, currencies, parseMoneyToMinor } from "@/domain/finance";
+import { accountTypes, currencies } from "@/domain/finance";
 import { nowIso } from "@/lib/dates";
+import { parseAmount, stringField } from "@/lib/form";
 
 const accountSchema = z.object({
   name: z.string().trim().min(1, "请输入账户名称"),
@@ -43,11 +44,6 @@ function extractValues(formData: FormData): AccountFormValues {
   };
 }
 
-function stringField(formData: FormData, key: string): string | undefined {
-  const value = formData.get(key);
-  return typeof value === "string" ? value : undefined;
-}
-
 export async function createAccount(
   _prev: AccountActionState,
   formData: FormData,
@@ -71,16 +67,11 @@ export async function createAccount(
   }
 
   const parsed = result.data;
-  let balanceMinor: number;
-
-  try {
-    balanceMinor = parseMoneyToMinor(parsed.initialBalance ?? "0", parsed.currency);
-  } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : "初始余额格式不正确",
-      values,
-    };
+  const amount = parseAmount(parsed.initialBalance ?? "0", parsed.currency);
+  if (!amount.ok) {
+    return { error: amount.error, values };
   }
+  const balanceMinor = amount.amountMinor;
 
   const timestamp = nowIso();
 

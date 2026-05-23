@@ -9,6 +9,7 @@ import { accounts, refundTrackers, transactions } from "@/db/schema";
 import { currencies, parseMoneyToMinor, type Currency } from "@/domain/finance";
 import { computeRefundStatus, refundRemainingMinor } from "@/domain/refund";
 import { nowIso } from "@/lib/dates";
+import { normalize, stringField as field } from "@/lib/form";
 
 // ── 创建 / 编辑 / 取消 / 删除 退款追踪 ───────────────────────────────────
 
@@ -32,16 +33,6 @@ export type RefundTrackerActionState = {
   error?: string;
   values?: RefundTrackerFormValues;
 };
-
-function field(formData: FormData, key: string): string | undefined {
-  const value = formData.get(key);
-  return typeof value === "string" ? value : undefined;
-}
-
-function normalize(value: string | undefined): string | undefined {
-  const trimmed = (value ?? "").trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
 
 function extract(formData: FormData): RefundTrackerFormValues {
   return {

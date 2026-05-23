@@ -9,6 +9,7 @@ import { installmentPlans, transactions } from "@/db/schema";
 import { currencies, parseMoneyToMinor } from "@/domain/finance";
 import { computeInstallmentStatus } from "@/domain/installment";
 import { nowIso } from "@/lib/dates";
+import { stringField as field } from "@/lib/form";
 
 const installmentSchema = z.object({
   totalAmount: z.string().trim().min(1, "请输入总金额"),
@@ -30,11 +31,6 @@ export type InstallmentActionState = {
   error?: string;
   values?: InstallmentFormValues;
 };
-
-function field(formData: FormData, key: string): string | undefined {
-  const value = formData.get(key);
-  return typeof value === "string" ? value : undefined;
-}
 
 function extract(formData: FormData): InstallmentFormValues {
   return {
