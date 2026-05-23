@@ -40,6 +40,7 @@ export const transactions = sqliteTable("transactions", {
   targetAccountId: text("target_account_id").references(() => accounts.id),
   paymentMethodId: text("payment_method_id").references(() => paymentMethods.id),
   recurringItemId: text("recurring_item_id"),
+  refundTrackerId: text("refund_tracker_id"),
   includeInExpenseStats: integer("include_in_expense_stats", { mode: "boolean" })
     .notNull()
     .default(true),
@@ -113,6 +114,7 @@ export const refundTrackers = sqliteTable("refund_trackers", {
     .notNull()
     .references(() => transactions.id),
   amountMinor: integer("amount_minor").notNull(),
+  receivedAmountMinor: integer("received_amount_minor").notNull().default(0),
   currency: text("currency", { enum: ["JPY", "CNY"] }).notNull(),
   expectedAccountId: text("expected_account_id").references(() => accounts.id),
   expectedOn: text("expected_on"),
