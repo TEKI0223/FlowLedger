@@ -3,6 +3,7 @@ import {
   ArrowRightIcon,
   BellIcon,
   CreditCardIcon,
+  LayersIcon,
   PlusIcon,
   ReceiptIcon,
   RepeatIcon,
@@ -283,6 +284,14 @@ export default async function Home({ searchParams }: HomeProps) {
                 >
                   <ReceiptIcon className="size-3" />
                   退款追踪
+                  <ArrowRightIcon className="size-3" />
+                </Link>
+                <Link
+                  href="/installments"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  <LayersIcon className="size-3" />
+                  分期计划
                   <ArrowRightIcon className="size-3" />
                 </Link>
                 <Link

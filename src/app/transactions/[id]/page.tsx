@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeftIcon, ReceiptIcon } from "lucide-react";
+import { ArrowLeftIcon, LayersIcon, ReceiptIcon } from "lucide-react";
 import { TransactionForm } from "../transaction-form";
 import { updateTransaction } from "@/app/actions/transactions";
 import { buttonVariants } from "@/components/ui/button";
@@ -74,20 +74,38 @@ export default async function TransactionEditPage({ params }: TransactionEditPag
       {transaction.type === "expense" ? (
         <Card className="mt-4">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ReceiptIcon className="size-4 text-muted-foreground" />
-              退款追踪
-            </CardTitle>
+            <CardTitle className="text-base">关联管理</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="mb-3 text-sm text-muted-foreground">
-              如果这笔消费需要退款（商家退、信用卡返还、订单取消等），可以挂一个追踪记录预期金额、到账账户和实际到账。
-            </p>
+          <CardContent className="space-y-3">
             <Link
               href={`/refunds/new?originalTxId=${transaction.id}`}
-              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 w-full")}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "h-auto min-h-14 w-full justify-start gap-3 text-left",
+              )}
             >
-              新建退款追踪
+              <ReceiptIcon className="size-4 text-muted-foreground shrink-0" />
+              <span className="flex flex-col items-start gap-0.5">
+                <span className="text-sm font-semibold">新建退款追踪</span>
+                <span className="text-xs text-muted-foreground">
+                  商家退、订单取消、信用卡返还等
+                </span>
+              </span>
+            </Link>
+            <Link
+              href={`/installments/new?originalTxId=${transaction.id}`}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "h-auto min-h-14 w-full justify-start gap-3 text-left",
+              )}
+            >
+              <LayersIcon className="size-4 text-muted-foreground shrink-0" />
+              <span className="flex flex-col items-start gap-0.5">
+                <span className="text-sm font-semibold">新建分期计划</span>
+                <span className="text-xs text-muted-foreground">
+                  把这笔消费拆成多期记录每期扣款进度
+                </span>
+              </span>
             </Link>
           </CardContent>
         </Card>
