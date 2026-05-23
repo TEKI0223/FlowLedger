@@ -205,34 +205,6 @@ export async function cancelRefundTracker(id: string) {
   redirect(`/refunds/${id}`);
 }
 
-export async function reopenRefundTracker(id: string) {
-  // 把 cancelled 改回根据 received/expected 计算的状态
-  const [existing] = await db
-    .select()
-    .from(refundTrackers)
-    .where(eq(refundTrackers.id, id))
-    .limit(1);
-
-  if (!existing) return;
-
-  const status = computeRefundStatus(
-    existing.amountMinor,
-    existing.receivedAmountMinor,
-    false,
-  );
-
-  await db
-    .update(refundTrackers)
-    .set({ status, updatedAt: nowIso() })
-    .where(eq(refundTrackers.id, id))
-    .run();
-
-  revalidatePath("/");
-  revalidatePath("/refunds");
-  revalidatePath(`/refunds/${id}`);
-  redirect(`/refunds/${id}`);
-}
-
 export async function deleteRefundTracker(id: string) {
   const [existing] = await db
     .select()

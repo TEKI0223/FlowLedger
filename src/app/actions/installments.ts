@@ -16,7 +16,6 @@ const installmentSchema = z.object({
   periods: z.coerce.number().int().min(2, "期数至少 2"),
   amountPerPeriod: z.string().trim().min(1, "请输入每期金额"),
   firstPaymentOn: z.string().trim().min(1, "请选择首期扣款日期"),
-  feeAmount: z.string().trim().optional(),
 });
 
 export type InstallmentFormValues = {
@@ -25,7 +24,6 @@ export type InstallmentFormValues = {
   periods?: string;
   amountPerPeriod?: string;
   firstPaymentOn?: string;
-  feeAmount?: string;
 };
 
 export type InstallmentActionState = {
@@ -38,11 +36,6 @@ function field(formData: FormData, key: string): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
-function normalize(value: string | undefined): string | undefined {
-  const trimmed = (value ?? "").trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
-
 function extract(formData: FormData): InstallmentFormValues {
   return {
     totalAmount: field(formData, "totalAmount"),
@@ -50,7 +43,6 @@ function extract(formData: FormData): InstallmentFormValues {
     periods: field(formData, "periods"),
     amountPerPeriod: field(formData, "amountPerPeriod"),
     firstPaymentOn: field(formData, "firstPaymentOn"),
-    feeAmount: field(formData, "feeAmount"),
   };
 }
 
@@ -67,7 +59,6 @@ export async function createInstallmentPlan(
     periods: values.periods,
     amountPerPeriod: values.amountPerPeriod,
     firstPaymentOn: values.firstPaymentOn,
-    feeAmount: normalize(values.feeAmount),
   });
 
   if (!result.success) {
@@ -78,14 +69,10 @@ export async function createInstallmentPlan(
 
   let totalAmountMinor: number;
   let amountPerPeriodMinor: number;
-  let feeAmountMinor: number | null = null;
 
   try {
     totalAmountMinor = Math.abs(parseMoneyToMinor(parsed.totalAmount, parsed.currency));
     amountPerPeriodMinor = Math.abs(parseMoneyToMinor(parsed.amountPerPeriod, parsed.currency));
-    if (parsed.feeAmount) {
-      feeAmountMinor = Math.abs(parseMoneyToMinor(parsed.feeAmount, parsed.currency));
-    }
   } catch (error) {
     return { error: error instanceof Error ? error.message : "金额格式不正确", values };
   }
@@ -108,6 +95,9 @@ export async function createInstallmentPlan(
   if (originalTx.currency !== parsed.currency) {
     return { error: "分期币种必须与原始交易一致", values };
   }
+
+  // 利息 / 手续费 = 期数 × 每期金额 − 总金额，自动派生
+  const feeAmountMinor = parsed.periods * amountPerPeriodMinor - totalAmountMinor;
 
   const timestamp = nowIso();
 
@@ -147,7 +137,6 @@ export async function updateInstallmentPlan(
     periods: values.periods,
     amountPerPeriod: values.amountPerPeriod,
     firstPaymentOn: values.firstPaymentOn,
-    feeAmount: normalize(values.feeAmount),
   });
 
   if (!result.success) {
@@ -157,17 +146,15 @@ export async function updateInstallmentPlan(
   const parsed = result.data;
   let totalAmountMinor: number;
   let amountPerPeriodMinor: number;
-  let feeAmountMinor: number | null = null;
 
   try {
     totalAmountMinor = Math.abs(parseMoneyToMinor(parsed.totalAmount, parsed.currency));
     amountPerPeriodMinor = Math.abs(parseMoneyToMinor(parsed.amountPerPeriod, parsed.currency));
-    if (parsed.feeAmount) {
-      feeAmountMinor = Math.abs(parseMoneyToMinor(parsed.feeAmount, parsed.currency));
-    }
   } catch (error) {
     return { error: error instanceof Error ? error.message : "金额格式不正确", values };
   }
+
+  const feeAmountMinor = parsed.periods * amountPerPeriodMinor - totalAmountMinor;
 
   const [existing] = await db
     .select()

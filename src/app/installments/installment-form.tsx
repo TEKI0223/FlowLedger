@@ -12,6 +12,7 @@ import {
   currencies,
   currencyLabels,
   formatMinorForInput,
+  formatMoney,
   parseMoneyToMinor,
   type Currency,
 } from "@/domain/finance";
@@ -24,7 +25,6 @@ type Defaults = {
   periods?: string;
   amountPerPeriod?: string;
   firstPaymentOn?: string;
-  feeAmount?: string;
 };
 
 type InstallmentFormProps = {
@@ -50,10 +50,13 @@ export function InstallmentForm({ action, defaults = {}, submitLabel }: Installm
     values?.totalAmount ?? defaults.totalAmount ?? "",
   );
   const [periods, setPeriods] = useState<string>(values?.periods ?? defaults.periods ?? "12");
-  const [amountPerPeriod, setAmountPerPeriod] = useState<string>(
-    values?.amountPerPeriod ?? defaults.amountPerPeriod ?? "",
-  );
 
+  // 每期金额：默认根据总额 / 期数自动算；用户手动改后就不再覆盖
+  const initialPerPeriod = values?.amountPerPeriod ?? defaults.amountPerPeriod ?? "";
+  const [manualPerPeriod, setManualPerPeriod] = useState(initialPerPeriod);
+  const [userEditedPerPeriod, setUserEditedPerPeriod] = useState(Boolean(initialPerPeriod));
+
+  // render 阶段同步 action 返回的 values（错误回填）
   const [prevState, setPrevState] = useState(state);
   if (state !== prevState) {
     setPrevState(state);
@@ -61,23 +64,18 @@ export function InstallmentForm({ action, defaults = {}, submitLabel }: Installm
     if (v?.currency) setCurrency(v.currency as Currency);
     if (v?.totalAmount !== undefined) setTotalAmount(v.totalAmount);
     if (v?.periods !== undefined) setPeriods(v.periods);
-    if (v?.amountPerPeriod !== undefined) setAmountPerPeriod(v.amountPerPeriod);
+    if (v?.amountPerPeriod !== undefined) {
+      setManualPerPeriod(v.amountPerPeriod);
+      if (v.amountPerPeriod) setUserEditedPerPeriod(true);
+    }
   }
 
-  // 估算每期金额（用户没填时基于 totalAmount / periods）
-  const suggested = (() => {
-    if (amountPerPeriod) return null;
-    const n = Number.parseInt(periods, 10);
-    if (!Number.isFinite(n) || n < 2) return null;
-    try {
-      const totalMinor = parseMoneyToMinor(totalAmount, currency);
-      const per = Math.floor(totalMinor / n);
-      if (per <= 0) return null;
-      return formatMinorForInput({ amountMinor: per, currency });
-    } catch {
-      return null;
-    }
-  })();
+  const periodsNum = Number.parseInt(periods, 10);
+  const autoPerPeriod = computeAutoPerPeriod(totalAmount, periodsNum, currency);
+  const amountPerPeriod = userEditedPerPeriod ? manualPerPeriod : autoPerPeriod;
+
+  // 利息（手续费）= 期数 × 每期金额 − 总金额
+  const interestSummary = computeInterest(totalAmount, periodsNum, amountPerPeriod, currency);
 
   return (
     <>
@@ -134,14 +132,17 @@ export function InstallmentForm({ action, defaults = {}, submitLabel }: Installm
               id="amountPerPeriod"
               name="amountPerPeriod"
               required
-              placeholder={suggested ? `建议：${suggested}` : "例如：10,000"}
+              placeholder="例如：10,000"
               value={amountPerPeriod}
-              onChange={(event) => setAmountPerPeriod(event.target.value)}
+              onChange={(event) => {
+                setManualPerPeriod(event.target.value);
+                setUserEditedPerPeriod(true);
+              }}
               className="h-11 text-base tabular-nums"
             />
-            {suggested && !amountPerPeriod ? (
+            {!userEditedPerPeriod && autoPerPeriod ? (
               <p className="text-xs text-muted-foreground">
-                平均：{suggested}（点上面金额会自动填入）
+                自动计算：总额 ÷ 期数。可手动改成实际扣款额。
               </p>
             ) : null}
           </div>
@@ -159,19 +160,93 @@ export function InstallmentForm({ action, defaults = {}, submitLabel }: Installm
           />
         </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="feeAmount">手续费 / 利息总额（可选）</Label>
-          <MoneyInput
-            id="feeAmount"
-            name="feeAmount"
-            placeholder="例如：1,200"
-            defaultValue={values?.feeAmount ?? defaults.feeAmount ?? ""}
-            className="h-11 text-base tabular-nums"
-          />
-        </div>
+        {interestSummary ? (
+          <div className="rounded-md border border-border bg-muted/40 px-3 py-2.5 text-sm">
+            {interestSummary.totalMinor === 0 ? (
+              <p className="text-muted-foreground">无利息分期</p>
+            ) : interestSummary.totalMinor > 0 ? (
+              <p>
+                <span className="text-muted-foreground">利息：</span>
+                <span className="font-semibold tabular-nums text-adjustment">
+                  每期 +
+                  {formatMoney({
+                    amountMinor: interestSummary.perPeriodMinor,
+                    currency,
+                  })}
+                </span>
+                <span className="text-muted-foreground">
+                  {" · "}总{" "}
+                </span>
+                <span className="font-semibold tabular-nums text-adjustment">
+                  {formatMoney({
+                    amountMinor: interestSummary.totalMinor,
+                    currency,
+                  })}
+                </span>
+              </p>
+            ) : (
+              <p>
+                <span className="text-muted-foreground">回扣 / 折让：</span>
+                <span className="font-semibold tabular-nums text-income">
+                  每期 −
+                  {formatMoney({
+                    amountMinor: -interestSummary.perPeriodMinor,
+                    currency,
+                  })}
+                </span>
+                <span className="text-muted-foreground">
+                  {" · "}总{" "}
+                </span>
+                <span className="font-semibold tabular-nums text-income">
+                  {formatMoney({
+                    amountMinor: -interestSummary.totalMinor,
+                    currency,
+                  })}
+                </span>
+              </p>
+            )}
+          </div>
+        ) : null}
 
         <SubmitButton>{submitLabel}</SubmitButton>
       </form>
     </>
   );
+}
+
+function computeAutoPerPeriod(
+  totalAmount: string,
+  periods: number,
+  currency: Currency,
+): string {
+  if (!totalAmount || !Number.isFinite(periods) || periods < 1) return "";
+  try {
+    const totalMinor = parseMoneyToMinor(totalAmount, currency);
+    if (totalMinor <= 0) return "";
+    const per = Math.floor(totalMinor / periods);
+    if (per <= 0) return "";
+    return formatMinorForInput({ amountMinor: per, currency });
+  } catch {
+    return "";
+  }
+}
+
+function computeInterest(
+  totalAmount: string,
+  periods: number,
+  amountPerPeriod: string,
+  currency: Currency,
+): { totalMinor: number; perPeriodMinor: number } | null {
+  if (!totalAmount || !amountPerPeriod) return null;
+  if (!Number.isFinite(periods) || periods < 1) return null;
+  try {
+    const totalMinor = parseMoneyToMinor(totalAmount, currency);
+    const perMinor = parseMoneyToMinor(amountPerPeriod, currency);
+    if (totalMinor <= 0 || perMinor <= 0) return null;
+    const totalInterestMinor = periods * perMinor - totalMinor;
+    const perPeriodInterestMinor = Math.round(totalInterestMinor / periods);
+    return { totalMinor: totalInterestMinor, perPeriodMinor: perPeriodInterestMinor };
+  } catch {
+    return null;
+  }
 }

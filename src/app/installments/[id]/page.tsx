@@ -84,12 +84,22 @@ export default async function InstallmentDetailPage({ params }: Props) {
               <p className="text-xl font-semibold tabular-nums">
                 {formatMoney({ amountMinor: plan.totalAmountMinor, currency: plan.currency })}
               </p>
-              {plan.feeAmountMinor ? (
-                <p className="text-xs text-muted-foreground">
-                  含手续费{" "}
+              {plan.feeAmountMinor && plan.feeAmountMinor > 0 ? (
+                <p className="text-xs text-adjustment">
+                  含利息{" "}
                   {formatMoney({ amountMinor: plan.feeAmountMinor, currency: plan.currency })}
                 </p>
-              ) : null}
+              ) : plan.feeAmountMinor && plan.feeAmountMinor < 0 ? (
+                <p className="text-xs text-income">
+                  回扣{" "}
+                  {formatMoney({
+                    amountMinor: -plan.feeAmountMinor,
+                    currency: plan.currency,
+                  })}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">无利息</p>
+              )}
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">已扣</p>
@@ -242,12 +252,6 @@ export default async function InstallmentDetailPage({ params }: Props) {
                 currency: plan.currency,
               }),
               firstPaymentOn: plan.firstPaymentOn,
-              feeAmount: plan.feeAmountMinor
-                ? formatMinorForInput({
-                    amountMinor: plan.feeAmountMinor,
-                    currency: plan.currency,
-                  })
-                : "",
             }}
             submitLabel="保存修改"
           />
