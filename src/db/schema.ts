@@ -67,6 +67,8 @@ export const quickEntryTemplates = sqliteTable("quick_entry_templates", {
   note: text("note"),
   sortOrder: integer("sort_order").notNull().default(0),
   enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+  usageCount: integer("usage_count").notNull().default(0),
+  lastUsedAt: text("last_used_at"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });

@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from "drizzle-orm";
+import { asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, categories, paymentMethods, quickEntryTemplates } from "@/db/schema";
 
@@ -18,11 +18,31 @@ export type TemporaryEntryDefaults = {
 };
 
 export async function listQuickEntryTemplates() {
+  // 使用频率高的排在前面；同频次按 sortOrder（seed 顺序）兜底；再按 name
   const templateRows = await db
     .select()
     .from(quickEntryTemplates)
     .where(eq(quickEntryTemplates.enabled, true))
-    .orderBy(asc(quickEntryTemplates.sortOrder), asc(quickEntryTemplates.name));
+    .orderBy(
+      desc(quickEntryTemplates.usageCount),
+      asc(quickEntryTemplates.sortOrder),
+      asc(quickEntryTemplates.name),
+    );
+
+  return hydrateQuickEntryTemplates(templateRows);
+}
+
+/** 管理页用 —— 包括已停用的，统一按 sortOrder 排序方便维护 */
+export async function listAllQuickEntryTemplates() {
+  const templateRows = await db
+    .select()
+    .from(quickEntryTemplates)
+    .orderBy(
+      desc(quickEntryTemplates.enabled),
+      desc(quickEntryTemplates.usageCount),
+      asc(quickEntryTemplates.sortOrder),
+      asc(quickEntryTemplates.name),
+    );
 
   return hydrateQuickEntryTemplates(templateRows);
 }
@@ -35,6 +55,19 @@ export async function getQuickEntryTemplate(id: string) {
     .limit(1);
 
   const [template] = await hydrateQuickEntryTemplates(templateRows.filter((row) => row.enabled));
+
+  return template ?? null;
+}
+
+/** 管理用：不过滤 enabled，编辑停用的模板时也能拿到 */
+export async function getQuickEntryTemplateAnyStatus(id: string) {
+  const templateRows = await db
+    .select()
+    .from(quickEntryTemplates)
+    .where(eq(quickEntryTemplates.id, id))
+    .limit(1);
+
+  const [template] = await hydrateQuickEntryTemplates(templateRows);
 
   return template ?? null;
 }

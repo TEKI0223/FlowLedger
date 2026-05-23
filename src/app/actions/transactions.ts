@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { accounts, transactions } from "@/db/schema";
+import { accounts, quickEntryTemplates, transactions } from "@/db/schema";
 import {
   currencies,
   formatMinorForInput,
@@ -207,6 +207,21 @@ export async function createQuickEntryTransaction(
   }
 
   await createTransactionRecord(result.transaction);
+
+  // 累加这个模板的使用次数（用于首页排序）；失败不阻断保存
+  try {
+    await db
+      .update(quickEntryTemplates)
+      .set({
+        usageCount: sql`${quickEntryTemplates.usageCount} + 1`,
+        lastUsedAt: nowIso(),
+      })
+      .where(eq(quickEntryTemplates.id, template.id))
+      .run();
+  } catch {
+    // 静默：模板被并发删除等极端情况不影响主流程
+  }
+
   revalidateTransactionPaths(result.transaction.id);
   redirect("/?saved=quick-entry");
 }
