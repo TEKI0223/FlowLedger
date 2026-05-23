@@ -15,7 +15,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "node scripts/seed.mjs",
     "db:setup": "mkdir -p data && npm run db:migrate && npm run db:seed",
-    "db:reset": "rm -f data/flowledger.db data/flowledger.db-wal data/flowledger.db-shm && npm run db:setup"
+    "db:reset": "rm -f data/flowledger.db data/flowledger.db-wal data/flowledger.db-shm && npm run db:setup",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

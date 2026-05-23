@@ -89,6 +89,33 @@ Vercel Settings → Environment Variables → 改 `FLOWLEDGER_PASSWORD` → Save
 
 ## 4. 日常维护
 
+### 4.0 浏览 / 编辑数据：Drizzle Studio
+
+最方便的可视化编辑器：
+
+```bash
+# 本地数据库
+npm run db:studio
+```
+
+会启一个本地 web 界面（默认 https://local.drizzle.studio），可以看所有表、改字段、加 / 删行、跑自定义 SQL。
+
+要编辑 **Turso 上的远程数据**，给 db:studio 临时加上 env：
+
+```bash
+DATABASE_URL='libsql://...' DATABASE_AUTH_TOKEN='...' npm run db:studio
+```
+
+⚠️ 直接编辑生产库要小心——余额是从交易流水推算的，绕过 action 直接改 `accounts.balance_minor` 会和交易历史脱节。建议只用 Studio 改"非余额型"字段（备注、分类、汇率、停用 / 启用周期项等）；要调余额还是走应用的「余额校准」入口产生 adjustment 交易。
+
+简短 SQL 改动：
+
+```bash
+turso db shell flowledger
+> UPDATE exchange_rates SET rate = 22.0 WHERE id = 'cny-to-jpy';
+> .exit
+```
+
 ### 4.1 改 schema 后部署
 
 ```bash
