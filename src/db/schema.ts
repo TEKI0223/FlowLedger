@@ -77,6 +77,9 @@ export const creditCards = sqliteTable("credit_cards", {
     .references(() => accounts.id),
   closingDay: integer("closing_day").notNull(),
   paymentDay: integer("payment_day").notNull(),
+  cycleBoundary: text("cycle_boundary", { enum: ["inclusive", "exclusive"] })
+    .notNull()
+    .default("inclusive"),
   repaymentAccountId: text("repayment_account_id").references(() => accounts.id),
   enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").notNull(),

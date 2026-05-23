@@ -1,0 +1,1 @@
+ALTER TABLE `credit_cards` ADD `cycle_boundary` text DEFAULT 'inclusive' NOT NULL;
