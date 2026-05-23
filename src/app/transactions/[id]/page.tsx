@@ -64,6 +64,7 @@ export default async function TransactionEditPage({ params }: TransactionEditPag
               note: transaction.note ?? undefined,
             }}
             submitLabel="保存修改"
+            mode="edit"
           />
         </CardContent>
       </Card>

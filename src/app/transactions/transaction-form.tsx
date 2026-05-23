@@ -11,6 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   currencies,
   currencyLabels,
+  formatMinorForInput,
+  formatMoney,
+  parseMoneyToMinor,
   transactionTypeLabels,
   type Currency,
   type TransactionType,
@@ -20,7 +23,7 @@ import { todayIsoDate } from "@/lib/dates";
 const initialState: TransactionActionState = {};
 
 type Lookups = {
-  accounts: Array<{ id: string; name: string; currency: Currency }>;
+  accounts: Array<{ id: string; name: string; currency: Currency; balanceMinor: number }>;
   categories: Array<{ id: string; name: string }>;
   paymentMethods: Array<{ id: string; name: string; defaultAccountId: string | null }>;
 };
@@ -42,9 +45,13 @@ type TransactionFormProps = {
   lookups: Lookups;
   defaults: Defaults;
   submitLabel: string;
+  /**
+   * "create"：新建交易（adjustment 用"输入实际余额"UI）
+   * "edit"：编辑已有交易（adjustment 保留传统的差额输入）
+   */
+  mode?: "create" | "edit";
 };
 
-// 根据交易类型动态决定来源 / 目标账户字段的可见性与标签
 const accountFieldsByType: Record<
   TransactionType,
   { showSource: boolean; sourceLabel: string; showTarget: boolean; targetLabel: string }
@@ -75,7 +82,13 @@ const accountFieldsByType: Record<
   },
 };
 
-export function TransactionForm({ action, lookups, defaults, submitLabel }: TransactionFormProps) {
+export function TransactionForm({
+  action,
+  lookups,
+  defaults,
+  submitLabel,
+  mode = "create",
+}: TransactionFormProps) {
   const [state, formAction] = useActionState<TransactionActionState, FormData>(
     action,
     initialState,
@@ -85,6 +98,10 @@ export function TransactionForm({ action, lookups, defaults, submitLabel }: Tran
   const initialType = (values?.type as TransactionType) ?? defaults.type;
   const [type, setType] = useState<TransactionType>(initialType);
 
+  const [currency, setCurrency] = useState<Currency>(
+    (values?.currency as Currency) ?? defaults.currency,
+  );
+
   const [sourceAccountId, setSourceAccountId] = useState<string>(
     values?.sourceAccountId ?? defaults.sourceAccountId ?? "",
   );
@@ -92,7 +109,25 @@ export function TransactionForm({ action, lookups, defaults, submitLabel }: Tran
     values?.targetAccountId ?? defaults.targetAccountId ?? "",
   );
 
+  const [targetBalance, setTargetBalance] = useState<string>("");
+
   const fieldConfig = accountFieldsByType[type];
+
+  // 是否启用"输入实际余额"模式：仅 create 模式下的 adjustment
+  const useTargetBalanceUI = mode === "create" && type === "adjustment";
+
+  const targetAccount = lookups.accounts.find((a) => a.id === targetAccountId) ?? null;
+  const currentBalanceMinor = targetAccount?.balanceMinor ?? 0;
+
+  // 校准模式下基于"目标余额 - 当前余额"算 delta
+  const computedDelta = useTargetBalanceUI ? computeDelta(targetBalance, currency, currentBalanceMinor) : null;
+
+  // amount 输入框的实际值：校准模式用 computedDelta；其他模式用用户输入
+  const amountFieldValue = useTargetBalanceUI
+    ? computedDelta !== null
+      ? formatMinorForInput({ amountMinor: computedDelta, currency })
+      : ""
+    : undefined;
 
   function handlePaymentMethodChange(event: React.ChangeEvent<HTMLSelectElement>) {
     const newPmId = event.target.value;
@@ -137,58 +172,115 @@ export function TransactionForm({ action, lookups, defaults, submitLabel }: Tran
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
-          <div className="grid gap-2">
-            <Label htmlFor="amount">金额</Label>
-            <Input
-              id="amount"
-              name="amount"
-              inputMode="decimal"
-              required
-              placeholder="例如：1200"
-              defaultValue={values?.amount ?? defaults.amount ?? ""}
-              className="h-12 text-xl font-semibold tabular-nums"
-            />
-            {type === "adjustment" ? (
+        {useTargetBalanceUI ? (
+          // 调整：输入实际余额，系统算差额
+          <div className="grid gap-3 rounded-md border border-adjustment/30 bg-adjustment/5 p-3">
+            <div className="grid gap-1">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">当前系统余额</p>
+              <p className="text-lg font-semibold tabular-nums">
+                {targetAccount
+                  ? formatMoney({ amountMinor: currentBalanceMinor, currency: targetAccount.currency })
+                  : "请先选择校准账户"}
+              </p>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="targetBalance">实际余额（系统会算差额）</Label>
+              <Input
+                id="targetBalance"
+                inputMode="decimal"
+                placeholder={targetAccount ? "盘点出来的真实余额" : "请先选择校准账户"}
+                value={targetBalance}
+                onChange={(event) => setTargetBalance(event.target.value)}
+                disabled={!targetAccount}
+                required
+                className="h-11 text-base tabular-nums"
+              />
+            </div>
+            {computedDelta !== null && targetAccount ? (
               <p className="text-xs text-muted-foreground">
-                填差额：余额需要增加输入正数，需要减少输入负数（例如 −1000）
+                差额：
+                <span
+                  className={
+                    computedDelta > 0
+                      ? "text-income font-semibold tabular-nums"
+                      : computedDelta < 0
+                        ? "text-expense font-semibold tabular-nums"
+                        : "font-semibold tabular-nums"
+                  }
+                >
+                  {computedDelta >= 0 ? "+" : ""}
+                  {formatMoney({ amountMinor: computedDelta, currency: targetAccount.currency })}
+                </span>
               </p>
             ) : null}
+            {/* 实际提交的 amount 字段 */}
+            <input type="hidden" name="amount" value={amountFieldValue ?? ""} />
           </div>
-          <div className="grid gap-2 sm:w-32">
-            <Label htmlFor="currency">币种</Label>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
+            <div className="grid gap-2">
+              <Label htmlFor="amount">金额</Label>
+              <Input
+                id="amount"
+                name="amount"
+                inputMode="decimal"
+                required
+                placeholder="例如：1200"
+                defaultValue={values?.amount ?? defaults.amount ?? ""}
+                className="h-12 text-xl font-semibold tabular-nums"
+              />
+              {type === "adjustment" ? (
+                <p className="text-xs text-muted-foreground">
+                  填差额：余额需要增加输入正数，需要减少输入负数（例如 −1000）
+                </p>
+              ) : null}
+            </div>
+            <div className="grid gap-2 sm:w-32">
+              <Label htmlFor="currency">币种</Label>
+              <NativeSelect
+                id="currency"
+                name="currency"
+                required
+                value={currency}
+                onChange={(event) => setCurrency(event.target.value as Currency)}
+              >
+                {currencies.map((curr) => (
+                  <option value={curr} key={curr}>
+                    {curr} · {currencyLabels[curr]}
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+          </div>
+        )}
+
+        {/* 调整 UI 里也需要 currency 字段，但不让用户选（跟随选中的账户币种） */}
+        {useTargetBalanceUI ? (
+          <input
+            type="hidden"
+            name="currency"
+            value={targetAccount?.currency ?? currency}
+          />
+        ) : null}
+
+        {!useTargetBalanceUI ? (
+          <div className="grid gap-2">
+            <Label htmlFor="categoryId">分类</Label>
             <NativeSelect
-              id="currency"
-              name="currency"
-              required
-              defaultValue={values?.currency ?? defaults.currency}
+              id="categoryId"
+              name="categoryId"
+              defaultValue={values?.categoryId ?? defaults.categoryId ?? ""}
             >
-              {currencies.map((currency) => (
-                <option value={currency} key={currency}>
-                  {currency} · {currencyLabels[currency]}
+              <option value="">无分类</option>
+              {lookups.categories.map((category) => (
+                <option value={category.id} key={category.id}>
+                  {category.name}
                 </option>
               ))}
             </NativeSelect>
           </div>
-        </div>
+        ) : null}
 
-        <div className="grid gap-2">
-          <Label htmlFor="categoryId">分类</Label>
-          <NativeSelect
-            id="categoryId"
-            name="categoryId"
-            defaultValue={values?.categoryId ?? defaults.categoryId ?? ""}
-          >
-            <option value="">无分类</option>
-            {lookups.categories.map((category) => (
-              <option value={category.id} key={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
-
-        {/* 始终渲染来源 / 目标 input，但不需要时隐藏；这样 form 提交时 name 还在，action 端继续工作 */}
         <div
           className={
             fieldConfig.showSource && fieldConfig.showTarget
@@ -218,7 +310,16 @@ export function TransactionForm({ action, lookups, defaults, submitLabel }: Tran
               id="targetAccountId"
               name="targetAccountId"
               value={targetAccountId}
-              onChange={(event) => setTargetAccountId(event.target.value)}
+              onChange={(event) => {
+                setTargetAccountId(event.target.value);
+                // 切换校准账户时，币种跟随
+                if (useTargetBalanceUI) {
+                  const acc = lookups.accounts.find((a) => a.id === event.target.value);
+                  if (acc) {
+                    setCurrency(acc.currency);
+                  }
+                }
+              }}
             >
               <option value="">不选择</option>
               {lookups.accounts.map((account) => (
@@ -268,4 +369,20 @@ export function TransactionForm({ action, lookups, defaults, submitLabel }: Tran
       </form>
     </>
   );
+}
+
+function computeDelta(
+  targetBalanceInput: string,
+  currency: Currency,
+  currentBalanceMinor: number,
+): number | null {
+  const trimmed = targetBalanceInput.trim();
+  if (!trimmed) return null;
+
+  try {
+    const targetMinor = parseMoneyToMinor(trimmed, currency);
+    return targetMinor - currentBalanceMinor;
+  } catch {
+    return null;
+  }
 }

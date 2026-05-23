@@ -4,7 +4,15 @@ import { accounts, categories, paymentMethods } from "@/db/schema";
 
 export async function getTransactionLookups() {
   const [accountRows, categoryRows, paymentMethodRows] = await Promise.all([
-    db.select().from(accounts).orderBy(asc(accounts.currency), asc(accounts.name)),
+    db
+      .select({
+        id: accounts.id,
+        name: accounts.name,
+        currency: accounts.currency,
+        balanceMinor: accounts.balanceMinor,
+      })
+      .from(accounts)
+      .orderBy(asc(accounts.currency), asc(accounts.name)),
     db.select().from(categories).orderBy(asc(categories.name)),
     db.select().from(paymentMethods).orderBy(asc(paymentMethods.name)),
   ]);
