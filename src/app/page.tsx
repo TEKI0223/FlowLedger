@@ -4,6 +4,7 @@ import {
   BellIcon,
   CreditCardIcon,
   PlusIcon,
+  ReceiptIcon,
   RepeatIcon,
   WalletIcon,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import {
   type QuickEntryModalTemplate,
 } from "@/features/quick-entry/quick-entry-modal";
 import { countPendingRecurringItems } from "@/features/recurring/data";
+import { countPendingRefunds } from "@/features/refunds/data";
 import { listTransactions } from "@/features/transactions/data";
 import { cn } from "@/lib/utils";
 import type { ActionTileTheme } from "@/components/ui/action-tile";
@@ -46,15 +48,23 @@ const transactionToneClass: Record<string, string> = {
 };
 
 export default async function Home({ searchParams }: HomeProps) {
-  const [{ saved }, summary, accounts, quickEntryTemplates, transactions, pendingRecurringCount] =
-    await Promise.all([
-      searchParams,
-      getDashboardSummary(),
-      listAccounts(),
-      listQuickEntryTemplates(),
-      listTransactions(6),
-      countPendingRecurringItems(),
-    ]);
+  const [
+    { saved },
+    summary,
+    accounts,
+    quickEntryTemplates,
+    transactions,
+    pendingRecurringCount,
+    pendingRefundCount,
+  ] = await Promise.all([
+    searchParams,
+    getDashboardSummary(),
+    listAccounts(),
+    listQuickEntryTemplates(),
+    listTransactions(6),
+    countPendingRecurringItems(),
+    countPendingRefunds(),
+  ]);
 
   const metrics: Array<{ label: string; value: string; note?: string; tone?: MetricTone }> = [
     {
@@ -218,24 +228,45 @@ export default async function Home({ searchParams }: HomeProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {pendingRecurringCount === 0 ? (
-                <p className="text-sm text-muted-foreground">没有待确认的周期项。</p>
+              {pendingRecurringCount === 0 && pendingRefundCount === 0 ? (
+                <p className="text-sm text-muted-foreground">没有待处理项。</p>
               ) : (
-                <Link
-                  href="/recurring/pending"
-                  className="flex items-center justify-between gap-3 rounded-lg border border-adjustment/30 bg-adjustment/5 px-3 py-2.5 text-sm transition-colors hover:bg-adjustment/10"
-                >
-                  <div className="flex items-center gap-2">
-                    <RepeatIcon className="size-4 text-adjustment" />
-                    <span>
-                      <strong className="font-semibold text-adjustment">
-                        {pendingRecurringCount}
-                      </strong>
-                      <span className="text-muted-foreground"> 个待确认周期项</span>
-                    </span>
-                  </div>
-                  <ArrowRightIcon className="size-4 text-adjustment" />
-                </Link>
+                <div className="space-y-2">
+                  {pendingRecurringCount > 0 ? (
+                    <Link
+                      href="/recurring/pending"
+                      className="flex items-center justify-between gap-3 rounded-lg border border-adjustment/30 bg-adjustment/5 px-3 py-2.5 text-sm transition-colors hover:bg-adjustment/10"
+                    >
+                      <div className="flex items-center gap-2">
+                        <RepeatIcon className="size-4 text-adjustment" />
+                        <span>
+                          <strong className="font-semibold text-adjustment">
+                            {pendingRecurringCount}
+                          </strong>
+                          <span className="text-muted-foreground"> 个待确认周期项</span>
+                        </span>
+                      </div>
+                      <ArrowRightIcon className="size-4 text-adjustment" />
+                    </Link>
+                  ) : null}
+                  {pendingRefundCount > 0 ? (
+                    <Link
+                      href="/refunds"
+                      className="flex items-center justify-between gap-3 rounded-lg border border-transfer/30 bg-transfer/5 px-3 py-2.5 text-sm transition-colors hover:bg-transfer/10"
+                    >
+                      <div className="flex items-center gap-2">
+                        <ReceiptIcon className="size-4 text-transfer" />
+                        <span>
+                          <strong className="font-semibold text-transfer">
+                            {pendingRefundCount}
+                          </strong>
+                          <span className="text-muted-foreground"> 笔退款未到账</span>
+                        </span>
+                      </div>
+                      <ArrowRightIcon className="size-4 text-transfer" />
+                    </Link>
+                  ) : null}
+                </div>
               )}
               <Separator />
               <div className="flex flex-col gap-1.5">
@@ -244,6 +275,14 @@ export default async function Home({ searchParams }: HomeProps) {
                   className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
                 >
                   管理周期项
+                  <ArrowRightIcon className="size-3" />
+                </Link>
+                <Link
+                  href="/refunds"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  <ReceiptIcon className="size-3" />
+                  退款追踪
                   <ArrowRightIcon className="size-3" />
                 </Link>
                 <Link

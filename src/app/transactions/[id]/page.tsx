@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, ReceiptIcon } from "lucide-react";
 import { TransactionForm } from "../transaction-form";
 import { updateTransaction } from "@/app/actions/transactions";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatMinorForInput } from "@/domain/finance";
 import { getTransactionLookups } from "@/features/lookups/data";
 import { getTransaction } from "@/features/transactions/data";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +70,28 @@ export default async function TransactionEditPage({ params }: TransactionEditPag
           />
         </CardContent>
       </Card>
+
+      {transaction.type === "expense" ? (
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ReceiptIcon className="size-4 text-muted-foreground" />
+              退款追踪
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-3 text-sm text-muted-foreground">
+              如果这笔消费需要退款（商家退、信用卡返还、订单取消等），可以挂一个追踪记录预期金额、到账账户和实际到账。
+            </p>
+            <Link
+              href={`/refunds/new?originalTxId=${transaction.id}`}
+              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 w-full")}
+            >
+              新建退款追踪
+            </Link>
+          </CardContent>
+        </Card>
+      ) : null}
     </main>
   );
 }
