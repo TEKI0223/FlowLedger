@@ -103,17 +103,17 @@ export default async function AccountDetailPage({ params }: AccountDetailPagePro
             余额校准
           </Link>
           <Link
-            href="/transactions"
+            href={`/accounts/${account.id}/topup`}
             className={cn(
               buttonVariants({ variant: "outline", size: "lg" }),
               "h-auto min-h-16 flex-col gap-1 text-sm",
             )}
           >
             <ArrowDownToLineIcon className="size-4" />
-            充值 / 转入
+            {account.type === "credit_card" ? "还款" : "充值 / 转入"}
           </Link>
           <Link
-            href="/transactions"
+            href={`/accounts/${account.id}/spend`}
             className={cn(
               buttonVariants({ variant: "outline", size: "lg" }),
               "h-auto min-h-16 flex-col gap-1 text-sm",
