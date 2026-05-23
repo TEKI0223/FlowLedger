@@ -147,7 +147,8 @@ export async function createRecurringItem(
 
   const timestamp = nowIso();
 
-  db.insert(recurringItems)
+  await db
+    .insert(recurringItems)
     .values({
       id: crypto.randomUUID(),
       name: parsed.name,
@@ -324,8 +325,9 @@ export async function confirmRecurringItem(
   const nextDate = getNextOccurrence(row.nextDate, row.frequency);
   const timestamp = nowIso();
 
-  db.transaction((tx) => {
-    tx.insert(transactions)
+  await db.transaction(async (tx) => {
+    await tx
+      .insert(transactions)
       .values({
         id: transaction.id,
         occurredOn: transaction.occurredOn,
@@ -346,7 +348,8 @@ export async function confirmRecurringItem(
       .run();
 
     for (const impact of getTransactionBalanceImpacts(transaction)) {
-      tx.update(accounts)
+      await tx
+        .update(accounts)
         .set({
           balanceMinor: sql`${accounts.balanceMinor} + ${impact.amountMinor}`,
           updatedAt: timestamp,
@@ -355,7 +358,8 @@ export async function confirmRecurringItem(
         .run();
     }
 
-    tx.update(recurringItems)
+    await tx
+      .update(recurringItems)
       .set({ nextDate, updatedAt: timestamp })
       .where(eq(recurringItems.id, row.id))
       .run();

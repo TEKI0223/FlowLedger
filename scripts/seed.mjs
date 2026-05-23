@@ -1,24 +1,21 @@
-import Database from "better-sqlite3";
-import { dirname } from "node:path";
 import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+import { createClient } from "@libsql/client";
 
-const defaultDatabaseUrl = "./data/flowledger.db";
+const defaultUrl = "file:./data/flowledger.db";
+const url = process.env.DATABASE_URL ?? defaultUrl;
+const authToken = process.env.DATABASE_AUTH_TOKEN;
 
-function normalizeDatabasePath(databaseUrl) {
-  const withoutQuery = databaseUrl.split("?")[0] ?? databaseUrl;
-
-  if (withoutQuery.startsWith("file:")) {
-    return withoutQuery.slice("file:".length);
-  }
-
-  return withoutQuery;
+if (url.startsWith("file:")) {
+  const filePath = url.slice("file:".length).split("?")[0];
+  if (filePath) mkdirSync(dirname(filePath), { recursive: true });
 }
 
-const databasePath = normalizeDatabasePath(process.env.DATABASE_URL ?? defaultDatabaseUrl);
-mkdirSync(dirname(databasePath), { recursive: true });
+const client = createClient({ url, authToken });
 
-const db = new Database(databasePath);
-db.pragma("foreign_keys = ON");
+if (url.startsWith("file:")) {
+  await client.execute("PRAGMA foreign_keys = ON");
+}
 
 const now = new Date().toISOString();
 
@@ -72,105 +69,14 @@ const categories = [
 ];
 
 const quickEntryTemplates = [
-  [
-    "grocery",
-    "超市",
-    "expense",
-    "JPY",
-    null,
-    "grocery",
-    "jp-bank-main",
-    null,
-    "apple-pay",
-    null,
-    10,
-    1,
-  ],
-  [
-    "convenience-store",
-    "便利店",
-    "expense",
-    "JPY",
-    null,
-    "convenience-store",
-    "paypay",
-    null,
-    "paypay",
-    null,
-    20,
-    1,
-  ],
-  [
-    "dining",
-    "外食",
-    "expense",
-    "JPY",
-    null,
-    "dining",
-    "jpy-credit-card-a",
-    null,
-    "credit-card-a",
-    null,
-    30,
-    1,
-  ],
+  ["grocery", "超市", "expense", "JPY", null, "grocery", "jp-bank-main", null, "apple-pay", null, 10, 1],
+  ["convenience-store", "便利店", "expense", "JPY", null, "convenience-store", "paypay", null, "paypay", null, 20, 1],
+  ["dining", "外食", "expense", "JPY", null, "dining", "jpy-credit-card-a", null, "credit-card-a", null, 30, 1],
   ["coffee", "咖啡", "expense", "JPY", null, "coffee", "paypay", null, "paypay", null, 40, 1],
-  [
-    "transport",
-    "交通",
-    "expense",
-    "JPY",
-    null,
-    "transport",
-    "jpy-cash",
-    null,
-    "jpy-cash",
-    null,
-    50,
-    1,
-  ],
-  [
-    "online-shopping",
-    "网购",
-    "expense",
-    "JPY",
-    null,
-    "shopping",
-    "jpy-credit-card-a",
-    null,
-    "credit-card-a",
-    "平台标签待补充",
-    60,
-    1,
-  ],
-  [
-    "paypay-expense",
-    "PayPay 消费",
-    "expense",
-    "JPY",
-    null,
-    "other",
-    "paypay",
-    null,
-    "paypay",
-    null,
-    70,
-    1,
-  ],
-  [
-    "cash-expense",
-    "现金消费",
-    "expense",
-    "JPY",
-    null,
-    "other",
-    "jpy-cash",
-    null,
-    "jpy-cash",
-    null,
-    80,
-    1,
-  ],
+  ["transport", "交通", "expense", "JPY", null, "transport", "jpy-cash", null, "jpy-cash", null, 50, 1],
+  ["online-shopping", "网购", "expense", "JPY", null, "shopping", "jpy-credit-card-a", null, "credit-card-a", "平台标签待补充", 60, 1],
+  ["paypay-expense", "PayPay 消费", "expense", "JPY", null, "other", "paypay", null, "paypay", null, 70, 1],
+  ["cash-expense", "现金消费", "expense", "JPY", null, "other", "jpy-cash", null, "jpy-cash", null, 80, 1],
 ];
 
 const creditCards = [
@@ -178,13 +84,12 @@ const creditCards = [
   ["credit-card-b", "jpy-credit-card-b", 25, 10, "jp-bank-main", 1],
 ];
 
-// 1 CNY = 21.5 JPY (手动参考汇率，后续做编辑 UI 时让用户更新)
 const exchangeRates = [
   ["cny-to-jpy", "CNY", "JPY", 21.5],
   ["jpy-to-cny", "JPY", "CNY", 1 / 21.5],
 ];
 
-const insertAccount = db.prepare(`
+const SQL_ACCOUNT = `
   insert into accounts (id, name, type, currency, balance_minor, include_in_net_worth, note, created_at, updated_at)
   values (?, ?, ?, ?, ?, ?, ?, ?, ?)
   on conflict(id) do update set
@@ -194,42 +99,31 @@ const insertAccount = db.prepare(`
     include_in_net_worth = excluded.include_in_net_worth,
     note = excluded.note,
     updated_at = excluded.updated_at
-`);
+`;
 
-const insertPaymentMethod = db.prepare(`
+const SQL_PAYMENT_METHOD = `
   insert into payment_methods (id, name, default_account_id, created_at, updated_at)
   values (?, ?, ?, ?, ?)
   on conflict(id) do update set
     name = excluded.name,
     default_account_id = excluded.default_account_id,
     updated_at = excluded.updated_at
-`);
+`;
 
-const insertCategory = db.prepare(`
+const SQL_CATEGORY = `
   insert into categories (id, name, parent_id, created_at, updated_at)
   values (?, ?, ?, ?, ?)
   on conflict(id) do update set
     name = excluded.name,
     parent_id = excluded.parent_id,
     updated_at = excluded.updated_at
-`);
+`;
 
-const insertQuickEntryTemplate = db.prepare(`
+const SQL_QUICK_ENTRY = `
   insert into quick_entry_templates (
-    id,
-    name,
-    type,
-    currency,
-    amount_minor,
-    category_id,
-    source_account_id,
-    target_account_id,
-    payment_method_id,
-    note,
-    sort_order,
-    enabled,
-    created_at,
-    updated_at
+    id, name, type, currency, amount_minor, category_id,
+    source_account_id, target_account_id, payment_method_id,
+    note, sort_order, enabled, created_at, updated_at
   )
   values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   on conflict(id) do update set
@@ -245,9 +139,9 @@ const insertQuickEntryTemplate = db.prepare(`
     sort_order = excluded.sort_order,
     enabled = excluded.enabled,
     updated_at = excluded.updated_at
-`);
+`;
 
-const insertCreditCard = db.prepare(`
+const SQL_CREDIT_CARD = `
   insert into credit_cards (id, account_id, closing_day, payment_day, repayment_account_id, enabled, created_at, updated_at)
   values (?, ?, ?, ?, ?, ?, ?, ?)
   on conflict(id) do update set
@@ -257,9 +151,9 @@ const insertCreditCard = db.prepare(`
     repayment_account_id = excluded.repayment_account_id,
     enabled = excluded.enabled,
     updated_at = excluded.updated_at
-`);
+`;
 
-const insertExchangeRate = db.prepare(`
+const SQL_EXCHANGE_RATE = `
   insert into exchange_rates (id, from_currency, to_currency, rate, updated_at)
   values (?, ?, ?, ?, ?)
   on conflict(id) do update set
@@ -267,34 +161,20 @@ const insertExchangeRate = db.prepare(`
     to_currency = excluded.to_currency,
     rate = excluded.rate,
     updated_at = excluded.updated_at
-`);
+`;
 
-const seed = db.transaction(() => {
-  for (const account of accounts) {
-    insertAccount.run(...account, now, now);
-  }
+// libsql 在 batch 里自动开启隐式事务（"deferred" 模式），全部成功才提交。
+const statements = [
+  ...accounts.map((row) => ({ sql: SQL_ACCOUNT, args: [...row, now, now] })),
+  ...paymentMethods.map((row) => ({ sql: SQL_PAYMENT_METHOD, args: [...row, now, now] })),
+  ...categories.map((row) => ({ sql: SQL_CATEGORY, args: [...row, now, now] })),
+  ...quickEntryTemplates.map((row) => ({ sql: SQL_QUICK_ENTRY, args: [...row, now, now] })),
+  ...creditCards.map((row) => ({ sql: SQL_CREDIT_CARD, args: [...row, now, now] })),
+  ...exchangeRates.map((row) => ({ sql: SQL_EXCHANGE_RATE, args: [...row, now] })),
+];
 
-  for (const paymentMethod of paymentMethods) {
-    insertPaymentMethod.run(...paymentMethod, now, now);
-  }
+await client.batch(statements, "deferred");
+client.close();
 
-  for (const category of categories) {
-    insertCategory.run(...category, now, now);
-  }
-
-  for (const template of quickEntryTemplates) {
-    insertQuickEntryTemplate.run(...template, now, now);
-  }
-
-  for (const creditCard of creditCards) {
-    insertCreditCard.run(...creditCard, now, now);
-  }
-
-  for (const rate of exchangeRates) {
-    insertExchangeRate.run(...rate, now);
-  }
-});
-
-seed();
-
-console.log(`Seeded FlowLedger defaults into ${databasePath}`);
+const target = url.startsWith("file:") ? url.slice("file:".length).split("?")[0] : url;
+console.log(`Seeded FlowLedger defaults into ${target}`);

@@ -84,7 +84,8 @@ export async function createAccount(
 
   const timestamp = nowIso();
 
-  db.insert(accounts)
+  await db
+    .insert(accounts)
     .values({
       id: crypto.randomUUID(),
       name: parsed.name,

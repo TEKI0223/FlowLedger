@@ -98,7 +98,8 @@ export async function createRefundTracker(
 
   const timestamp = nowIso();
 
-  db.insert(refundTrackers)
+  await db
+    .insert(refundTrackers)
     .values({
       id: crypto.randomUUID(),
       originalTransactionId,
@@ -324,9 +325,10 @@ export async function recordRefundReceipt(
   const timestamp = nowIso();
   const transactionId = crypto.randomUUID();
 
-  db.transaction((tx) => {
+  await db.transaction(async (tx) => {
     // 1. 创建收入交易：type=income, category=refund, target=account
-    tx.insert(transactions)
+    await tx
+      .insert(transactions)
       .values({
         id: transactionId,
         occurredOn: parsed.occurredOn,
@@ -348,7 +350,8 @@ export async function recordRefundReceipt(
       .run();
 
     // 2. 更新账户余额（收入 = 目标账户加余额）
-    tx.update(accounts)
+    await tx
+      .update(accounts)
       .set({
         balanceMinor: sql`${accounts.balanceMinor} + ${amountMinor}`,
         updatedAt: timestamp,
@@ -357,7 +360,8 @@ export async function recordRefundReceipt(
       .run();
 
     // 3. 更新退款追踪：累计金额 + status + receivedOn（如果完成）
-    tx.update(refundTrackers)
+    await tx
+      .update(refundTrackers)
       .set({
         receivedAmountMinor: newReceivedMinor,
         status: newStatus,
@@ -403,10 +407,11 @@ export async function deleteRefundReceipt(receiptTransactionId: string) {
   );
   const timestamp = nowIso();
 
-  db.transaction((tx) => {
+  await db.transaction(async (tx) => {
     // 回滚账户余额
     if (receipt.targetAccountId) {
-      tx.update(accounts)
+      await tx
+        .update(accounts)
         .set({
           balanceMinor: sql`${accounts.balanceMinor} - ${receipt.amountMinor}`,
           updatedAt: timestamp,
@@ -416,10 +421,11 @@ export async function deleteRefundReceipt(receiptTransactionId: string) {
     }
 
     // 删除交易
-    tx.delete(transactions).where(eq(transactions.id, receipt.id)).run();
+    await tx.delete(transactions).where(eq(transactions.id, receipt.id)).run();
 
     // 更新 tracker
-    tx.update(refundTrackers)
+    await tx
+      .update(refundTrackers)
       .set({
         receivedAmountMinor: newReceivedMinor,
         status: newStatus,

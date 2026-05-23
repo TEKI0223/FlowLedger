@@ -82,7 +82,7 @@ export async function createTransaction(
     return { error: result.error, values: result.values };
   }
 
-  createTransactionRecord(result.transaction);
+  await createTransactionRecord(result.transaction);
   revalidateTransactionPaths(result.transaction.id);
   redirect("/transactions");
 }
@@ -106,10 +106,15 @@ export async function updateTransaction(
 
   const timestamp = nowIso();
 
-  db.transaction((tx) => {
-    applyBalanceImpacts(tx, invertImpacts(getTransactionBalanceImpacts(previous)), timestamp);
+  await db.transaction(async (tx) => {
+    await applyBalanceImpacts(
+      tx,
+      invertImpacts(getTransactionBalanceImpacts(previous)),
+      timestamp,
+    );
 
-    tx.update(transactions)
+    await tx
+      .update(transactions)
       .set({
         occurredOn: result.transaction.occurredOn,
         type: result.transaction.type,
@@ -127,7 +132,7 @@ export async function updateTransaction(
       .where(eq(transactions.id, id))
       .run();
 
-    applyBalanceImpacts(tx, getTransactionBalanceImpacts(result.transaction), timestamp);
+    await applyBalanceImpacts(tx, getTransactionBalanceImpacts(result.transaction), timestamp);
   });
 
   revalidateTransactionPaths(id);
@@ -143,9 +148,13 @@ export async function deleteTransaction(id: string) {
 
   const timestamp = nowIso();
 
-  db.transaction((tx) => {
-    applyBalanceImpacts(tx, invertImpacts(getTransactionBalanceImpacts(previous)), timestamp);
-    tx.delete(transactions).where(eq(transactions.id, id)).run();
+  await db.transaction(async (tx) => {
+    await applyBalanceImpacts(
+      tx,
+      invertImpacts(getTransactionBalanceImpacts(previous)),
+      timestamp,
+    );
+    await tx.delete(transactions).where(eq(transactions.id, id)).run();
   });
 
   revalidateTransactionPaths(id);
@@ -197,7 +206,7 @@ export async function createQuickEntryTransaction(
     return { error: result.error, values: extractValues(formData) };
   }
 
-  createTransactionRecord(result.transaction);
+  await createTransactionRecord(result.transaction);
   revalidateTransactionPaths(result.transaction.id);
   redirect("/?saved=quick-entry");
 }
@@ -232,7 +241,7 @@ export async function createTemporaryTransaction(
     return { error: result.error, values: extractValues(formData) };
   }
 
-  createTransactionRecord(result.transaction);
+  await createTransactionRecord(result.transaction);
   revalidateTransactionPaths(result.transaction.id);
   redirect("/?saved=temporary");
 }
@@ -316,11 +325,12 @@ function setOptionalFormValue(formData: FormData, name: string, value: string | 
   }
 }
 
-function createTransactionRecord(transaction: Transaction) {
+async function createTransactionRecord(transaction: Transaction) {
   const timestamp = nowIso();
 
-  db.transaction((tx) => {
-    tx.insert(transactions)
+  await db.transaction(async (tx) => {
+    await tx
+      .insert(transactions)
       .values({
         id: transaction.id,
         occurredOn: transaction.occurredOn,
@@ -339,7 +349,7 @@ function createTransactionRecord(transaction: Transaction) {
       })
       .run();
 
-    applyBalanceImpacts(tx, getTransactionBalanceImpacts(transaction), timestamp);
+    await applyBalanceImpacts(tx, getTransactionBalanceImpacts(transaction), timestamp);
   });
 }
 
@@ -435,13 +445,14 @@ function rowToTransaction(row: {
   };
 }
 
-function applyBalanceImpacts(
+async function applyBalanceImpacts(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
   impacts: Array<{ accountId: string; amountMinor: number }>,
   timestamp: string,
 ) {
   for (const impact of impacts) {
-    tx.update(accounts)
+    await tx
+      .update(accounts)
       .set({
         balanceMinor: sql`${accounts.balanceMinor} + ${impact.amountMinor}`,
         updatedAt: timestamp,

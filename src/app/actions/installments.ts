@@ -101,7 +101,8 @@ export async function createInstallmentPlan(
 
   const timestamp = nowIso();
 
-  db.insert(installmentPlans)
+  await db
+    .insert(installmentPlans)
     .values({
       id: crypto.randomUUID(),
       originalTransactionId,
