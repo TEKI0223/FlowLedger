@@ -15,7 +15,9 @@ export default function StatsPage() {
             首页
           </Link>
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">统计</h1>
-          <p className="text-sm text-muted-foreground">月度对比、分类排行和趋势视图会在 S2.4 接入。</p>
+          <p className="text-sm text-muted-foreground">
+            月度对比、分类排行和趋势视图会在 S2.4 接入。
+          </p>
         </div>
       </header>
 
