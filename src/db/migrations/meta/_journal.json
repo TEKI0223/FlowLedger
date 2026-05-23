@@ -15,6 +15,13 @@
       "when": 1779466047299,
       "tag": "0001_flowery_dakota_north",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1779497581411,
+      "tag": "0002_shallow_eternity",
+      "breakpoints": true
     }
   ]
 }

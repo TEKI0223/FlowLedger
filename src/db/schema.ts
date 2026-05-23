@@ -39,6 +39,7 @@ export const transactions = sqliteTable("transactions", {
   sourceAccountId: text("source_account_id").references(() => accounts.id),
   targetAccountId: text("target_account_id").references(() => accounts.id),
   paymentMethodId: text("payment_method_id").references(() => paymentMethods.id),
+  recurringItemId: text("recurring_item_id"),
   includeInExpenseStats: integer("include_in_expense_stats", { mode: "boolean" })
     .notNull()
     .default(true),
@@ -89,11 +90,16 @@ export const recurringItems = sqliteTable("recurring_items", {
   amountMinor: integer("amount_minor"),
   amountFixed: integer("amount_fixed", { mode: "boolean" }).notNull().default(false),
   currency: text("currency", { enum: ["JPY", "CNY"] }).notNull(),
+  frequency: text("frequency", { enum: ["monthly", "weekly", "yearly"] })
+    .notNull()
+    .default("monthly"),
   nextDate: text("next_date").notNull(),
   categoryId: text("category_id").references(() => categories.id),
   sourceAccountId: text("source_account_id").references(() => accounts.id),
   targetAccountId: text("target_account_id").references(() => accounts.id),
   paymentMethodId: text("payment_method_id").references(() => paymentMethods.id),
+  note: text("note"),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
