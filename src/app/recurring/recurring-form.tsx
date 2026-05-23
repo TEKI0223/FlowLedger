@@ -5,6 +5,7 @@ import type { RecurringActionState } from "@/app/actions/recurring";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MoneyInput } from "@/components/ui/money-input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
@@ -159,11 +160,10 @@ export function RecurringForm({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
           <div className="grid gap-2">
             <Label htmlFor="amount">金额（变动金额可留空）</Label>
-            <Input
+            <MoneyInput
               id="amount"
               name="amount"
-              inputMode="decimal"
-              placeholder="例如：8800"
+              placeholder="例如：8,800"
               defaultValue={values?.amount ?? defaults.amount ?? ""}
               className="h-11 text-base tabular-nums"
             />

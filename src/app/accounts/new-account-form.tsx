@@ -5,6 +5,7 @@ import { createAccount, type AccountActionState } from "@/app/actions/accounts";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MoneyInput } from "@/components/ui/money-input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
@@ -64,10 +65,9 @@ export function NewAccountForm() {
 
         <div className="grid gap-2">
           <Label htmlFor="initialBalance">初始余额</Label>
-          <Input
+          <MoneyInput
             id="initialBalance"
             name="initialBalance"
-            inputMode="decimal"
             placeholder="0"
             defaultValue={values?.initialBalance ?? "0"}
             className="h-11 text-base tabular-nums"

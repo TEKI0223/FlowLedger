@@ -12,6 +12,7 @@ import { InlineAlert } from "@/components/ui/inline-alert";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MoneyInput } from "@/components/ui/money-input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
 import type { Currency } from "@/domain/finance";
@@ -71,13 +72,12 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
       <form action={formAction} className="grid gap-4">
         <div className="grid gap-2">
           <Label htmlFor="quick-amount">金额</Label>
-          <Input
+          <MoneyInput
             id="quick-amount"
             ref={amountInputRef}
             name="amount"
-            inputMode="decimal"
             required
-            placeholder={currency === "JPY" ? "1200" : "38.50"}
+            placeholder={currency === "JPY" ? "1,200" : "38.50"}
             defaultValue={amountDefault}
             className="h-16 text-3xl font-semibold tabular-nums"
           />
