@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { ArrowRightIcon, BellIcon, PlusIcon, RepeatIcon, WalletIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  BellIcon,
+  CreditCardIcon,
+  PlusIcon,
+  RepeatIcon,
+  WalletIcon,
+} from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
@@ -231,13 +238,23 @@ export default async function Home({ searchParams }: HomeProps) {
                 </Link>
               )}
               <Separator />
-              <Link
-                href="/recurring"
-                className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-              >
-                管理周期项
-                <ArrowRightIcon className="size-3" />
-              </Link>
+              <div className="flex flex-col gap-1.5">
+                <Link
+                  href="/recurring"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  管理周期项
+                  <ArrowRightIcon className="size-3" />
+                </Link>
+                <Link
+                  href="/credit-cards"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  <CreditCardIcon className="size-3" />
+                  信用卡账单
+                  <ArrowRightIcon className="size-3" />
+                </Link>
+              </div>
             </CardContent>
           </Card>
 
