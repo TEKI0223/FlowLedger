@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { inArray } from "drizzle-orm";
@@ -24,6 +23,7 @@ import {
 } from "@/features/transactions/service";
 import { todayIsoDate } from "@/lib/dates";
 import { normalize, stringField } from "@/lib/form";
+import { revalidatePaths, transactionPaths } from "@/lib/revalidate";
 
 const transactionSchema = z.object({
   occurredOn: z.string().trim().min(1),
@@ -76,7 +76,7 @@ export async function createTransaction(
   if (!result.ok) return { error: result.error, values: result.values };
 
   await createTransactionRecord(result.transaction);
-  revalidateTransactionPaths(result.transaction.id);
+  revalidatePaths(transactionPaths(result.transaction.id));
   redirect("/transactions");
 }
 
@@ -94,7 +94,7 @@ export async function updateTransaction(
   if (!result.ok) return { error: result.error, values: result.values };
 
   await replaceTransactionRecord(id, previous, result.transaction);
-  revalidateTransactionPaths(id);
+  revalidatePaths(transactionPaths(id));
   redirect("/transactions");
 }
 
@@ -103,7 +103,7 @@ export async function deleteTransaction(id: string) {
   if (!previous) return;
 
   await deleteTransactionRecord(previous);
-  revalidateTransactionPaths(id);
+  revalidatePaths(transactionPaths(id));
   redirect("/transactions");
 }
 
@@ -149,7 +149,7 @@ export async function createQuickEntryTransaction(
 
   await createTransactionRecord(result.transaction);
   await bumpQuickEntryTemplateUsage(template.id);
-  revalidateTransactionPaths(result.transaction.id);
+  revalidatePaths(transactionPaths(result.transaction.id));
   redirect("/?saved=quick-entry");
 }
 
@@ -180,7 +180,7 @@ export async function createTemporaryTransaction(
   if (!result.ok) return { error: result.error, values: extractValues(formData) };
 
   await createTransactionRecord(result.transaction);
-  revalidateTransactionPaths(result.transaction.id);
+  revalidatePaths(transactionPaths(result.transaction.id));
   redirect("/?saved=temporary");
 }
 
@@ -302,11 +302,4 @@ async function assertAccountCurrencies(
     if (!account) throw new Error("选择的账户不存在");
     if (account.currency !== currency) throw new Error("交易币种必须和所选账户币种一致");
   }
-}
-
-function revalidateTransactionPaths(id: string) {
-  revalidatePath("/");
-  revalidatePath("/accounts");
-  revalidatePath("/transactions");
-  revalidatePath(`/transactions/${id}`);
 }

@@ -1,11 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { accountTypes, currencies } from "@/domain/finance";
 import { createAccountRecord, updateAccountRecord } from "@/features/accounts/service";
 import { parseAmount, stringField } from "@/lib/form";
+import { accountPaths, revalidatePaths } from "@/lib/revalidate";
 
 const accountSchema = z.object({
   name: z.string().trim().min(1, "请输入账户名称"),
@@ -75,8 +75,7 @@ export async function createAccount(
     note: parsed.note,
   });
 
-  revalidatePath("/");
-  revalidatePath("/accounts");
+  revalidatePaths(accountPaths());
   redirect("/accounts");
 }
 
@@ -109,8 +108,6 @@ export async function updateAccount(
     note: parsed.note,
   });
 
-  revalidatePath("/");
-  revalidatePath("/accounts");
-  revalidatePath(`/accounts/${id}`);
+  revalidatePaths(accountPaths(id));
   redirect(`/accounts/${id}`);
 }

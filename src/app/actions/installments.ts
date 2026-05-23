@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
@@ -16,6 +15,7 @@ import {
   updateInstallmentPlanRecord,
 } from "@/features/installments/service";
 import { stringField as field } from "@/lib/form";
+import { installmentPaths, revalidatePaths } from "@/lib/revalidate";
 
 const installmentSchema = z.object({
   totalAmount: z.string().trim().min(1, "请输入总金额"),
@@ -103,9 +103,7 @@ export async function createInstallmentPlan(
     feeAmountMinor,
   });
 
-  revalidatePath("/");
-  revalidatePath("/installments");
-  revalidatePath(`/transactions/${originalTransactionId}`);
+  revalidatePaths(installmentPaths(undefined, originalTransactionId));
   redirect("/installments");
 }
 
@@ -167,33 +165,25 @@ export async function updateInstallmentPlan(
     status: newStatus,
   });
 
-  revalidatePath("/");
-  revalidatePath("/installments");
-  revalidatePath(`/installments/${id}`);
+  revalidatePaths(installmentPaths(id));
   redirect(`/installments/${id}`);
 }
 
 export async function markInstallmentPeriodPaid(id: string) {
   await shiftInstallmentCompletedPeriods(id, 1);
-  revalidatePath("/");
-  revalidatePath("/installments");
-  revalidatePath(`/installments/${id}`);
+  revalidatePaths(installmentPaths(id));
   redirect(`/installments/${id}`);
 }
 
 export async function unmarkInstallmentPeriodPaid(id: string) {
   await shiftInstallmentCompletedPeriods(id, -1);
-  revalidatePath("/");
-  revalidatePath("/installments");
-  revalidatePath(`/installments/${id}`);
+  revalidatePaths(installmentPaths(id));
   redirect(`/installments/${id}`);
 }
 
 export async function cancelInstallmentPlan(id: string) {
   await setInstallmentStatus(id, "cancelled");
-  revalidatePath("/");
-  revalidatePath("/installments");
-  revalidatePath(`/installments/${id}`);
+  revalidatePaths(installmentPaths(id));
   redirect(`/installments/${id}`);
 }
 
@@ -206,15 +196,12 @@ export async function reopenInstallmentPlan(id: string) {
   if (!existing) return;
   const status = computeInstallmentStatus(existing.completedPeriods, existing.periods, false);
   await setInstallmentStatus(id, status);
-  revalidatePath("/");
-  revalidatePath("/installments");
-  revalidatePath(`/installments/${id}`);
+  revalidatePaths(installmentPaths(id));
   redirect(`/installments/${id}`);
 }
 
 export async function deleteInstallmentPlan(id: string) {
   await deleteInstallmentPlanRecord(id);
-  revalidatePath("/");
-  revalidatePath("/installments");
+  revalidatePaths(installmentPaths());
   redirect("/installments");
 }

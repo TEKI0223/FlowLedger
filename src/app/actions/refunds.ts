@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
@@ -17,6 +16,7 @@ import {
   updateRefundTrackerRecord,
 } from "@/features/refunds/service";
 import { normalize, stringField as field } from "@/lib/form";
+import { refundPaths, revalidatePaths } from "@/lib/revalidate";
 
 // ── 创建 / 编辑 / 取消 / 删除 退款追踪 ───────────────────────────────────
 
@@ -95,9 +95,7 @@ export async function createRefundTracker(
     note: parsed.note,
   });
 
-  revalidatePath("/");
-  revalidatePath("/refunds");
-  revalidatePath("/transactions");
+  revalidatePaths(refundPaths());
   redirect("/refunds");
 }
 
@@ -157,17 +155,13 @@ export async function updateRefundTracker(
     status: newStatus,
   });
 
-  revalidatePath("/");
-  revalidatePath("/refunds");
-  revalidatePath(`/refunds/${id}`);
+  revalidatePaths(refundPaths(id));
   redirect(`/refunds/${id}`);
 }
 
 export async function cancelRefundTracker(id: string) {
   await setRefundTrackerStatus(id, "cancelled");
-  revalidatePath("/");
-  revalidatePath("/refunds");
-  revalidatePath(`/refunds/${id}`);
+  revalidatePaths(refundPaths(id));
   redirect(`/refunds/${id}`);
 }
 
@@ -184,8 +178,7 @@ export async function deleteRefundTracker(id: string) {
   }
 
   await deleteRefundTrackerRecord(id);
-  revalidatePath("/");
-  revalidatePath("/refunds");
+  revalidatePaths(refundPaths());
   redirect("/refunds");
 }
 
@@ -279,12 +272,7 @@ export async function recordRefundReceipt(
     note: parsed.note ?? `退款到账 - ${tracker.note ?? ""}`.trim(),
   });
 
-  revalidatePath("/");
-  revalidatePath("/refunds");
-  revalidatePath(`/refunds/${tracker.id}`);
-  revalidatePath("/accounts");
-  revalidatePath(`/accounts/${parsed.targetAccountId}`);
-  revalidatePath("/transactions");
+  revalidatePaths(refundPaths(tracker.id, parsed.targetAccountId));
   redirect(`/refunds/${tracker.id}?received=1`);
 }
 
@@ -299,10 +287,6 @@ export async function deleteRefundReceipt(receiptTransactionId: string) {
 
   await deleteRefundReceiptAtomic(receiptTransactionId);
 
-  revalidatePath("/");
-  revalidatePath("/refunds");
-  if (trackerId) revalidatePath(`/refunds/${trackerId}`);
-  revalidatePath("/accounts");
-  revalidatePath("/transactions");
+  revalidatePaths(refundPaths(trackerId ?? undefined));
   redirect(trackerId ? `/refunds/${trackerId}` : "/refunds");
 }

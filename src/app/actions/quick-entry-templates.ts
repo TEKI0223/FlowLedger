@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { currencies, parseMoneyToMinor } from "@/domain/finance";
@@ -11,6 +10,7 @@ import {
   updateQuickEntryTemplateRecord,
 } from "@/features/quick-entry/service";
 import { normalize, stringField as field } from "@/lib/form";
+import { revalidatePaths, templatePaths } from "@/lib/revalidate";
 
 const templateSchema = z.object({
   name: z.string().trim().min(1, "请输入名称"),
@@ -111,8 +111,7 @@ export async function createQuickEntryTemplate(
     enabled: parsed.enabled,
   });
 
-  revalidatePath("/");
-  revalidatePath("/templates");
+  revalidatePaths(templatePaths());
   redirect("/templates");
 }
 
@@ -157,23 +156,18 @@ export async function updateQuickEntryTemplate(
     enabled: parsed.enabled,
   });
 
-  revalidatePath("/");
-  revalidatePath("/templates");
-  revalidatePath(`/templates/${id}`);
+  revalidatePaths(templatePaths(id));
   redirect("/templates");
 }
 
 export async function deleteQuickEntryTemplate(id: string) {
   await deleteQuickEntryTemplateRecord(id);
-  revalidatePath("/");
-  revalidatePath("/templates");
+  revalidatePaths(templatePaths());
   redirect("/templates");
 }
 
 export async function resetQuickEntryTemplateUsage(id: string) {
   await resetQuickEntryTemplateUsageRecord(id);
-  revalidatePath("/");
-  revalidatePath("/templates");
-  revalidatePath(`/templates/${id}`);
+  revalidatePaths(templatePaths(id));
   redirect(`/templates/${id}`);
 }

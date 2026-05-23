@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { eq, inArray } from "drizzle-orm";
@@ -21,6 +20,7 @@ import {
   updateRecurringItemRecord,
 } from "@/features/recurring/service";
 import { normalize, stringField as field } from "@/lib/form";
+import { recurringConfirmPaths, recurringPaths, revalidatePaths } from "@/lib/revalidate";
 
 const recurringSchema = z
   .object({
@@ -150,8 +150,7 @@ export async function createRecurringItem(
     enabled: parsed.enabled,
   });
 
-  revalidatePath("/");
-  revalidatePath("/recurring");
+  revalidatePaths(recurringPaths());
   redirect("/recurring");
 }
 
@@ -202,16 +201,13 @@ export async function updateRecurringItem(
     enabled: parsed.enabled,
   });
 
-  revalidatePath("/");
-  revalidatePath("/recurring");
-  revalidatePath(`/recurring/${id}`);
+  revalidatePaths(recurringPaths(id));
   redirect("/recurring");
 }
 
 export async function deleteRecurringItem(id: string) {
   await deleteRecurringItemRecord(id);
-  revalidatePath("/");
-  revalidatePath("/recurring");
+  revalidatePaths(recurringPaths());
   redirect("/recurring");
 }
 
@@ -292,19 +288,13 @@ export async function confirmRecurringItem(
     transaction,
   });
 
-  revalidatePath("/");
-  revalidatePath("/accounts");
-  revalidatePath("/transactions");
-  revalidatePath("/recurring");
-  revalidatePath("/recurring/pending");
+  revalidatePaths(recurringConfirmPaths(id));
   redirect("/recurring/pending?confirmed=1");
 }
 
 export async function skipRecurringItem(id: string) {
   await skipRecurringItemRecord(id);
-  revalidatePath("/");
-  revalidatePath("/recurring");
-  revalidatePath("/recurring/pending");
+  revalidatePaths(recurringPaths(id));
   redirect("/recurring/pending?skipped=1");
 }
 
