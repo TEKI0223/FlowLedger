@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type { RecurringActionState } from "@/app/actions/recurring";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,7 @@ type RecurringType = keyof typeof RECURRING_TYPE_LABELS;
 type Lookups = {
   accounts: Array<{ id: string; name: string; currency: Currency }>;
   categories: Array<{ id: string; name: string }>;
-  paymentMethods: Array<{ id: string; name: string }>;
+  paymentMethods: Array<{ id: string; name: string; defaultAccountId: string | null }>;
 };
 
 type Defaults = {
@@ -59,6 +59,19 @@ export function RecurringForm({
 }: RecurringFormProps) {
   const [state, formAction] = useActionState<RecurringActionState, FormData>(action, initialState);
   const values = state.values;
+
+  const [sourceAccountId, setSourceAccountId] = useState<string>(
+    values?.sourceAccountId ?? defaults.sourceAccountId ?? "",
+  );
+
+  function handlePaymentMethodChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    const newPmId = event.target.value;
+    if (!newPmId) return;
+    const pm = lookups.paymentMethods.find((m) => m.id === newPmId);
+    if (pm?.defaultAccountId) {
+      setSourceAccountId(pm.defaultAccountId);
+    }
+  }
 
   return (
     <>
@@ -182,7 +195,8 @@ export function RecurringForm({
             <NativeSelect
               id="sourceAccountId"
               name="sourceAccountId"
-              defaultValue={values?.sourceAccountId ?? defaults.sourceAccountId ?? ""}
+              value={sourceAccountId}
+              onChange={(event) => setSourceAccountId(event.target.value)}
             >
               <option value="">不选择</option>
               {lookups.accounts.map((account) => (
@@ -215,6 +229,7 @@ export function RecurringForm({
             id="paymentMethodId"
             name="paymentMethodId"
             defaultValue={values?.paymentMethodId ?? defaults.paymentMethodId ?? ""}
+            onChange={handlePaymentMethodChange}
           >
             <option value="">不选择</option>
             {lookups.paymentMethods.map((paymentMethod) => (
@@ -223,6 +238,7 @@ export function RecurringForm({
               </option>
             ))}
           </NativeSelect>
+          <p className="text-xs text-muted-foreground">选择后会自动填入对应的来源账户</p>
         </div>
 
         <div className="grid gap-2">

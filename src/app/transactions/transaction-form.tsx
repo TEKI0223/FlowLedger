@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type { TransactionActionState } from "@/app/actions/transactions";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,7 @@ const initialState: TransactionActionState = {};
 type Lookups = {
   accounts: Array<{ id: string; name: string; currency: Currency }>;
   categories: Array<{ id: string; name: string }>;
-  paymentMethods: Array<{ id: string; name: string }>;
+  paymentMethods: Array<{ id: string; name: string; defaultAccountId: string | null }>;
 };
 
 type Defaults = {
@@ -50,6 +50,19 @@ export function TransactionForm({ action, lookups, defaults, submitLabel }: Tran
     initialState,
   );
   const values = state.values;
+
+  const [sourceAccountId, setSourceAccountId] = useState<string>(
+    values?.sourceAccountId ?? defaults.sourceAccountId ?? "",
+  );
+
+  function handlePaymentMethodChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    const newPmId = event.target.value;
+    if (!newPmId) return;
+    const pm = lookups.paymentMethods.find((m) => m.id === newPmId);
+    if (pm?.defaultAccountId) {
+      setSourceAccountId(pm.defaultAccountId);
+    }
+  }
 
   return (
     <>
@@ -136,7 +149,8 @@ export function TransactionForm({ action, lookups, defaults, submitLabel }: Tran
             <NativeSelect
               id="sourceAccountId"
               name="sourceAccountId"
-              defaultValue={values?.sourceAccountId ?? defaults.sourceAccountId ?? ""}
+              value={sourceAccountId}
+              onChange={(event) => setSourceAccountId(event.target.value)}
             >
               <option value="">不选择</option>
               {lookups.accounts.map((account) => (
@@ -169,6 +183,7 @@ export function TransactionForm({ action, lookups, defaults, submitLabel }: Tran
             id="paymentMethodId"
             name="paymentMethodId"
             defaultValue={values?.paymentMethodId ?? defaults.paymentMethodId ?? ""}
+            onChange={handlePaymentMethodChange}
           >
             <option value="">不选择</option>
             {lookups.paymentMethods.map((paymentMethod) => (
@@ -177,6 +192,9 @@ export function TransactionForm({ action, lookups, defaults, submitLabel }: Tran
               </option>
             ))}
           </NativeSelect>
+          <p className="text-xs text-muted-foreground">
+            选择后会自动把支付方式的默认资金来源填到上面的来源账户
+          </p>
         </div>
 
         <div className="grid gap-2">
