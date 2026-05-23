@@ -143,5 +143,5 @@ export async function updateAccount(
   revalidatePath("/");
   revalidatePath("/accounts");
   revalidatePath(`/accounts/${id}`);
-  redirect("/accounts");
+  redirect(`/accounts/${id}`);
 }

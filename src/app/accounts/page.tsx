@@ -48,7 +48,11 @@ export default async function AccountsPage() {
           ) : (
             <Card size="sm" className="divide-y divide-border py-0">
               {accounts.map((account) => (
-                <article key={account.id} className="flex items-start gap-3 px-4 py-3">
+                <Link
+                  key={account.id}
+                  href={`/accounts/${account.id}`}
+                  className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40"
+                >
                   <div className="min-w-0 flex-1 space-y-0.5">
                     <p className="truncate text-sm font-medium">{account.name}</p>
                     <p className="text-xs text-muted-foreground">
@@ -63,14 +67,9 @@ export default async function AccountsPage() {
                         currency: account.currency,
                       })}
                     </span>
-                    <Link
-                      href={`/accounts/${account.id}`}
-                      className="text-xs font-medium text-primary hover:underline"
-                    >
-                      编辑
-                    </Link>
+                    <span className="text-xs text-muted-foreground">详情 →</span>
                   </div>
-                </article>
+                </Link>
               ))}
             </Card>
           )}
