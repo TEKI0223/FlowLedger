@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import {
   confirmRecurringItem,
   skipRecurringItem,
@@ -86,16 +87,18 @@ export function ConfirmRecurringForm({
 }
 
 function SkipButton({ itemId }: { itemId: string }) {
+  const { pending } = useFormStatus();
+
   return (
-    <form action={skipRecurringItem.bind(null, itemId)}>
-      <Button
-        type="submit"
-        variant="ghost"
-        size="lg"
-        className="h-11 w-full text-sm text-muted-foreground"
-      >
-        跳过本期
-      </Button>
-    </form>
+    <Button
+      type="submit"
+      formAction={skipRecurringItem.bind(null, itemId)}
+      variant="ghost"
+      size="lg"
+      disabled={pending}
+      className="h-11 w-full text-sm text-muted-foreground"
+    >
+      跳过本期
+    </Button>
   );
 }
