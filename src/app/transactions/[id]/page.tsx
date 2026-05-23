@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeftIcon, LayersIcon, ReceiptIcon } from "lucide-react";
+import { LayersIcon, ReceiptIcon } from "lucide-react";
+import { DeleteTransactionButton } from "../delete-transaction-button";
 import { TransactionForm } from "../transaction-form";
 import { updateTransaction } from "@/app/actions/transactions";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormActionBar } from "@/components/ui/form-action-bar";
 import { formatMinorForInput } from "@/domain/finance";
 import { getTransactionLookups } from "@/features/lookups/data";
 import { getTransaction } from "@/features/transactions/data";
@@ -34,17 +36,24 @@ export default async function TransactionEditPage({ params }: TransactionEditPag
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
-      <header className="space-y-1 pb-5">
-        <Link
-          href="/transactions"
-          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeftIcon className="size-3" />
-          交易
-        </Link>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">编辑交易</h1>
-        <p className="text-sm text-muted-foreground">保存时会自动回滚旧余额影响并应用新影响</p>
-      </header>
+      {transaction.type === "expense" ? (
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          <Link
+            href={`/refunds/new?originalTxId=${transaction.id}`}
+            className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11")}
+          >
+            <ReceiptIcon className="size-4 text-muted-foreground" />
+            退款
+          </Link>
+          <Link
+            href={`/installments/new?originalTxId=${transaction.id}`}
+            className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11")}
+          >
+            <LayersIcon className="size-4 text-muted-foreground" />
+            分期
+          </Link>
+        </div>
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -67,49 +76,25 @@ export default async function TransactionEditPage({ params }: TransactionEditPag
             }}
             submitLabel="保存修改"
             mode="edit"
+            id="transaction-edit-form"
+            hideSubmit
           />
         </CardContent>
       </Card>
 
-      {transaction.type === "expense" ? (
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle className="text-base">关联管理</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Link
-              href={`/refunds/new?originalTxId=${transaction.id}`}
-              className={cn(
-                buttonVariants({ variant: "outline", size: "lg" }),
-                "h-auto min-h-14 w-full justify-start gap-3 text-left",
-              )}
-            >
-              <ReceiptIcon className="size-4 text-muted-foreground shrink-0" />
-              <span className="flex flex-col items-start gap-0.5">
-                <span className="text-sm font-semibold">新建退款追踪</span>
-                <span className="text-xs text-muted-foreground">
-                  商家退、订单取消、信用卡返还等
-                </span>
-              </span>
-            </Link>
-            <Link
-              href={`/installments/new?originalTxId=${transaction.id}`}
-              className={cn(
-                buttonVariants({ variant: "outline", size: "lg" }),
-                "h-auto min-h-14 w-full justify-start gap-3 text-left",
-              )}
-            >
-              <LayersIcon className="size-4 text-muted-foreground shrink-0" />
-              <span className="flex flex-col items-start gap-0.5">
-                <span className="text-sm font-semibold">新建分期计划</span>
-                <span className="text-xs text-muted-foreground">
-                  把这笔消费拆成多期记录每期扣款进度
-                </span>
-              </span>
-            </Link>
-          </CardContent>
-        </Card>
-      ) : null}
+      <div className="mt-4">
+        <FormActionBar
+          formId="transaction-edit-form"
+          submitLabel="保存修改"
+          cancelHref="/transactions"
+          dangerAction={
+            <DeleteTransactionButton
+              id={transaction.id}
+              className="h-11 border border-destructive/25 bg-destructive/10 px-3"
+            />
+          }
+        />
+      </div>
     </main>
   );
 }

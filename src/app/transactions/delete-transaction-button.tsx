@@ -5,6 +5,7 @@ import { Trash2Icon } from "lucide-react";
 import { deleteTransaction } from "@/app/actions/transactions";
 import {
   AlertDialog,
+  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -14,12 +15,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type DeleteTransactionButtonProps = {
   id: string;
+  className?: string;
 };
 
-export function DeleteTransactionButton({ id }: DeleteTransactionButtonProps) {
+export function DeleteTransactionButton({ id, className }: DeleteTransactionButtonProps) {
   return (
     <AlertDialog>
       <AlertDialogTrigger
@@ -28,7 +31,10 @@ export function DeleteTransactionButton({ id }: DeleteTransactionButtonProps) {
             type="button"
             variant="ghost"
             size="sm"
-            className="h-8 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+            className={cn(
+              "h-8 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive",
+              className,
+            )}
           >
             <Trash2Icon className="size-3.5" />
             删除
@@ -44,7 +50,7 @@ export function DeleteTransactionButton({ id }: DeleteTransactionButtonProps) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>取消</AlertDialogCancel>
-          <form action={deleteTransaction.bind(null, id)}>
+          <form action={deleteTransaction.bind(null, id)} className="w-full sm:w-auto">
             <ConfirmDeleteButton />
           </form>
         </AlertDialogFooter>
@@ -56,8 +62,8 @@ export function DeleteTransactionButton({ id }: DeleteTransactionButtonProps) {
 function ConfirmDeleteButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" variant="destructive" disabled={pending} aria-busy={pending}>
+    <AlertDialogAction type="submit" variant="destructive" disabled={pending} aria-busy={pending}>
       {pending ? "删除中…" : "确认删除"}
-    </Button>
+    </AlertDialogAction>
   );
 }

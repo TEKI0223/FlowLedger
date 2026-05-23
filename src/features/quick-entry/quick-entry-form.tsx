@@ -29,13 +29,12 @@ type QuickEntryFormProps =
       noteHint?: string;
       autoFocusAmount?: boolean;
       submitLabel?: string;
-      showFullEntryLink?: boolean;
+      showTemplateEditLink?: boolean;
     }
   | {
       mode: "temporary";
       autoFocusAmount?: boolean;
       submitLabel?: string;
-      showFullEntryLink?: boolean;
     };
 
 export function QuickEntryForm(props: QuickEntryFormProps) {
@@ -63,7 +62,8 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
       : (state.values?.amount ?? "");
   const noteDefault = state.values?.note ?? "";
   const occurredOnDefault = state.values?.occurredOn ?? todayIsoDate();
-  const showFullEntryLink = props.showFullEntryLink ?? true;
+  const showTemplateEditLink =
+    props.mode === "template" ? (props.showTemplateEditLink ?? true) : false;
   const submitLabel = props.submitLabel ?? (props.mode === "temporary" ? "保存临时记录" : "保存");
 
   return (
@@ -129,12 +129,12 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
           <SubmitButton>{submitLabel}</SubmitButton>
-          {showFullEntryLink ? (
+          {showTemplateEditLink ? (
             <Link
-              href="/transactions"
+              href={`/templates/${props.templateId}`}
               className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 text-base")}
             >
-              完整录入
+              编辑模板
             </Link>
           ) : null}
         </div>

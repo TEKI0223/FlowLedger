@@ -46,6 +46,8 @@ type TransactionFormProps = {
   lookups: Lookups;
   defaults: Defaults;
   submitLabel: string;
+  id?: string;
+  hideSubmit?: boolean;
   /**
    * "create"：新建交易（adjustment 用"输入实际余额"UI）
    * "edit"：编辑已有交易（adjustment 保留传统的差额输入）
@@ -88,6 +90,8 @@ export function TransactionForm({
   lookups,
   defaults,
   submitLabel,
+  id,
+  hideSubmit = false,
   mode = "create",
 }: TransactionFormProps) {
   const [state, formAction] = useActionState<TransactionActionState, FormData>(
@@ -140,6 +144,7 @@ export function TransactionForm({
   const targetBalanceResult = useTargetBalanceUI
     ? parseTargetBalance(targetBalance, currency, currentBalanceMinor)
     : null;
+  const submitDisabled = Boolean(targetBalanceResult && !targetBalanceResult.ok);
 
   // amount 输入框的实际值：校准模式用 delta（解析成功才有）；其他模式用用户输入
   const amountFieldValue =
@@ -161,7 +166,7 @@ export function TransactionForm({
   return (
     <>
       {state.error ? <InlineAlert tone="danger">{state.error}</InlineAlert> : null}
-      <form action={formAction} className="grid gap-4">
+      <form id={id} action={formAction} className="grid gap-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="occurredOn">日期</Label>
@@ -387,9 +392,7 @@ export function TransactionForm({
           />
         </div>
 
-        <SubmitButton disabled={Boolean(targetBalanceResult && !targetBalanceResult.ok)}>
-          {submitLabel}
-        </SubmitButton>
+        {hideSubmit ? null : <SubmitButton disabled={submitDisabled}>{submitLabel}</SubmitButton>}
       </form>
     </>
   );

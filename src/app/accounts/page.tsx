@@ -27,7 +27,7 @@ export default async function AccountsPage() {
           <p className="text-sm text-muted-foreground">管理现金、银行、信用卡和余额账户</p>
         </div>
         <Link
-          href="/transactions"
+          href="/entry"
           className={cn(buttonVariants({ variant: "default", size: "lg" }), "h-11 gap-2")}
         >
           <PlusIcon className="size-4" />

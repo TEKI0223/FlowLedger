@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3Icon, CirclePlusIcon, HomeIcon, SettingsIcon } from "lucide-react";
+import { BarChart3Icon, CirclePlusIcon, HomeIcon, ListIcon, SettingsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
@@ -13,10 +13,19 @@ const tabs = [
     isActive: (pathname: string) => pathname === "/",
   },
   {
-    label: "记一笔",
+    label: "交易",
     href: "/transactions",
+    icon: ListIcon,
+    isActive: (pathname: string) =>
+      pathname === "/transactions" ||
+      pathname.startsWith("/transactions/recent") ||
+      /^\/transactions\/[^/]+$/.test(pathname),
+  },
+  {
+    label: "记一笔",
+    href: "/entry",
     icon: CirclePlusIcon,
-    isActive: (pathname: string) => pathname.startsWith("/transactions"),
+    isActive: (pathname: string) => pathname.startsWith("/entry"),
   },
   {
     label: "统计",
@@ -51,7 +60,7 @@ export function BottomTabBar() {
       aria-label="主导航"
       className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 shadow-[0_-10px_30px_rgba(0,0,0,0.06)] backdrop-blur supports-[backdrop-filter]:bg-background/80 min-[820px]:hidden"
     >
-      <div className="mx-auto grid min-h-[calc(4rem+env(safe-area-inset-bottom))] max-w-md grid-cols-4 px-2 pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto grid min-h-[calc(4rem+env(safe-area-inset-bottom))] max-w-md grid-cols-5 px-1 pb-[env(safe-area-inset-bottom)]">
         {tabs.map((tab) => {
           const active = tab.isActive(pathname);
           const Icon = tab.icon;
@@ -67,10 +76,7 @@ export function BottomTabBar() {
               )}
             >
               <Icon
-                className={cn(
-                  "size-5 transition-transform",
-                  active && "scale-105 stroke-[2.4]",
-                )}
+                className={cn("size-5 transition-transform", active && "scale-105 stroke-[2.4]")}
               />
               <span className="truncate">{tab.label}</span>
             </Link>
