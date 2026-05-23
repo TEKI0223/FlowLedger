@@ -2,13 +2,10 @@ import Link from "next/link";
 import {
   ArrowRightIcon,
   BellIcon,
-  CreditCardIcon,
-  LayersIcon,
   PlusIcon,
   ReceiptIcon,
   RepeatIcon,
   WalletIcon,
-  ZapIcon,
 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +25,6 @@ import {
 } from "@/features/quick-entry/quick-entry-modal";
 import { countPendingRecurringItems } from "@/features/recurring/data";
 import { countPendingRefunds } from "@/features/refunds/data";
-import { LogoutButton } from "./logout-button";
 import { listTransactions } from "@/features/transactions/data";
 import { cn } from "@/lib/utils";
 import type { ActionTileTheme } from "@/components/ui/action-tile";
@@ -272,47 +268,13 @@ export default async function Home({ searchParams }: HomeProps) {
                 </div>
               )}
               <Separator />
-              <div className="flex flex-col gap-1.5">
-                <Link
-                  href="/recurring"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-                >
-                  管理周期项
-                  <ArrowRightIcon className="size-3" />
-                </Link>
-                <Link
-                  href="/refunds"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-                >
-                  <ReceiptIcon className="size-3" />
-                  退款追踪
-                  <ArrowRightIcon className="size-3" />
-                </Link>
-                <Link
-                  href="/installments"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-                >
-                  <LayersIcon className="size-3" />
-                  分期计划
-                  <ArrowRightIcon className="size-3" />
-                </Link>
-                <Link
-                  href="/credit-cards"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-                >
-                  <CreditCardIcon className="size-3" />
-                  信用卡账单
-                  <ArrowRightIcon className="size-3" />
-                </Link>
-                <Link
-                  href="/templates"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-                >
-                  <ZapIcon className="size-3" />
-                  快捷模板
-                  <ArrowRightIcon className="size-3" />
-                </Link>
-              </div>
+              <Link
+                href="/manage"
+                className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                打开管理
+                <ArrowRightIcon className="size-3" />
+              </Link>
             </CardContent>
           </Card>
 
@@ -362,10 +324,6 @@ export default async function Home({ searchParams }: HomeProps) {
               >
                 打开交易页
               </Link>
-              <Separator />
-              <div className="flex justify-end">
-                <LogoutButton />
-              </div>
             </CardContent>
           </Card>
         </aside>
