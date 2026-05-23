@@ -17,9 +17,7 @@ export type CreateTemplateInput = {
   enabled: boolean;
 };
 
-export async function createQuickEntryTemplateRecord(
-  input: CreateTemplateInput,
-): Promise<string> {
+export async function createQuickEntryTemplateRecord(input: CreateTemplateInput): Promise<string> {
   // 新模板放到列表末尾：max(sortOrder) + 10
   const [maxRow] = await db
     .select({ max: sql<number>`coalesce(max(${quickEntryTemplates.sortOrder}), 0)` })

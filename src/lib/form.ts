@@ -17,9 +17,7 @@ export function normalizedField(formData: FormData, key: string): string | undef
   return normalize(stringField(formData, key));
 }
 
-export type ParsedAmount =
-  | { ok: true; amountMinor: number }
-  | { ok: false; error: string };
+export type ParsedAmount = { ok: true; amountMinor: number } | { ok: false; error: string };
 
 /**
  * 解析金额字符串到 minor units，统一错误形态。
@@ -28,10 +26,7 @@ export type ParsedAmount =
  * - 非法格式 / 精度超限：透传 parseMoneyToMinor 的错误消息
  * - 返回**有符号**金额（负数保留）。需要正值的调用方自己 `Math.abs(amountMinor)`
  */
-export function parseAmount(
-  raw: string | undefined,
-  currency: Currency,
-): ParsedAmount {
+export function parseAmount(raw: string | undefined, currency: Currency): ParsedAmount {
   if (!raw || raw.trim().length === 0) {
     return { ok: false, error: "请输入金额" };
   }

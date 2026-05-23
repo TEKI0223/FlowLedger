@@ -31,7 +31,11 @@ export default async function NewTemplatePage() {
           <CardTitle>模板内容</CardTitle>
         </CardHeader>
         <CardContent>
-          <TemplateForm action={createQuickEntryTemplate} lookups={lookups} submitLabel="创建模板" />
+          <TemplateForm
+            action={createQuickEntryTemplate}
+            lookups={lookups}
+            submitLabel="创建模板"
+          />
         </CardContent>
       </Card>
     </main>

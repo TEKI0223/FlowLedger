@@ -29,10 +29,7 @@ type Defaults = {
 };
 
 type InstallmentFormProps = {
-  action: (
-    prev: InstallmentActionState,
-    formData: FormData,
-  ) => Promise<InstallmentActionState>;
+  action: (prev: InstallmentActionState, formData: FormData) => Promise<InstallmentActionState>;
   defaults?: Defaults;
   submitLabel: string;
 };
@@ -79,9 +76,7 @@ export function InstallmentForm({ action, defaults = {}, submitLabel }: Installm
   // 容差：rounding 误差视为 0（见 classifyInstallmentFee）
   const rawFeeMinor = computeRawFee(totalAmount, periodsNum, amountPerPeriod, currency);
   const interestSummary =
-    rawFeeMinor === null
-      ? null
-      : classifyInstallmentFee(rawFeeMinor, periodsNum);
+    rawFeeMinor === null ? null : classifyInstallmentFee(rawFeeMinor, periodsNum);
 
   return (
     <>
@@ -180,9 +175,7 @@ export function InstallmentForm({ action, defaults = {}, submitLabel }: Installm
                     currency,
                   })}
                 </span>
-                <span className="text-muted-foreground">
-                  {" · "}总{" "}
-                </span>
+                <span className="text-muted-foreground">{" · "}总 </span>
                 <span className="font-semibold tabular-nums text-adjustment">
                   {formatMoney({
                     amountMinor: interestSummary.totalMinor,
@@ -200,9 +193,7 @@ export function InstallmentForm({ action, defaults = {}, submitLabel }: Installm
                     currency,
                   })}
                 </span>
-                <span className="text-muted-foreground">
-                  {" · "}总{" "}
-                </span>
+                <span className="text-muted-foreground">{" · "}总 </span>
                 <span className="font-semibold tabular-nums text-income">
                   {formatMoney({
                     amountMinor: interestSummary.totalMinor,
@@ -220,11 +211,7 @@ export function InstallmentForm({ action, defaults = {}, submitLabel }: Installm
   );
 }
 
-function computeAutoPerPeriod(
-  totalAmount: string,
-  periods: number,
-  currency: Currency,
-): string {
+function computeAutoPerPeriod(totalAmount: string, periods: number, currency: Currency): string {
   if (!totalAmount || !Number.isFinite(periods) || periods < 1) return "";
   try {
     const totalMinor = parseMoneyToMinor(totalAmount, currency);

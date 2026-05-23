@@ -29,10 +29,7 @@ export type StatementPeriod = {
 export function getStatementPeriod(date: string, config: CreditCardConfig): StatementPeriod {
   const target = dayjs(date);
   const closingDate = findClosingDateOf(target, config);
-  const previousClosingDate = monthClosingDate(
-    closingDate.subtract(1, "month"),
-    config.closingDay,
-  );
+  const previousClosingDate = monthClosingDate(closingDate.subtract(1, "month"), config.closingDay);
 
   const periodEnd = closingDateToPeriodEnd(closingDate, config.cycleBoundary);
   const previousPeriodEnd = closingDateToPeriodEnd(previousClosingDate, config.cycleBoundary);
@@ -49,10 +46,7 @@ export function getStatementPeriod(date: string, config: CreditCardConfig): Stat
 /**
  * 给定一个账单周期的 periodEnd，返回下一期的 periodEnd。
  */
-export function getNextStatementPeriodEnd(
-  periodEnd: string,
-  config: CreditCardConfig,
-): string {
+export function getNextStatementPeriodEnd(periodEnd: string, config: CreditCardConfig): string {
   const nextDayInsideNextPeriod = dayjs(periodEnd).add(1, "day").format(ISO_DATE);
   return getStatementPeriod(nextDayInsideNextPeriod, config).periodEnd;
 }
@@ -60,10 +54,7 @@ export function getNextStatementPeriodEnd(
 /**
  * 给定一个账单周期的 periodEnd，返回上一期的 periodEnd。
  */
-export function getPreviousStatementPeriodEnd(
-  periodEnd: string,
-  config: CreditCardConfig,
-): string {
+export function getPreviousStatementPeriodEnd(periodEnd: string, config: CreditCardConfig): string {
   const previousDayInsidePreviousPeriod = dayjs(periodEnd).subtract(1, "day").format(ISO_DATE);
   return getStatementPeriod(previousDayInsidePreviousPeriod, config).periodEnd;
 }

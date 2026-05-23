@@ -53,10 +53,7 @@ export type InstallmentFeeSummary = {
  * 容差：|fee| < 期数（即每期平均偏差不到 1 个最小货币单位）视为 rounding，不算真实利息。
  * 12 期 JPY 容差 ¥11；12 期 CNY 容差 ¥0.11。
  */
-export function classifyInstallmentFee(
-  feeMinor: number,
-  periods: number,
-): InstallmentFeeSummary {
+export function classifyInstallmentFee(feeMinor: number, periods: number): InstallmentFeeSummary {
   if (periods <= 0 || Math.abs(feeMinor) < periods) {
     return { kind: "none", totalMinor: 0, perPeriodMinor: 0 };
   }

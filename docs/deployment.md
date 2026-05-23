@@ -56,19 +56,21 @@ unset DATABASE_URL DATABASE_AUTH_TOKEN
 
 Project Settings → Environment Variables，加三个（Production + Preview 都勾上）：
 
-| Name | Value |
-|------|-------|
-| `DATABASE_URL` | `libsql://flowledger-<your-org>.turso.io` |
-| `DATABASE_AUTH_TOKEN` | （turso db tokens create 输出） |
-| `FLOWLEDGER_PASSWORD` | 你想用的访问密码（强密码） |
+| Name                  | Value                                     |
+| --------------------- | ----------------------------------------- |
+| `DATABASE_URL`        | `libsql://flowledger-<your-org>.turso.io` |
+| `DATABASE_AUTH_TOKEN` | （turso db tokens create 输出）           |
+| `FLOWLEDGER_PASSWORD` | 你想用的访问密码（强密码）                |
 
 ### 2.3 首次部署
 
-Deploy。部署完了访问 vercel 给的域名，应该先看到登录页，输入 `FLOWLEDGER_PASSWORD` 设的密码 → 跳到首页。
+Deploy。部署完了访问 vercel 给的域名，应该先看到登录页，输入 `FLOWLEDGER_PASSWORD`
+设的密码 → 跳到首页。
 
 ## 3. 访问保护：内置密码门
 
-FlowLedger **强制启用密码门**——`FLOWLEDGER_PASSWORD` 是必需环境变量。所有路径（除 `/login`）都强制登录。
+FlowLedger **强制启用密码门**——`FLOWLEDGER_PASSWORD` 是必需环境变量。所有路径（除
+`/login`）都强制登录。
 
 本地开发也一样，把它写进 `.env.local`：
 
@@ -77,6 +79,7 @@ echo 'FLOWLEDGER_PASSWORD=devpassword' >> .env.local
 ```
 
 实现细节：
+
 - session 是 JWT，存在 HttpOnly + Secure + SameSite=lax cookie 里，30 天 TTL
 - JWT 的签名 secret **从 `FLOWLEDGER_PASSWORD` 派生**（SHA-256）
 - 改密码 → 旧 secret 不匹配 → 所有现存 session 立即失效（不用手动登出）
@@ -90,7 +93,9 @@ echo 'FLOWLEDGER_PASSWORD=devpassword' >> .env.local
 
 ### 想要 OAuth / 多用户
 
-把内置密码门换 [Auth.js](https://authjs.dev/) + Turso adapter。第一版没做是因为对单用户记账过度。要换的时候删 `src/proxy.ts`、`src/app/login`、`src/app/actions/auth.ts`、`src/lib/auth.ts`，按 Auth.js 文档重新接入。
+把内置密码门换 [Auth.js](https://authjs.dev/) + Turso
+adapter。第一版没做是因为对单用户记账过度。要换的时候删
+`src/proxy.ts`、`src/app/login`、`src/app/actions/auth.ts`、`src/lib/auth.ts`，按 Auth.js 文档重新接入。
 
 ## 4. 日常维护
 
@@ -103,7 +108,8 @@ echo 'FLOWLEDGER_PASSWORD=devpassword' >> .env.local
 npm run db:studio
 ```
 
-会启一个本地 web 界面（默认 https://local.drizzle.studio），可以看所有表、改字段、加 / 删行、跑自定义 SQL。
+会启一个本地 web 界面（默认 https://local.drizzle.studio），可以看所有表、改字段、加
+/ 删行、跑自定义 SQL。
 
 要编辑 **Turso 上的远程数据**，给 db:studio 临时加上 env：
 
@@ -111,7 +117,8 @@ npm run db:studio
 DATABASE_URL='libsql://...' DATABASE_AUTH_TOKEN='...' npm run db:studio
 ```
 
-⚠️ 直接编辑生产库要小心——余额是从交易流水推算的，绕过 action 直接改 `accounts.balance_minor` 会和交易历史脱节。建议只用 Studio 改"非余额型"字段（备注、分类、汇率、停用 / 启用周期项等）；要调余额还是走应用的「余额校准」入口产生 adjustment 交易。
+⚠️ 直接编辑生产库要小心——余额是从交易流水推算的，绕过 action 直接改 `accounts.balance_minor`
+会和交易历史脱节。建议只用 Studio 改"非余额型"字段（备注、分类、汇率、停用 / 启用周期项等）；要调余额还是走应用的「余额校准」入口产生 adjustment 交易。
 
 简短 SQL 改动：
 

@@ -246,7 +246,10 @@ async function hydrate(cardRows: CreditCardRow[]): Promise<HydratedCreditCard[]>
 
   const accountRows =
     accountIds.size > 0
-      ? await db.select().from(accounts).where(inArray(accounts.id, [...accountIds]))
+      ? await db
+          .select()
+          .from(accounts)
+          .where(inArray(accounts.id, [...accountIds]))
       : [];
   const accountById = new Map(accountRows.map((account) => [account.id, account]));
 

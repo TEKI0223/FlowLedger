@@ -62,10 +62,7 @@ export async function updateInstallmentPlanRecord(
     .run();
 }
 
-export async function shiftInstallmentCompletedPeriods(
-  id: string,
-  delta: 1 | -1,
-): Promise<void> {
+export async function shiftInstallmentCompletedPeriods(id: string, delta: 1 | -1): Promise<void> {
   const [existing] = await db
     .select()
     .from(installmentPlans)
@@ -94,10 +91,7 @@ export async function shiftInstallmentCompletedPeriods(
     .run();
 }
 
-export async function setInstallmentStatus(
-  id: string,
-  status: InstallmentStatus,
-): Promise<void> {
+export async function setInstallmentStatus(id: string, status: InstallmentStatus): Promise<void> {
   await db
     .update(installmentPlans)
     .set({ status, updatedAt: nowIso() })

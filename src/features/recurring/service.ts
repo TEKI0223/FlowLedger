@@ -1,11 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { recurringItems, transactions } from "@/db/schema";
-import {
-  getTransactionBalanceImpacts,
-  type Currency,
-  type Transaction,
-} from "@/domain/finance";
+import { getTransactionBalanceImpacts, type Currency, type Transaction } from "@/domain/finance";
 import { getNextOccurrence, type RecurringFrequency } from "@/domain/recurring";
 import { applyBalanceImpacts } from "@/features/transactions/service";
 import { nowIso } from "@/lib/dates";
@@ -55,10 +51,7 @@ export async function createRecurringItemRecord(input: RecurringInput): Promise<
   return id;
 }
 
-export async function updateRecurringItemRecord(
-  id: string,
-  input: RecurringInput,
-): Promise<void> {
+export async function updateRecurringItemRecord(id: string, input: RecurringInput): Promise<void> {
   await db
     .update(recurringItems)
     .set({

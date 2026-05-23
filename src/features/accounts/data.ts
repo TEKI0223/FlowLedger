@@ -82,8 +82,7 @@ export async function getAccountDetail(id: string) {
           gte(transactions.occurredOn, start),
           lt(transactions.occurredOn, next),
         ),
-      )
-      .groupBy(sql`case
+      ).groupBy(sql`case
         when ${transactions.type} = 'adjustment' and ${transactions.amountMinor} < 0 then 'out'
         when ${transactions.type} = 'adjustment' then 'in'
         when ${transactions.targetAccountId} = ${id} then 'in'
@@ -152,8 +151,7 @@ export async function getAccountDetail(id: string) {
 
   const recent: AccountTransactionRow[] = recentRows.map((tx) => {
     const direction: "in" | "out" = tx.targetAccountId === id ? "in" : "out";
-    const counterpartId =
-      direction === "in" ? tx.sourceAccountId : tx.targetAccountId;
+    const counterpartId = direction === "in" ? tx.sourceAccountId : tx.targetAccountId;
     return {
       id: tx.id,
       occurredOn: tx.occurredOn,

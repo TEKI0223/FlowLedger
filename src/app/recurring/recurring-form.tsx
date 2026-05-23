@@ -76,12 +76,7 @@ const accountFieldsByType: Record<
   },
 };
 
-export function RecurringForm({
-  action,
-  lookups,
-  defaults = {},
-  submitLabel,
-}: RecurringFormProps) {
+export function RecurringForm({ action, lookups, defaults = {}, submitLabel }: RecurringFormProps) {
   const [state, formAction] = useActionState<RecurringActionState, FormData>(action, initialState);
   const values = state.values;
 

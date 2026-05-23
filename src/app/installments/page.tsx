@@ -3,10 +3,7 @@ import { ArrowLeftIcon, ArrowRightIcon, LayersIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatMoney } from "@/domain/finance";
-import {
-  installmentStatusLabels,
-  type InstallmentStatus,
-} from "@/domain/installment";
+import { installmentStatusLabels, type InstallmentStatus } from "@/domain/installment";
 import { listInstallmentPlans } from "@/features/installments/data";
 import { cn } from "@/lib/utils";
 
@@ -71,20 +68,14 @@ export default async function InstallmentsPage() {
                 <div className="min-w-0 flex-1 space-y-0.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="truncate text-sm font-medium">
-                      {plan.originalTransaction?.note ??
-                        plan.category?.name ??
-                        "分期"}
+                      {plan.originalTransaction?.note ?? plan.category?.name ?? "分期"}
                     </p>
-                    <Badge
-                      variant="outline"
-                      className={cn("text-xs", statusBadgeClass[status])}
-                    >
+                    <Badge variant="outline" className={cn("text-xs", statusBadgeClass[status])}>
                       {installmentStatusLabels[status]}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground tabular-nums">
-                    {plan.completedPeriods} / {plan.periods} 期 · 首期{" "}
-                    {plan.firstPaymentOn}
+                    {plan.completedPeriods} / {plan.periods} 期 · 首期 {plan.firstPaymentOn}
                     {plan.sourceAccount ? ` · ${plan.sourceAccount.name}` : ""}
                   </p>
                 </div>

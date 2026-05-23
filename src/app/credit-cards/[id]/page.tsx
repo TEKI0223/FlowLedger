@@ -1,12 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  ArrowLeftIcon,
-  CalendarIcon,
-  CreditCardIcon,
-  LayersIcon,
-  ReceiptIcon,
-} from "lucide-react";
+import { ArrowLeftIcon, CalendarIcon, CreditCardIcon, LayersIcon, ReceiptIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,8 +48,9 @@ export default async function CreditCardDetailPage({ params }: CreditCardDetailP
           {card.account.name}
         </h1>
         <p className="text-sm text-muted-foreground">
-          账单日每月 {card.closingDay} 号（{card.cycleBoundary === "inclusive" ? "含当天" : "不含当天"}） · 扣款日 {card.paymentDay} 号
-          {card.repaymentAccount ? ` · 还款账户：${card.repaymentAccount.name}` : ""}
+          账单日每月 {card.closingDay} 号（
+          {card.cycleBoundary === "inclusive" ? "含当天" : "不含当天"}） · 扣款日 {card.paymentDay}{" "}
+          号{card.repaymentAccount ? ` · 还款账户：${card.repaymentAccount.name}` : ""}
         </p>
       </header>
 
@@ -282,7 +277,10 @@ function StatementTransactionList({
       key: `tx-${tx.id}`,
       date: tx.occurredOn,
       node: (
-        <li key={`tx-${tx.id}`} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+        <li
+          key={`tx-${tx.id}`}
+          className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+        >
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs text-muted-foreground">
               {tx.occurredOn} · {transactionTypeLabels[tx.type]}

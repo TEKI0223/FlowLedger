@@ -46,10 +46,7 @@ export default async function RecurringPendingPage({ searchParams }: PendingPage
         <Card size="sm" className="px-4 py-8 text-center text-sm text-muted-foreground">
           没有待确认的周期项。
           <div className="mt-3">
-            <Link
-              href="/recurring"
-              className="text-primary hover:underline"
-            >
+            <Link href="/recurring" className="text-primary hover:underline">
               管理周期项 →
             </Link>
           </div>

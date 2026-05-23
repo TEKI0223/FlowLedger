@@ -66,10 +66,7 @@ export default async function AccountDetailPage({ params }: AccountDetailPagePro
         {account.note ? <p className="text-sm text-muted-foreground">{account.note}</p> : null}
       </header>
 
-      <section
-        aria-label="账户概览"
-        className="grid grid-cols-1 gap-3 sm:grid-cols-3"
-      >
+      <section aria-label="账户概览" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <MetricCell
           label="当前余额"
           value={formatMoney({ amountMinor: account.balanceMinor, currency: account.currency })}
@@ -140,10 +137,7 @@ export default async function AccountDetailPage({ params }: AccountDetailPagePro
           <h2 className="mb-3 text-lg font-semibold">待处理周期项</h2>
           <Card size="sm" className="divide-y divide-border py-0">
             {pending.map((item) => (
-              <article
-                key={item.id}
-                className="flex items-center justify-between gap-3 px-4 py-3"
-              >
+              <article key={item.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <p className="truncate text-sm font-medium">{item.name}</p>
@@ -180,10 +174,7 @@ export default async function AccountDetailPage({ params }: AccountDetailPagePro
         ) : (
           <Card size="sm" className="divide-y divide-border py-0">
             {recent.map((tx) => (
-              <article
-                key={tx.id}
-                className="flex items-start justify-between gap-3 px-4 py-3"
-              >
+              <article key={tx.id} className="flex items-start justify-between gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1 space-y-0.5">
                   <p className="truncate text-sm font-medium">
                     {tx.category?.name ?? tx.note ?? transactionTypeLabels[tx.type]}
@@ -201,11 +192,7 @@ export default async function AccountDetailPage({ params }: AccountDetailPagePro
                 {(() => {
                   // 调整交易：金额本身带符号；其他类型：用 direction 决定符号
                   const effectiveDirection: "in" | "out" =
-                    tx.type === "adjustment"
-                      ? tx.amountMinor >= 0
-                        ? "in"
-                        : "out"
-                      : tx.direction;
+                    tx.type === "adjustment" ? (tx.amountMinor >= 0 ? "in" : "out") : tx.direction;
                   const displayMinor =
                     tx.type === "adjustment" ? Math.abs(tx.amountMinor) : tx.amountMinor;
                   return (

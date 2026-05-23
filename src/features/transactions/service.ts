@@ -54,10 +54,8 @@ export async function createTransactionRecord(
   extras: CreateTransactionExtras = {},
 ): Promise<void> {
   const timestamp = nowIso();
-  const includeInExpenseStats =
-    extras.includeInExpenseStats ?? transaction.type === "expense";
-  const includeInCashflowStats =
-    extras.includeInCashflowStats ?? transaction.type !== "adjustment";
+  const includeInExpenseStats = extras.includeInExpenseStats ?? transaction.type === "expense";
+  const includeInCashflowStats = extras.includeInCashflowStats ?? transaction.type !== "adjustment";
 
   await db.transaction(async (tx) => {
     await tx
@@ -97,11 +95,7 @@ export async function replaceTransactionRecord(
   const timestamp = nowIso();
 
   await db.transaction(async (tx) => {
-    await applyBalanceImpacts(
-      tx,
-      invertImpacts(getTransactionBalanceImpacts(previous)),
-      timestamp,
-    );
+    await applyBalanceImpacts(tx, invertImpacts(getTransactionBalanceImpacts(previous)), timestamp);
 
     await tx
       .update(transactions)
@@ -133,11 +127,7 @@ export async function deleteTransactionRecord(previous: Transaction): Promise<vo
   const timestamp = nowIso();
 
   await db.transaction(async (tx) => {
-    await applyBalanceImpacts(
-      tx,
-      invertImpacts(getTransactionBalanceImpacts(previous)),
-      timestamp,
-    );
+    await applyBalanceImpacts(tx, invertImpacts(getTransactionBalanceImpacts(previous)), timestamp);
     await tx.delete(transactions).where(eq(transactions.id, previous.id)).run();
   });
 }

@@ -58,10 +58,16 @@ async function hydrate(rows: RecurringItemRow[]): Promise<HydratedRecurringItem[
 
   const [accountRows, categoryRows, paymentMethodRows] = await Promise.all([
     accountIds.size > 0
-      ? db.select().from(accounts).where(inArray(accounts.id, [...accountIds]))
+      ? db
+          .select()
+          .from(accounts)
+          .where(inArray(accounts.id, [...accountIds]))
       : [],
     categoryIds.size > 0
-      ? db.select().from(categories).where(inArray(categories.id, [...categoryIds]))
+      ? db
+          .select()
+          .from(categories)
+          .where(inArray(categories.id, [...categoryIds]))
       : [],
     paymentMethodIds.size > 0
       ? db

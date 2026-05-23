@@ -78,12 +78,7 @@ type TemplateFormProps = {
   submitLabel: string;
 };
 
-export function TemplateForm({
-  action,
-  lookups,
-  defaults = {},
-  submitLabel,
-}: TemplateFormProps) {
+export function TemplateForm({ action, lookups, defaults = {}, submitLabel }: TemplateFormProps) {
   const [state, formAction] = useActionState<QuickEntryTemplateActionState, FormData>(
     action,
     initialState,

@@ -43,10 +43,7 @@ export type UpdateAccountInput = {
   note?: string;
 };
 
-export async function updateAccountRecord(
-  id: string,
-  input: UpdateAccountInput,
-): Promise<void> {
+export async function updateAccountRecord(id: string, input: UpdateAccountInput): Promise<void> {
   await db
     .update(accounts)
     .set({

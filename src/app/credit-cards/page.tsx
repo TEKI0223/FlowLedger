@@ -107,11 +107,17 @@ export default async function CreditCardsPage() {
                         <div className="mt-1 flex items-center justify-between gap-2">
                           <span>扣款 {previousStatement.dueDate}</span>
                           {previousStatement.isPaid ? (
-                            <Badge variant="outline" className="text-xs text-income border-income/30">
+                            <Badge
+                              variant="outline"
+                              className="text-xs text-income border-income/30"
+                            >
                               已还款
                             </Badge>
                           ) : previousStatement.isOverdue ? (
-                            <Badge variant="outline" className="text-xs text-expense border-expense/30">
+                            <Badge
+                              variant="outline"
+                              className="text-xs text-expense border-expense/30"
+                            >
                               逾期未还
                             </Badge>
                           ) : (

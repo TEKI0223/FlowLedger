@@ -14,10 +14,7 @@ type LoginFormProps = {
 };
 
 export function LoginForm({ from }: LoginFormProps) {
-  const [state, formAction] = useActionState<LoginActionState, FormData>(
-    loginAction,
-    initialState,
-  );
+  const [state, formAction] = useActionState<LoginActionState, FormData>(loginAction, initialState);
 
   return (
     <form action={formAction} className="grid gap-4">

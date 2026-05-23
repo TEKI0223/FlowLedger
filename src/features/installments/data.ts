@@ -21,11 +21,7 @@ export async function listInstallmentPlans(): Promise<HydratedInstallmentPlan[]>
 }
 
 export async function getInstallmentPlan(id: string): Promise<HydratedInstallmentPlan | null> {
-  const rows = await db
-    .select()
-    .from(installmentPlans)
-    .where(eq(installmentPlans.id, id))
-    .limit(1);
+  const rows = await db.select().from(installmentPlans).where(eq(installmentPlans.id, id)).limit(1);
   const [plan] = await hydrate(rows);
   return plan ?? null;
 }
@@ -51,7 +47,10 @@ async function hydrate(rows: InstallmentPlanRow[]): Promise<HydratedInstallmentP
 
   const txRows =
     txIds.size > 0
-      ? await db.select().from(transactions).where(inArray(transactions.id, [...txIds]))
+      ? await db
+          .select()
+          .from(transactions)
+          .where(inArray(transactions.id, [...txIds]))
       : [];
 
   const categoryIds = new Set<string>();

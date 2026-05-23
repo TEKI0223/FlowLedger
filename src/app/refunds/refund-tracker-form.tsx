@@ -26,10 +26,7 @@ type Defaults = {
 };
 
 type RefundTrackerFormProps = {
-  action: (
-    prev: RefundTrackerActionState,
-    formData: FormData,
-  ) => Promise<RefundTrackerActionState>;
+  action: (prev: RefundTrackerActionState, formData: FormData) => Promise<RefundTrackerActionState>;
   lookups: Lookups;
   defaults?: Defaults;
   submitLabel: string;

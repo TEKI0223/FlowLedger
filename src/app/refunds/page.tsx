@@ -3,11 +3,7 @@ import { ArrowLeftIcon, ArrowRightIcon, ReceiptIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatMoney } from "@/domain/finance";
-import {
-  refundStatusLabels,
-  refundRemainingMinor,
-  type RefundStatus,
-} from "@/domain/refund";
+import { refundStatusLabels, refundRemainingMinor, type RefundStatus } from "@/domain/refund";
 import { listRefundTrackers } from "@/features/refunds/data";
 import { cn } from "@/lib/utils";
 

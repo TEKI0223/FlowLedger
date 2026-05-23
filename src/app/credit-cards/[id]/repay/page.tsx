@@ -6,10 +6,7 @@ import { createTransaction } from "@/app/actions/transactions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatMinorForInput, formatMoney } from "@/domain/finance";
 import { getStatementPeriod, type CycleBoundary } from "@/domain/credit-card";
-import {
-  getCreditCard,
-  listCardStatements,
-} from "@/features/credit-cards/data";
+import { getCreditCard, listCardStatements } from "@/features/credit-cards/data";
 import { getTransactionLookups } from "@/features/lookups/data";
 import { todayIsoDate } from "@/lib/dates";
 
@@ -34,10 +31,9 @@ export default async function CreditCardRepayPage({ params, searchParams }: Repa
   // 找到要还的那一期：URL 指定的 periodEnd，没有则取最近一期未还满的
   let targetStatement = periodEnd
     ? statements.find((s) => s.periodEnd === periodEnd)
-    : statements.find(
+    : (statements.find(
         (s) => !s.isPaid && s.totalAmountMinor > s.repaidAmountMinor && !s.isCurrent,
-      ) ??
-      statements.find((s) => !s.isPaid && s.totalAmountMinor > s.repaidAmountMinor);
+      ) ?? statements.find((s) => !s.isPaid && s.totalAmountMinor > s.repaidAmountMinor));
 
   if (!targetStatement) {
     targetStatement = statements[0];

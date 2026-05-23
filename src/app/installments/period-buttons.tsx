@@ -2,10 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import { MinusIcon, PlusIcon } from "lucide-react";
-import {
-  markInstallmentPeriodPaid,
-  unmarkInstallmentPeriodPaid,
-} from "@/app/actions/installments";
+import { markInstallmentPeriodPaid, unmarkInstallmentPeriodPaid } from "@/app/actions/installments";
 import { Button } from "@/components/ui/button";
 
 type PeriodButtonsProps = {

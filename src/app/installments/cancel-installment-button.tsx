@@ -2,10 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import { BanIcon, RotateCcwIcon } from "lucide-react";
-import {
-  cancelInstallmentPlan,
-  reopenInstallmentPlan,
-} from "@/app/actions/installments";
+import { cancelInstallmentPlan, reopenInstallmentPlan } from "@/app/actions/installments";
 import { Button } from "@/components/ui/button";
 
 type Props = {

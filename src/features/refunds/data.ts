@@ -17,10 +17,7 @@ export type RefundReceipt = TransactionRow & {
 };
 
 export async function listRefundTrackers(): Promise<HydratedRefundTracker[]> {
-  const rows = await db
-    .select()
-    .from(refundTrackers)
-    .orderBy(desc(refundTrackers.createdAt));
+  const rows = await db.select().from(refundTrackers).orderBy(desc(refundTrackers.createdAt));
   return hydrate(rows);
 }
 
@@ -44,7 +41,10 @@ export async function listRefundReceipts(trackerId: string): Promise<RefundRecei
 
   const accountRows =
     accountIds.size > 0
-      ? await db.select().from(accounts).where(inArray(accounts.id, [...accountIds]))
+      ? await db
+          .select()
+          .from(accounts)
+          .where(inArray(accounts.id, [...accountIds]))
       : [];
   const accountById = new Map(accountRows.map((account) => [account.id, account]));
 
@@ -79,10 +79,16 @@ async function hydrate(rows: RefundTrackerRow[]): Promise<HydratedRefundTracker[
 
   const [txRows, accountRows] = await Promise.all([
     txIds.size > 0
-      ? db.select().from(transactions).where(inArray(transactions.id, [...txIds]))
+      ? db
+          .select()
+          .from(transactions)
+          .where(inArray(transactions.id, [...txIds]))
       : [],
     accountIds.size > 0
-      ? db.select().from(accounts).where(inArray(accounts.id, [...accountIds]))
+      ? db
+          .select()
+          .from(accounts)
+          .where(inArray(accounts.id, [...accountIds]))
       : [],
   ]);
 

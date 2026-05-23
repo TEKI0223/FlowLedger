@@ -11,21 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Separator } from "@/components/ui/separator";
-import {
-  formatMinorForInput,
-  formatMoney,
-  transactionTypeLabels,
-} from "@/domain/finance";
-import {
-  refundRemainingMinor,
-  refundStatusLabels,
-  type RefundStatus,
-} from "@/domain/refund";
+import { formatMinorForInput, formatMoney, transactionTypeLabels } from "@/domain/finance";
+import { refundRemainingMinor, refundStatusLabels, type RefundStatus } from "@/domain/refund";
 import { getTransactionLookups } from "@/features/lookups/data";
-import {
-  getRefundTracker,
-  listRefundReceipts,
-} from "@/features/refunds/data";
+import { getRefundTracker, listRefundReceipts } from "@/features/refunds/data";
 import { todayIsoDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 
@@ -43,10 +32,7 @@ type RefundDetailPageProps = {
   searchParams: Promise<{ received?: string }>;
 };
 
-export default async function RefundDetailPage({
-  params,
-  searchParams,
-}: RefundDetailPageProps) {
+export default async function RefundDetailPage({ params, searchParams }: RefundDetailPageProps) {
   const [{ id }, { received }] = await Promise.all([params, searchParams]);
 
   const tracker = await getRefundTracker(id);
@@ -137,10 +123,7 @@ export default async function RefundDetailPage({
 
           <div className="flex flex-wrap items-center gap-1">
             <CancelTrackerButton id={tracker.id} isCancelled={status === "cancelled"} />
-            <DeleteTrackerButton
-              id={tracker.id}
-              disabled={tracker.receivedAmountMinor > 0}
-            />
+            <DeleteTrackerButton id={tracker.id} disabled={tracker.receivedAmountMinor > 0} />
           </div>
         </CardContent>
       </Card>

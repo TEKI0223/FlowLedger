@@ -149,7 +149,6 @@ export function TransactionForm({
         ? ""
         : undefined;
 
-
   function handlePaymentMethodChange(event: React.ChangeEvent<HTMLSelectElement>) {
     const newPmId = event.target.value;
     if (!newPmId) return;
@@ -200,7 +199,10 @@ export function TransactionForm({
               <p className="text-xs uppercase tracking-wide text-muted-foreground">当前系统余额</p>
               <p className="text-lg font-semibold tabular-nums">
                 {targetAccount
-                  ? formatMoney({ amountMinor: currentBalanceMinor, currency: targetAccount.currency })
+                  ? formatMoney({
+                      amountMinor: currentBalanceMinor,
+                      currency: targetAccount.currency,
+                    })
                   : "请先选择校准账户"}
               </p>
             </div>
@@ -280,11 +282,7 @@ export function TransactionForm({
 
         {/* 调整 UI 里也需要 currency 字段，但不让用户选（跟随选中的账户币种） */}
         {useTargetBalanceUI ? (
-          <input
-            type="hidden"
-            name="currency"
-            value={targetAccount?.currency ?? currency}
-          />
+          <input type="hidden" name="currency" value={targetAccount?.currency ?? currency} />
         ) : null}
 
         {!useTargetBalanceUI ? (
@@ -389,9 +387,7 @@ export function TransactionForm({
           />
         </div>
 
-        <SubmitButton
-          disabled={Boolean(targetBalanceResult && !targetBalanceResult.ok)}
-        >
+        <SubmitButton disabled={Boolean(targetBalanceResult && !targetBalanceResult.ok)}>
           {submitLabel}
         </SubmitButton>
       </form>
@@ -399,10 +395,7 @@ export function TransactionForm({
   );
 }
 
-type TargetBalanceResult =
-  | { ok: true; delta: number }
-  | { ok: false; error: string }
-  | null;
+type TargetBalanceResult = { ok: true; delta: number } | { ok: false; error: string } | null;
 
 function parseTargetBalance(
   targetBalanceInput: string,

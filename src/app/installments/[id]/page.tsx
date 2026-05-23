@@ -1,11 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  ArrowLeftIcon,
-  ArrowRightIcon,
-  CalendarIcon,
-  LayersIcon,
-} from "lucide-react";
+import { ArrowLeftIcon, ArrowRightIcon, CalendarIcon, LayersIcon } from "lucide-react";
 import { CancelInstallmentButton } from "../cancel-installment-button";
 import { DeleteInstallmentButton } from "../delete-installment-button";
 import { InstallmentForm } from "../installment-form";
@@ -90,16 +85,14 @@ export default async function InstallmentDetailPage({ params }: Props) {
                 if (fee.kind === "interest") {
                   return (
                     <p className="text-xs text-adjustment">
-                      含利息{" "}
-                      {formatMoney({ amountMinor: fee.totalMinor, currency: plan.currency })}
+                      含利息 {formatMoney({ amountMinor: fee.totalMinor, currency: plan.currency })}
                     </p>
                   );
                 }
                 if (fee.kind === "rebate") {
                   return (
                     <p className="text-xs text-income">
-                      回扣{" "}
-                      {formatMoney({ amountMinor: fee.totalMinor, currency: plan.currency })}
+                      回扣 {formatMoney({ amountMinor: fee.totalMinor, currency: plan.currency })}
                     </p>
                   );
                 }
@@ -128,7 +121,8 @@ export default async function InstallmentDetailPage({ params }: Props) {
                 {formatMoney({ amountMinor: remainingMinor, currency: plan.currency })}
               </p>
               <p className="text-xs text-muted-foreground tabular-nums">
-                每期 {formatMoney({ amountMinor: plan.amountPerPeriodMinor, currency: plan.currency })}
+                每期{" "}
+                {formatMoney({ amountMinor: plan.amountPerPeriodMinor, currency: plan.currency })}
               </p>
             </div>
           </div>
@@ -166,9 +160,7 @@ export default async function InstallmentDetailPage({ params }: Props) {
                   className="flex items-center justify-between gap-3 py-2.5 text-sm"
                 >
                   <span className="flex items-center gap-2">
-                    <span className="tabular-nums text-xs text-muted-foreground">
-                      #{index + 1}
-                    </span>
+                    <span className="tabular-nums text-xs text-muted-foreground">#{index + 1}</span>
                     <span
                       className={cn(
                         "tabular-nums",
@@ -182,7 +174,10 @@ export default async function InstallmentDetailPage({ params }: Props) {
                         已扣
                       </Badge>
                     ) : isPast && status === "active" ? (
-                      <Badge variant="outline" className="text-xs text-adjustment border-adjustment/30">
+                      <Badge
+                        variant="outline"
+                        className="text-xs text-adjustment border-adjustment/30"
+                      >
                         已到期
                       </Badge>
                     ) : null}
