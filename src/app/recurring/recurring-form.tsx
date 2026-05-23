@@ -51,6 +51,30 @@ type RecurringFormProps = {
   submitLabel: string;
 };
 
+const accountFieldsByType: Record<
+  RecurringType,
+  { showSource: boolean; sourceLabel: string; showTarget: boolean; targetLabel: string }
+> = {
+  income: {
+    showSource: false,
+    sourceLabel: "",
+    showTarget: true,
+    targetLabel: "入账账户",
+  },
+  expense: {
+    showSource: true,
+    sourceLabel: "付款账户",
+    showTarget: false,
+    targetLabel: "",
+  },
+  transfer: {
+    showSource: true,
+    sourceLabel: "转出账户",
+    showTarget: true,
+    targetLabel: "转入账户",
+  },
+};
+
 export function RecurringForm({
   action,
   lookups,
@@ -60,9 +84,18 @@ export function RecurringForm({
   const [state, formAction] = useActionState<RecurringActionState, FormData>(action, initialState);
   const values = state.values;
 
+  const initialType =
+    (values?.type as RecurringType | undefined) ?? defaults.type ?? ("expense" as RecurringType);
+  const [type, setType] = useState<RecurringType>(initialType);
+
   const [sourceAccountId, setSourceAccountId] = useState<string>(
     values?.sourceAccountId ?? defaults.sourceAccountId ?? "",
   );
+  const [targetAccountId, setTargetAccountId] = useState<string>(
+    values?.targetAccountId ?? defaults.targetAccountId ?? "",
+  );
+
+  const fieldConfig = accountFieldsByType[type];
 
   function handlePaymentMethodChange(event: React.ChangeEvent<HTMLSelectElement>) {
     const newPmId = event.target.value;
@@ -96,7 +129,8 @@ export function RecurringForm({
               id="type"
               name="type"
               required
-              defaultValue={values?.type ?? defaults.type ?? "expense"}
+              value={type}
+              onChange={(event) => setType(event.target.value as RecurringType)}
             >
               {Object.entries(RECURRING_TYPE_LABELS).map(([value, label]) => (
                 <option value={value} key={value}>
@@ -189,9 +223,15 @@ export function RecurringForm({
           </NativeSelect>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="grid gap-2">
-            <Label htmlFor="sourceAccountId">来源账户</Label>
+        <div
+          className={
+            fieldConfig.showSource && fieldConfig.showTarget
+              ? "grid grid-cols-1 gap-3 sm:grid-cols-2"
+              : "grid gap-3"
+          }
+        >
+          <div className={fieldConfig.showSource ? "grid gap-2" : "hidden"}>
+            <Label htmlFor="sourceAccountId">{fieldConfig.sourceLabel || "来源账户"}</Label>
             <NativeSelect
               id="sourceAccountId"
               name="sourceAccountId"
@@ -206,12 +246,13 @@ export function RecurringForm({
               ))}
             </NativeSelect>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="targetAccountId">目标账户</Label>
+          <div className={fieldConfig.showTarget ? "grid gap-2" : "hidden"}>
+            <Label htmlFor="targetAccountId">{fieldConfig.targetLabel || "目标账户"}</Label>
             <NativeSelect
               id="targetAccountId"
               name="targetAccountId"
-              defaultValue={values?.targetAccountId ?? defaults.targetAccountId ?? ""}
+              value={targetAccountId}
+              onChange={(event) => setTargetAccountId(event.target.value)}
             >
               <option value="">不选择</option>
               {lookups.accounts.map((account) => (
@@ -223,23 +264,27 @@ export function RecurringForm({
           </div>
         </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="paymentMethodId">支付方式</Label>
-          <NativeSelect
-            id="paymentMethodId"
-            name="paymentMethodId"
-            defaultValue={values?.paymentMethodId ?? defaults.paymentMethodId ?? ""}
-            onChange={handlePaymentMethodChange}
-          >
-            <option value="">不选择</option>
-            {lookups.paymentMethods.map((paymentMethod) => (
-              <option value={paymentMethod.id} key={paymentMethod.id}>
-                {paymentMethod.name}
-              </option>
-            ))}
-          </NativeSelect>
-          <p className="text-xs text-muted-foreground">选择后会自动填入对应的来源账户</p>
-        </div>
+        {fieldConfig.showSource ? (
+          <div className="grid gap-2">
+            <Label htmlFor="paymentMethodId">支付方式</Label>
+            <NativeSelect
+              id="paymentMethodId"
+              name="paymentMethodId"
+              defaultValue={values?.paymentMethodId ?? defaults.paymentMethodId ?? ""}
+              onChange={handlePaymentMethodChange}
+            >
+              <option value="">不选择</option>
+              {lookups.paymentMethods.map((paymentMethod) => (
+                <option value={paymentMethod.id} key={paymentMethod.id}>
+                  {paymentMethod.name}
+                </option>
+              ))}
+            </NativeSelect>
+            <p className="text-xs text-muted-foreground">
+              选择后会自动填入{fieldConfig.sourceLabel}
+            </p>
+          </div>
+        ) : null}
 
         <div className="grid gap-2">
           <Label htmlFor="note">备注</Label>
