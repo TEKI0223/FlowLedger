@@ -1,6 +1,58 @@
-# FlowLedger 开发流程规划
+# FlowLedger 开发流程规划（Stage 1）
 
-最后更新：2026-05-20
+最后更新：2026-05-23
+
+> ✅ **Stage 1 已收尾。下一阶段计划见 [development-plan-stage-2.md](development-plan-stage-2.md)。**
+
+## 0. Stage 1 总结
+
+### 目标达成
+
+Stage 1 的目标是：用户可以在手机浏览器中稳定完成日常手动记账，账户余额 / 消费统计 / 转账 / 信用卡还款不会互相混淆。**这个目标完成了**——核心领域模型经得起浏览器验收，但 UX 还是「功能验证型」，没有为日常长期使用打磨。
+
+### 完成里程碑
+
+| 里程碑 | 范围 | 状态 |
+|--------|------|------|
+| M0 项目基线 | Next.js + Drizzle + SQLite + 金额最小单位 + seed | ✅ |
+| M1 账户与基础交易 | 账户 CRUD + 收入/支出/转账/调整 + 余额规则 | ✅ |
+| M2 首页概览 + 快捷录入 | 首页 modal + 快捷模板 + 临时记录 + 折算净资产 | ✅ |
+| M3 周期项目 | CRUD + 待确认动态计算 + 确认/跳过 + payment_method 默认资金来源 | ✅ |
+| M4 信用卡账单 | 周期归属（inclusive/exclusive 可配）+ 查询模型 + 还款转账 | ✅ |
+| M5 余额型账户 + 校准 | 调整改"输入实际余额" + 账户详情页 + 钱包/现金/校准快捷入口 | ✅ |
+| M6 退款 + 分期 | 退款追踪含部分到账 + 分期 mode B（账单按 dueDate 拆每期）+ 利息容差判断 | ✅ |
+| M6.5 部署基础 | 切换 libsql client + Turso 部署文档 + 内置密码门 | ✅（代码就绪，未实际部署） |
+
+### 中途加入的横向改造
+
+- **UI 整体迁移到 Tailwind v4 + shadcn/ui (base-nova)** + lucide-react + next-themes
+- **vitest + dayjs** 引入，76 个单元测试覆盖 domain 层
+- **useActionState + useFormStatus** 全面替代 redirect-with-error 模式
+- **通用 MoneyInput**（千分位自动加 / 失焦格式化）替换所有金额输入
+- **AlertDialog** 给所有删除操作加二次确认
+- **快捷模板 CRUD + 使用次数排序** — Stage 1 收尾时补的
+
+### Stage 1 留下的、Stage 2 要处理的遗留项
+
+| 项目 | 原计划 | 处理方向 |
+|------|--------|----------|
+| 信用卡 CRUD UI（closingDay / paymentDay / repaymentAccount 可视化编辑） | M4 暂未做 | 进 S2.3 管理页 |
+| 汇率管理 UI（当前 seed 写死 21.5） | M2 收尾备忘 | 进 S2.3 管理页 |
+| 数据导出 CSV | 之前讨论过未做 | 进 S2.3 管理页 |
+| 跨币种转账 + FX 手续费 | M5 前待决项 | 推到 Stage 3 |
+| 标签系统（schema 字段都没有） | 需求 §12.2 决定动态自建但未实现 | 推到 Stage 3 |
+| 朋友代付 / 借贷 / 月末结账 | 需求 §19 待确认问题 | 推到 Stage 3 |
+
+### Stage 1 没去碰的问题
+
+- **首页信息密度过大**：sidebar 4 张卡，待办+周期项+信用卡+完整录入纵向堆叠
+- **navigation 是 desktop 思维**：手机上点入口靠"sidebar 卡片底部链接"，不是底栏
+- **二级管理页缺统一入口**：accounts / templates / recurring / refunds / installments / credit-cards 散布各处
+- **缺统计分析**：没有任何按分类 / 时间趋势 / 净资产历史的汇总视图
+
+→ 这些是 Stage 2 的主要工作。
+
+---
 
 ## 1. 规划目标
 

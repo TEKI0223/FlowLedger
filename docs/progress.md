@@ -4,31 +4,46 @@
 
 ## 当前阶段
 
-M6 已收尾。退款追踪（含部分到账）、退款收入 type=income / category=refund / refundTrackerId 回链、分期计划（mode B：分类按购买日、信用卡账单按 dueDate 拆每期）、利息容差判断、删除确认 AlertDialog 全套通过浏览器验收。
+**Stage 1 全部里程碑收尾，未部署。下一步进入 [Stage 2](development-plan-stage-2.md)：手机优先 IA 重做 + 统计分析 + 上线。**
 
-下一步进入 M6.5：把 better-sqlite3 切换到 libsql client，部署到 Vercel + Turso。
+Stage 1 Q&A:
+- 为什么 M6.5 标"代码就绪未部署"：M6 结束后用户决定先 redesign 再部署，避免带着粗糙 UX 走真实数据。
+- 现 UI 已迁移到 Tailwind v4 + shadcn/ui (base-nova)，76 单元测试，本地 build / lint / test 全过。
+- 内置密码门已经做完，等部署时一起启用。
 
-M4 暂未做的小项（按需补）：
-- 信用卡 CRUD UI（新建 / 编辑 closingDay / paymentDay / cycleBoundary / repaymentAccount）。当前只能用 seed 出来的两张卡，或手动改数据库。
-- 账单确认状态（M4 前已决定不做，留给后续按需求）。
-
-部署方向已确定为 Vercel +
-Turso，但安排在 M6 完成、schema 稳定之后（新增 M6.5）。开发期不连接 Turso，避免频繁迁移和清理云端测试数据。
-
-## 里程碑状态
+## Stage 1 里程碑状态（全部已完成）
 
 | 里程碑                    | 状态   | 说明                                                            |
 | ------------------------- | ------ | --------------------------------------------------------------- |
-| M0 项目基线和开发护栏     | 已完成 | 数据库、迁移、seed、金额模型和验证命令已建立                    |
-| M1 账户与基础交易闭环     | 已完成 | 账户创建/编辑、交易创建/编辑/删除、余额回滚和错误提示已通过验收 |
-| M2 首页概览和快捷录入     | 已完成 | 快捷录入闭环已通过浏览器验收，折算净资产已用 seed 汇率打通      |
-| M3 周期项目和待确认流程   | 已完成 | 周期项 CRUD、待确认列表、确认 + 跳过、首页集成，浏览器验收通过  |
-| M4 信用卡账单周期         | 已完成 | 周期归属、查询模型、详情页、还款页通过浏览器验收                |
-| M5 余额型账户、现金和校准 | 已完成 | 调整语义改造、账户详情、钱包/现金快捷入口、金额千分位、删除确认 |
-| M6 退款和分期             | 已完成 | 退款追踪 + 部分到账 + 分期 mode B（账单按期拆）通过浏览器验收   |
-| M6.5 迁移到 Vercel + Turso| 进行中 | libsql client 切换 + 部署                                       |
-| M7 统计分析和视图打磨     | 未开始 | 依赖主要业务数据                                                |
-| M8 部署准备和日常维护     | 未开始 | 依赖核心功能稳定                                                |
+| M0 项目基线和开发护栏     | ✅     | 数据库、迁移、seed、金额模型和验证命令                          |
+| M1 账户与基础交易闭环     | ✅     | 账户 + 收入/支出/转账/调整 + 余额规则                            |
+| M2 首页概览和快捷录入     | ✅     | 快捷模板 + 临时记录 + 折算净资产                                  |
+| M3 周期项目和待确认流程   | ✅     | CRUD + 动态待确认 + 确认/跳过 + payment_method 默认来源          |
+| M4 信用卡账单周期         | ✅     | 周期归属（含 cycleBoundary 配置）+ 查询模型 + 还款页              |
+| M5 余额型账户和校准       | ✅     | 调整改"输入实际余额" + 账户详情 + 钱包/现金快捷入口                |
+| M6 退款和分期             | ✅     | 退款部分到账 + 分期 mode B + 利息容差                              |
+| M6.5 迁移到 Vercel + Turso| ✅（代码就绪，未部署） | libsql client 切换 + 密码门 + 部署文档        |
+
+横向改造（不属于单个里程碑但贯穿 Stage 1）：
+
+- UI 整体迁移 Tailwind v4 + shadcn/ui (base-nova) + lucide-react + next-themes
+- vitest + dayjs；76 个 domain 单元测试
+- useActionState + useFormStatus 全面替代 redirect-with-error
+- 通用 MoneyInput（千分位）替换所有金额输入
+- 快捷模板 CRUD + 使用次数排序
+- 内置 FLOWLEDGER_PASSWORD 密码门（Next.js 16 用 src/proxy.ts）
+
+## Stage 2 待办（从 development-plan-stage-2.md 摘要）
+
+| 里程碑 | 范围 |
+|--------|------|
+| S2.1 导航系统 | 底栏 Tab Bar 4 入口，从 sidebar 卡片迁过去 |
+| S2.2 首页重设计 | hero 大数字 + 紧凑待办 + 快捷模板上移 |
+| S2.3 「管理」二级页面整合 | 聚合页 + 信用卡 CRUD + 汇率 UI + CSV 导出 |
+| S2.4 统计分析 | 5 个核心视图，Tailwind div 画图，不引图表库 |
+| S2.5 部署上线 | PWA 图标 / splash + Turso + Vercel + 真机验收 |
+
+Stage 3 backlog（不进 Stage 2）：跨币种转账、标签系统、月末结账、朋友代付/借贷、自动汇率、多用户、投资资产。
 
 ## 已完成记录
 
