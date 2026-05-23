@@ -97,7 +97,7 @@ export default async function RecurringPage() {
                       <PencilIcon className="size-3.5" />
                       编辑
                     </Link>
-                    <DeleteRecurringButton id={item.id} />
+                    <DeleteRecurringButton id={item.id} name={item.name} />
                   </div>
                 </div>
               </article>
