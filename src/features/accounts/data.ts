@@ -67,8 +67,13 @@ export async function getAccountDetail(id: string) {
   const [monthlyRows, recentRows, pendingRows] = await Promise.all([
     db
       .select({
-        direction: sql<string>`case when ${transactions.targetAccountId} = ${id} then 'in' else 'out' end`,
-        totalMinor: sql<number>`coalesce(sum(${transactions.amountMinor}), 0)`,
+        direction: sql<string>`case
+          when ${transactions.type} = 'adjustment' and ${transactions.amountMinor} < 0 then 'out'
+          when ${transactions.type} = 'adjustment' then 'in'
+          when ${transactions.targetAccountId} = ${id} then 'in'
+          else 'out'
+        end`,
+        totalMinor: sql<number>`coalesce(sum(abs(${transactions.amountMinor})), 0)`,
       })
       .from(transactions)
       .where(
@@ -78,7 +83,12 @@ export async function getAccountDetail(id: string) {
           lt(transactions.occurredOn, next),
         ),
       )
-      .groupBy(sql`case when ${transactions.targetAccountId} = ${id} then 'in' else 'out' end`),
+      .groupBy(sql`case
+        when ${transactions.type} = 'adjustment' and ${transactions.amountMinor} < 0 then 'out'
+        when ${transactions.type} = 'adjustment' then 'in'
+        when ${transactions.targetAccountId} = ${id} then 'in'
+        else 'out'
+      end`),
     db
       .select()
       .from(transactions)

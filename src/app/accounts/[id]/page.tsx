@@ -198,15 +198,28 @@ export default async function AccountDetailPage({ params }: AccountDetailPagePro
                     {tx.paymentMethod ? ` · ${tx.paymentMethod.name}` : ""}
                   </p>
                 </div>
-                <span
-                  className={cn(
-                    "shrink-0 text-sm font-semibold tabular-nums",
-                    tx.direction === "in" ? "text-income" : "text-expense",
-                  )}
-                >
-                  {tx.direction === "in" ? "+" : "−"}
-                  {formatMoney({ amountMinor: tx.amountMinor, currency: tx.currency })}
-                </span>
+                {(() => {
+                  // 调整交易：金额本身带符号；其他类型：用 direction 决定符号
+                  const effectiveDirection: "in" | "out" =
+                    tx.type === "adjustment"
+                      ? tx.amountMinor >= 0
+                        ? "in"
+                        : "out"
+                      : tx.direction;
+                  const displayMinor =
+                    tx.type === "adjustment" ? Math.abs(tx.amountMinor) : tx.amountMinor;
+                  return (
+                    <span
+                      className={cn(
+                        "shrink-0 text-sm font-semibold tabular-nums",
+                        effectiveDirection === "in" ? "text-income" : "text-expense",
+                      )}
+                    >
+                      {effectiveDirection === "in" ? "+" : "−"}
+                      {formatMoney({ amountMinor: displayMinor, currency: tx.currency })}
+                    </span>
+                  );
+                })()}
               </article>
             ))}
           </Card>
