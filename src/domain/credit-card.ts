@@ -58,6 +58,17 @@ export function getNextStatementPeriodEnd(
 }
 
 /**
+ * 给定一个账单周期的 periodEnd，返回上一期的 periodEnd。
+ */
+export function getPreviousStatementPeriodEnd(
+  periodEnd: string,
+  config: CreditCardConfig,
+): string {
+  const previousDayInsidePreviousPeriod = dayjs(periodEnd).subtract(1, "day").format(ISO_DATE);
+  return getStatementPeriod(previousDayInsidePreviousPeriod, config).periodEnd;
+}
+
+/**
  * 给定 closingDate，返回对应的扣款日（dueDate）。
  *
  * 规则：dueDate 是 closingDate 之后第一个 paymentDay。
