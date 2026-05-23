@@ -4,6 +4,7 @@ import {
   ArrowLeftIcon,
   CalendarIcon,
   CreditCardIcon,
+  LayersIcon,
   ReceiptIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -113,7 +114,10 @@ function CurrentStatementCard({
               })}
             </p>
             <p className="text-xs text-muted-foreground">
-              {statement.transactions.length} 笔
+              {statement.transactions.length + statement.installmentEntries.length} 笔
+              {statement.installmentEntries.length > 0
+                ? ` · 含 ${statement.installmentEntries.length} 笔分期`
+                : ""}
             </p>
           </div>
           <div>
@@ -159,7 +163,7 @@ function CurrentStatementCard({
           </>
         ) : null}
 
-        {statement.transactions.length > 0 ? (
+        {statement.transactions.length > 0 || statement.installmentEntries.length > 0 ? (
           <>
             <Separator />
             <StatementTransactionList
@@ -265,6 +269,64 @@ function StatementTransactionList({
   currency: "JPY" | "CNY";
   label: string;
 }) {
+  // 合并普通交易和分期扣款，按日期排序
+  type Row =
+    | { kind: "tx"; key: string; date: string; node: React.ReactNode }
+    | { kind: "installment"; key: string; date: string; node: React.ReactNode };
+
+  const rows: Row[] = [];
+
+  for (const tx of statement.transactions) {
+    rows.push({
+      kind: "tx",
+      key: `tx-${tx.id}`,
+      date: tx.occurredOn,
+      node: (
+        <li key={`tx-${tx.id}`} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs text-muted-foreground">
+              {tx.occurredOn} · {transactionTypeLabels[tx.type]}
+              {tx.note ? ` · ${tx.note}` : ""}
+            </p>
+          </div>
+          <span className="shrink-0 font-semibold tabular-nums text-expense">
+            {formatMoney({ amountMinor: tx.amountMinor, currency })}
+          </span>
+        </li>
+      ),
+    });
+  }
+
+  for (const entry of statement.installmentEntries) {
+    rows.push({
+      kind: "installment",
+      key: `inst-${entry.planId}-${entry.periodIndex}`,
+      date: entry.dueDate,
+      node: (
+        <li
+          key={`inst-${entry.planId}-${entry.periodIndex}`}
+          className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+        >
+          <div className="min-w-0 flex-1">
+            <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+              <LayersIcon className="size-3 shrink-0" />
+              {entry.dueDate} · 分期 {entry.periodIndex}/{entry.totalPeriods}
+              {entry.note ? ` · ${entry.note}` : ""}
+            </p>
+          </div>
+          <Link
+            href={`/installments/${entry.planId}`}
+            className="shrink-0 font-semibold tabular-nums text-expense hover:underline"
+          >
+            {formatMoney({ amountMinor: entry.amountMinor, currency })}
+          </Link>
+        </li>
+      ),
+    });
+  }
+
+  rows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
@@ -272,19 +334,7 @@ function StatementTransactionList({
         {label}
       </div>
       <ul className="divide-y divide-border rounded-md border border-border">
-        {statement.transactions.map((tx) => (
-          <li key={tx.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs text-muted-foreground">
-                {tx.occurredOn} · {transactionTypeLabels[tx.type]}
-                {tx.note ? ` · ${tx.note}` : ""}
-              </p>
-            </div>
-            <span className="shrink-0 font-semibold tabular-nums text-expense">
-              {formatMoney({ amountMinor: tx.amountMinor, currency })}
-            </span>
-          </li>
-        ))}
+        {rows.map((row) => row.node)}
       </ul>
     </div>
   );

@@ -57,6 +57,7 @@ export default async function CreditCardRepayPage({ params, searchParams }: Repa
       dueDate: period.dueDate,
       totalAmountMinor: 0,
       transactions: [],
+      installmentEntries: [],
       repaymentTransactions: [],
       repaidAmountMinor: 0,
       isCurrent: false,

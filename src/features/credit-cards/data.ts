@@ -1,6 +1,6 @@
-import { and, asc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lte, ne, notInArray } from "drizzle-orm";
 import { db } from "@/db/client";
-import { accounts, creditCards, transactions } from "@/db/schema";
+import { accounts, creditCards, installmentPlans, transactions } from "@/db/schema";
 import {
   getPreviousStatementPeriodEnd,
   getStatementPeriod,
@@ -9,6 +9,7 @@ import {
   type StatementPeriod,
 } from "@/domain/credit-card";
 import type { Currency, TransactionType } from "@/domain/finance";
+import { computeInstallmentDueDates, type InstallmentStatus } from "@/domain/installment";
 import { todayIsoDate } from "@/lib/dates";
 
 type CreditCardRow = typeof creditCards.$inferSelect;
@@ -45,10 +46,25 @@ export type StatementTransaction = {
   categoryId: string | null;
 };
 
+/** 分期产生的本期扣款（不是真实交易，而是从 installment_plans 派生出来的「本期应扣」） */
+export type StatementInstallmentEntry = {
+  planId: string;
+  originalTransactionId: string;
+  periodIndex: number; // 1-based
+  totalPeriods: number;
+  dueDate: string;
+  amountMinor: number;
+  currency: Currency;
+  note: string | null;
+};
+
 export type StatementSummary = StatementPeriod & {
   cardId: string;
   totalAmountMinor: number;
+  /** 本期普通消费（不含已挂分期的原始大额） */
   transactions: StatementTransaction[];
+  /** 本期来自分期计划的扣款 */
+  installmentEntries: StatementInstallmentEntry[];
   repaymentTransactions: StatementTransaction[];
   repaidAmountMinor: number;
   isCurrent: boolean;
@@ -82,25 +98,51 @@ export async function listCardStatements(
   const earliestStart = getStatementPeriod(periodEnds[periodEnds.length - 1], config).periodStart;
   const latestEnd = (() => {
     // 还款可能发生在 dueDate 当天或之后，所以查询区间右端要取 dueDate 而非 periodEnd
-    const dueDates = periodEnds.map(
-      (pe) => getStatementPeriod(pe, config).dueDate,
-    );
+    const dueDates = periodEnds.map((pe) => getStatementPeriod(pe, config).dueDate);
     return dueDates.reduce((max, d) => (d > max ? d : max), today);
   })();
 
   const cardAccountId = card.accountId;
+
+  // 1. 查询挂在本卡上的所有分期计划（active / completed，跳过 cancelled）
+  const cardInstallments = await db
+    .select({
+      planId: installmentPlans.id,
+      originalTransactionId: installmentPlans.originalTransactionId,
+      amountPerPeriodMinor: installmentPlans.amountPerPeriodMinor,
+      firstPaymentOn: installmentPlans.firstPaymentOn,
+      periods: installmentPlans.periods,
+      status: installmentPlans.status,
+      currency: installmentPlans.currency,
+      txNote: transactions.note,
+    })
+    .from(installmentPlans)
+    .innerJoin(transactions, eq(installmentPlans.originalTransactionId, transactions.id))
+    .where(
+      and(
+        eq(transactions.sourceAccountId, cardAccountId),
+        ne(installmentPlans.status, "cancelled" satisfies InstallmentStatus),
+      ),
+    );
+
+  const installmentTxIds = cardInstallments.map((p) => p.originalTransactionId);
+
+  // 2. 普通消费查询，排除已挂分期的原始交易
+  const cardExpensesConds = [
+    eq(transactions.sourceAccountId, cardAccountId),
+    eq(transactions.type, "expense"),
+    gte(transactions.occurredOn, earliestStart),
+    lte(transactions.occurredOn, latestEnd),
+  ];
 
   const [cardExpenses, repaymentTxs] = await Promise.all([
     db
       .select()
       .from(transactions)
       .where(
-        and(
-          eq(transactions.sourceAccountId, cardAccountId),
-          eq(transactions.type, "expense"),
-          gte(transactions.occurredOn, earliestStart),
-          lte(transactions.occurredOn, latestEnd),
-        ),
+        installmentTxIds.length > 0
+          ? and(...cardExpensesConds, notInArray(transactions.id, installmentTxIds))
+          : and(...cardExpensesConds),
       )
       .orderBy(asc(transactions.occurredOn)),
     db
@@ -123,8 +165,28 @@ export async function listCardStatements(
       (tx) => tx.occurredOn >= period.periodStart && tx.occurredOn <= period.periodEnd,
     );
 
+    // 3. 本期分期扣款：扫描每个 plan，找 dueDate 落在 [periodStart, periodEnd] 之内的期数
+    const installmentEntries: StatementInstallmentEntry[] = [];
+    for (const plan of cardInstallments) {
+      const dueDates = computeInstallmentDueDates(plan.firstPaymentOn, plan.periods);
+      for (let i = 0; i < dueDates.length; i++) {
+        const dueDate = dueDates[i];
+        if (dueDate >= period.periodStart && dueDate <= period.periodEnd) {
+          installmentEntries.push({
+            planId: plan.planId,
+            originalTransactionId: plan.originalTransactionId,
+            periodIndex: i + 1,
+            totalPeriods: plan.periods,
+            dueDate,
+            amountMinor: plan.amountPerPeriodMinor,
+            currency: plan.currency as Currency,
+            note: plan.txNote,
+          });
+        }
+      }
+    }
+
     // 启发式：还款关联到「dueDate 当天或之前最近一期」
-    // 即：occurredOn 在 (上一期 dueDate, 本期 dueDate] 之间的转账归本期还款
     const previousDueDate = (() => {
       try {
         const prevEnd = getPreviousStatementPeriodEnd(periodEnd, config);
@@ -137,7 +199,9 @@ export async function listCardStatements(
       (tx) => tx.occurredOn > previousDueDate && tx.occurredOn <= period.dueDate,
     );
 
-    const totalAmountMinor = txs.reduce((sum, tx) => sum + tx.amountMinor, 0);
+    const txTotalMinor = txs.reduce((sum, tx) => sum + tx.amountMinor, 0);
+    const installmentTotalMinor = installmentEntries.reduce((sum, e) => sum + e.amountMinor, 0);
+    const totalAmountMinor = txTotalMinor + installmentTotalMinor;
     const repaidAmountMinor = repays.reduce((sum, tx) => sum + tx.amountMinor, 0);
     const isPaid = totalAmountMinor > 0 && repaidAmountMinor >= totalAmountMinor;
     const isOverdue = !isPaid && period.dueDate < today && totalAmountMinor > 0;
@@ -149,6 +213,7 @@ export async function listCardStatements(
       dueDate: period.dueDate,
       totalAmountMinor,
       transactions: txs.map(toStatementTransaction),
+      installmentEntries,
       repaymentTransactions: repays.map(toStatementTransaction),
       repaidAmountMinor,
       isCurrent: periodEnd === currentPeriod.periodEnd,
