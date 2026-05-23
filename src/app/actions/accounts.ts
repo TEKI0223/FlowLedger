@@ -3,11 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
-import { db } from "@/db/client";
-import { accounts } from "@/db/schema";
 import { accountTypes, currencies } from "@/domain/finance";
-import { nowIso } from "@/lib/dates";
+import { createAccountRecord, updateAccountRecord } from "@/features/accounts/service";
 import { parseAmount, stringField } from "@/lib/form";
 
 const accountSchema = z.object({
@@ -60,10 +57,7 @@ export async function createAccount(
   });
 
   if (!result.success) {
-    return {
-      error: result.error.issues[0]?.message ?? "账户内容不完整",
-      values,
-    };
+    return { error: result.error.issues[0]?.message ?? "账户内容不完整", values };
   }
 
   const parsed = result.data;
@@ -71,24 +65,15 @@ export async function createAccount(
   if (!amount.ok) {
     return { error: amount.error, values };
   }
-  const balanceMinor = amount.amountMinor;
 
-  const timestamp = nowIso();
-
-  await db
-    .insert(accounts)
-    .values({
-      id: crypto.randomUUID(),
-      name: parsed.name,
-      type: parsed.type,
-      currency: parsed.currency,
-      balanceMinor,
-      includeInNetWorth: parsed.includeInNetWorth,
-      note: parsed.note,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    })
-    .run();
+  await createAccountRecord({
+    name: parsed.name,
+    type: parsed.type,
+    currency: parsed.currency,
+    balanceMinor: amount.amountMinor,
+    includeInNetWorth: parsed.includeInNetWorth,
+    note: parsed.note,
+  });
 
   revalidatePath("/");
   revalidatePath("/accounts");
@@ -111,26 +96,18 @@ export async function updateAccount(
   });
 
   if (!result.success) {
-    return {
-      error: result.error.issues[0]?.message ?? "账户内容不完整",
-      values,
-    };
+    return { error: result.error.issues[0]?.message ?? "账户内容不完整", values };
   }
 
   const parsed = result.data;
 
-  await db
-    .update(accounts)
-    .set({
-      name: parsed.name,
-      type: parsed.type,
-      currency: parsed.currency,
-      includeInNetWorth: parsed.includeInNetWorth,
-      note: parsed.note,
-      updatedAt: nowIso(),
-    })
-    .where(eq(accounts.id, id))
-    .run();
+  await updateAccountRecord(id, {
+    name: parsed.name,
+    type: parsed.type,
+    currency: parsed.currency,
+    includeInNetWorth: parsed.includeInNetWorth,
+    note: parsed.note,
+  });
 
   revalidatePath("/");
   revalidatePath("/accounts");

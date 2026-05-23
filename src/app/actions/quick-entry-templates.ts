@@ -3,11 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { eq, sql } from "drizzle-orm";
-import { db } from "@/db/client";
-import { quickEntryTemplates } from "@/db/schema";
 import { currencies, parseMoneyToMinor } from "@/domain/finance";
-import { nowIso } from "@/lib/dates";
+import {
+  createQuickEntryTemplateRecord,
+  deleteQuickEntryTemplateRecord,
+  resetQuickEntryTemplateUsageRecord,
+  updateQuickEntryTemplateRecord,
+} from "@/features/quick-entry/service";
 import { normalize, stringField as field } from "@/lib/form";
 
 const templateSchema = z.object({
@@ -56,14 +58,14 @@ function extract(formData: FormData): QuickEntryTemplateFormValues {
   };
 }
 
-function parseAmount(
+/** 模板的金额允许为空（"自填"），所以单独处理；不复用 lib/form 里的 parseAmount。 */
+function parseOptionalAmount(
   raw: string | undefined,
   currency: "JPY" | "CNY",
 ): { ok: true; amountMinor: number | null } | { ok: false; error: string } {
   if (!raw || raw.trim() === "") return { ok: true, amountMinor: null };
   try {
-    const minor = Math.abs(parseMoneyToMinor(raw, currency));
-    return { ok: true, amountMinor: minor };
+    return { ok: true, amountMinor: Math.abs(parseMoneyToMinor(raw, currency)) };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "金额格式不正确" };
   }
@@ -93,40 +95,21 @@ export async function createQuickEntryTemplate(
   }
 
   const parsed = result.data;
-  const amountResult = parseAmount(parsed.amount, parsed.currency);
-  if (!amountResult.ok) {
-    return { error: amountResult.error, values };
-  }
+  const amountResult = parseOptionalAmount(parsed.amount, parsed.currency);
+  if (!amountResult.ok) return { error: amountResult.error, values };
 
-  // 新模板放到列表最后（用现有最大 sortOrder + 10），同频次场景下保持稳定顺序
-  const [maxRow] = await db
-    .select({ max: sql<number>`coalesce(max(${quickEntryTemplates.sortOrder}), 0)` })
-    .from(quickEntryTemplates);
-  const nextSortOrder = (maxRow?.max ?? 0) + 10;
-
-  const timestamp = nowIso();
-
-  await db
-    .insert(quickEntryTemplates)
-    .values({
-      id: crypto.randomUUID(),
-      name: parsed.name,
-      type: parsed.type,
-      currency: parsed.currency,
-      amountMinor: amountResult.amountMinor,
-      categoryId: parsed.categoryId,
-      sourceAccountId: parsed.sourceAccountId,
-      targetAccountId: parsed.targetAccountId,
-      paymentMethodId: parsed.paymentMethodId,
-      note: parsed.note,
-      sortOrder: nextSortOrder,
-      enabled: parsed.enabled,
-      usageCount: 0,
-      lastUsedAt: null,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    })
-    .run();
+  await createQuickEntryTemplateRecord({
+    name: parsed.name,
+    type: parsed.type,
+    currency: parsed.currency,
+    amountMinor: amountResult.amountMinor,
+    categoryId: parsed.categoryId,
+    sourceAccountId: parsed.sourceAccountId,
+    targetAccountId: parsed.targetAccountId,
+    paymentMethodId: parsed.paymentMethodId,
+    note: parsed.note,
+    enabled: parsed.enabled,
+  });
 
   revalidatePath("/");
   revalidatePath("/templates");
@@ -158,28 +141,21 @@ export async function updateQuickEntryTemplate(
   }
 
   const parsed = result.data;
-  const amountResult = parseAmount(parsed.amount, parsed.currency);
-  if (!amountResult.ok) {
-    return { error: amountResult.error, values };
-  }
+  const amountResult = parseOptionalAmount(parsed.amount, parsed.currency);
+  if (!amountResult.ok) return { error: amountResult.error, values };
 
-  await db
-    .update(quickEntryTemplates)
-    .set({
-      name: parsed.name,
-      type: parsed.type,
-      currency: parsed.currency,
-      amountMinor: amountResult.amountMinor,
-      categoryId: parsed.categoryId,
-      sourceAccountId: parsed.sourceAccountId,
-      targetAccountId: parsed.targetAccountId,
-      paymentMethodId: parsed.paymentMethodId,
-      note: parsed.note,
-      enabled: parsed.enabled,
-      updatedAt: nowIso(),
-    })
-    .where(eq(quickEntryTemplates.id, id))
-    .run();
+  await updateQuickEntryTemplateRecord(id, {
+    name: parsed.name,
+    type: parsed.type,
+    currency: parsed.currency,
+    amountMinor: amountResult.amountMinor,
+    categoryId: parsed.categoryId,
+    sourceAccountId: parsed.sourceAccountId,
+    targetAccountId: parsed.targetAccountId,
+    paymentMethodId: parsed.paymentMethodId,
+    note: parsed.note,
+    enabled: parsed.enabled,
+  });
 
   revalidatePath("/");
   revalidatePath("/templates");
@@ -188,18 +164,14 @@ export async function updateQuickEntryTemplate(
 }
 
 export async function deleteQuickEntryTemplate(id: string) {
-  await db.delete(quickEntryTemplates).where(eq(quickEntryTemplates.id, id)).run();
+  await deleteQuickEntryTemplateRecord(id);
   revalidatePath("/");
   revalidatePath("/templates");
   redirect("/templates");
 }
 
 export async function resetQuickEntryTemplateUsage(id: string) {
-  await db
-    .update(quickEntryTemplates)
-    .set({ usageCount: 0, lastUsedAt: null, updatedAt: nowIso() })
-    .where(eq(quickEntryTemplates.id, id))
-    .run();
+  await resetQuickEntryTemplateUsageRecord(id);
   revalidatePath("/");
   revalidatePath("/templates");
   revalidatePath(`/templates/${id}`);

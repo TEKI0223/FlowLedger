@@ -3,21 +3,26 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { eq, inArray, sql } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import { db } from "@/db/client";
-import { accounts, quickEntryTemplates, transactions } from "@/db/schema";
+import { accounts } from "@/db/schema";
 import {
   currencies,
   formatMinorForInput,
-  getTransactionBalanceImpacts,
   parseMoneyToMinor,
   transactionTypes,
   type Currency,
   type Transaction,
-  type TransactionType,
 } from "@/domain/finance";
 import { getQuickEntryTemplate, getTemporaryEntryDefaults } from "@/features/quick-entry/data";
-import { nowIso, todayIsoDate } from "@/lib/dates";
+import { bumpQuickEntryTemplateUsage } from "@/features/quick-entry/service";
+import {
+  createTransactionRecord,
+  deleteTransactionRecord,
+  loadTransaction,
+  replaceTransactionRecord,
+} from "@/features/transactions/service";
+import { todayIsoDate } from "@/lib/dates";
 import { normalize, stringField } from "@/lib/form";
 
 const transactionSchema = z.object({
@@ -68,10 +73,7 @@ export async function createTransaction(
   formData: FormData,
 ): Promise<TransactionActionState> {
   const result = await buildTransactionFromForm(formData, crypto.randomUUID());
-
-  if (!result.ok) {
-    return { error: result.error, values: result.values };
-  }
+  if (!result.ok) return { error: result.error, values: result.values };
 
   await createTransactionRecord(result.transaction);
   revalidateTransactionPaths(result.transaction.id);
@@ -84,70 +86,23 @@ export async function updateTransaction(
   formData: FormData,
 ): Promise<TransactionActionState> {
   const previous = await loadTransaction(id);
-
   if (!previous) {
     return { error: "交易不存在或已被删除", values: extractValues(formData) };
   }
 
   const result = await buildTransactionFromForm(formData, id);
+  if (!result.ok) return { error: result.error, values: result.values };
 
-  if (!result.ok) {
-    return { error: result.error, values: result.values };
-  }
-
-  const timestamp = nowIso();
-
-  await db.transaction(async (tx) => {
-    await applyBalanceImpacts(
-      tx,
-      invertImpacts(getTransactionBalanceImpacts(previous)),
-      timestamp,
-    );
-
-    await tx
-      .update(transactions)
-      .set({
-        occurredOn: result.transaction.occurredOn,
-        type: result.transaction.type,
-        amountMinor: result.transaction.money.amountMinor,
-        currency: result.transaction.money.currency,
-        categoryId: result.transaction.categoryId,
-        sourceAccountId: result.transaction.sourceAccountId,
-        targetAccountId: result.transaction.targetAccountId,
-        paymentMethodId: result.transaction.paymentMethodId,
-        includeInExpenseStats: result.transaction.type === "expense",
-        includeInCashflowStats: result.transaction.type !== "adjustment",
-        note: result.transaction.note,
-        updatedAt: timestamp,
-      })
-      .where(eq(transactions.id, id))
-      .run();
-
-    await applyBalanceImpacts(tx, getTransactionBalanceImpacts(result.transaction), timestamp);
-  });
-
+  await replaceTransactionRecord(id, previous, result.transaction);
   revalidateTransactionPaths(id);
   redirect("/transactions");
 }
 
 export async function deleteTransaction(id: string) {
   const previous = await loadTransaction(id);
+  if (!previous) return;
 
-  if (!previous) {
-    return;
-  }
-
-  const timestamp = nowIso();
-
-  await db.transaction(async (tx) => {
-    await applyBalanceImpacts(
-      tx,
-      invertImpacts(getTransactionBalanceImpacts(previous)),
-      timestamp,
-    );
-    await tx.delete(transactions).where(eq(transactions.id, id)).run();
-  });
-
+  await deleteTransactionRecord(previous);
   revalidateTransactionPaths(id);
   redirect("/transactions");
 }
@@ -158,13 +113,11 @@ export async function createQuickEntryTransaction(
   formData: FormData,
 ): Promise<TransactionActionState> {
   const template = await getQuickEntryTemplate(templateId);
-
   if (!template) {
     return { error: "快捷模板不存在或已停用", values: extractValues(formData) };
   }
 
   const amount = normalize(stringField(formData, "amount"));
-
   if (!amount && template.amountMinor === null) {
     return { error: "请输入金额", values: extractValues(formData) };
   }
@@ -192,27 +145,10 @@ export async function createQuickEntryTransaction(
   );
 
   const result = await buildTransactionFromForm(synthetic, crypto.randomUUID());
-
-  if (!result.ok) {
-    return { error: result.error, values: extractValues(formData) };
-  }
+  if (!result.ok) return { error: result.error, values: extractValues(formData) };
 
   await createTransactionRecord(result.transaction);
-
-  // 累加这个模板的使用次数（用于首页排序）；失败不阻断保存
-  try {
-    await db
-      .update(quickEntryTemplates)
-      .set({
-        usageCount: sql`${quickEntryTemplates.usageCount} + 1`,
-        lastUsedAt: nowIso(),
-      })
-      .where(eq(quickEntryTemplates.id, template.id))
-      .run();
-  } catch {
-    // 静默：模板被并发删除等极端情况不影响主流程
-  }
-
+  await bumpQuickEntryTemplateUsage(template.id);
   revalidateTransactionPaths(result.transaction.id);
   redirect("/?saved=quick-entry");
 }
@@ -222,7 +158,6 @@ export async function createTemporaryTransaction(
   formData: FormData,
 ): Promise<TransactionActionState> {
   const defaults = await getTemporaryEntryDefaults();
-
   if (!defaults) {
     return {
       error: "需要先创建一个 JPY 账户才能保存临时记录",
@@ -242,15 +177,14 @@ export async function createTemporaryTransaction(
   synthetic.set("note", userNote ? `临时记录，待补全：${userNote}` : "临时记录，待补全");
 
   const result = await buildTransactionFromForm(synthetic, crypto.randomUUID());
-
-  if (!result.ok) {
-    return { error: result.error, values: extractValues(formData) };
-  }
+  if (!result.ok) return { error: result.error, values: extractValues(formData) };
 
   await createTransactionRecord(result.transaction);
   revalidateTransactionPaths(result.transaction.id);
   redirect("/?saved=temporary");
 }
+
+// ── 内部：表单 → Transaction 的解析 + 业务校验 ────────────────────────────
 
 type BuildResult =
   | { ok: true; transaction: Transaction }
@@ -293,7 +227,6 @@ async function buildTransactionFromForm(formData: FormData, id: string): Promise
   }
 
   const amountMinor = parsed.type === "adjustment" ? rawAmountMinor : Math.abs(rawAmountMinor);
-
   if (amountMinor === 0) {
     return { ok: false, error: "金额不能为 0", values };
   }
@@ -326,62 +259,28 @@ async function buildTransactionFromForm(formData: FormData, id: string): Promise
 }
 
 function setOptionalFormValue(formData: FormData, name: string, value: string | null | undefined) {
-  if (value) {
-    formData.set(name, value);
-  }
-}
-
-async function createTransactionRecord(transaction: Transaction) {
-  const timestamp = nowIso();
-
-  await db.transaction(async (tx) => {
-    await tx
-      .insert(transactions)
-      .values({
-        id: transaction.id,
-        occurredOn: transaction.occurredOn,
-        type: transaction.type,
-        amountMinor: transaction.money.amountMinor,
-        currency: transaction.money.currency,
-        categoryId: transaction.categoryId,
-        sourceAccountId: transaction.sourceAccountId,
-        targetAccountId: transaction.targetAccountId,
-        paymentMethodId: transaction.paymentMethodId,
-        includeInExpenseStats: transaction.type === "expense",
-        includeInCashflowStats: transaction.type !== "adjustment",
-        note: transaction.note,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      })
-      .run();
-
-    await applyBalanceImpacts(tx, getTransactionBalanceImpacts(transaction), timestamp);
-  });
+  if (value) formData.set(name, value);
 }
 
 function assertRequiredAccounts(transaction: z.infer<typeof transactionSchema>) {
   if (transaction.type === "income" && !transaction.targetAccountId) {
     throw new Error("收入需要选择入账账户");
   }
-
   if (transaction.type === "expense" && !transaction.sourceAccountId) {
     throw new Error("支出需要选择付款账户");
   }
-
   if (
     transaction.type === "transfer" &&
     (!transaction.sourceAccountId || !transaction.targetAccountId)
   ) {
     throw new Error("转账需要选择转出账户和转入账户");
   }
-
   if (
     transaction.type === "transfer" &&
     transaction.sourceAccountId === transaction.targetAccountId
   ) {
     throw new Error("转出账户和转入账户不能相同");
   }
-
   if (transaction.type === "adjustment" && !transaction.targetAccountId) {
     throw new Error("调整需要选择校准账户");
   }
@@ -393,86 +292,16 @@ async function assertAccountCurrencies(
   currency: Currency,
 ) {
   const ids = [sourceAccountId, targetAccountId].filter((id): id is string => Boolean(id));
-
-  if (ids.length === 0) {
-    return;
-  }
+  if (ids.length === 0) return;
 
   const accountRows = await db.select().from(accounts).where(inArray(accounts.id, ids));
   const accountById = new Map(accountRows.map((account) => [account.id, account]));
 
   for (const id of ids) {
     const account = accountById.get(id);
-
-    if (!account) {
-      throw new Error("选择的账户不存在");
-    }
-
-    if (account.currency !== currency) {
-      throw new Error("交易币种必须和所选账户币种一致");
-    }
+    if (!account) throw new Error("选择的账户不存在");
+    if (account.currency !== currency) throw new Error("交易币种必须和所选账户币种一致");
   }
-}
-
-async function loadTransaction(id: string): Promise<Transaction | null> {
-  const [row] = await db.select().from(transactions).where(eq(transactions.id, id)).limit(1);
-
-  if (!row) {
-    return null;
-  }
-
-  return rowToTransaction(row);
-}
-
-function rowToTransaction(row: {
-  id: string;
-  occurredOn: string;
-  postedOn: string | null;
-  type: TransactionType;
-  amountMinor: number;
-  currency: Currency;
-  categoryId: string | null;
-  sourceAccountId: string | null;
-  targetAccountId: string | null;
-  paymentMethodId: string | null;
-  note: string | null;
-}): Transaction {
-  return {
-    id: row.id,
-    occurredOn: row.occurredOn,
-    postedOn: row.postedOn ?? undefined,
-    type: row.type,
-    money: { amountMinor: row.amountMinor, currency: row.currency },
-    categoryId: row.categoryId ?? undefined,
-    sourceAccountId: row.sourceAccountId ?? undefined,
-    targetAccountId: row.targetAccountId ?? undefined,
-    paymentMethodId: row.paymentMethodId ?? undefined,
-    note: row.note ?? undefined,
-  };
-}
-
-async function applyBalanceImpacts(
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
-  impacts: Array<{ accountId: string; amountMinor: number }>,
-  timestamp: string,
-) {
-  for (const impact of impacts) {
-    await tx
-      .update(accounts)
-      .set({
-        balanceMinor: sql`${accounts.balanceMinor} + ${impact.amountMinor}`,
-        updatedAt: timestamp,
-      })
-      .where(eq(accounts.id, impact.accountId))
-      .run();
-  }
-}
-
-function invertImpacts(impacts: Array<{ accountId: string; amountMinor: number }>) {
-  return impacts.map((impact) => ({
-    ...impact,
-    amountMinor: -impact.amountMinor,
-  }));
 }
 
 function revalidateTransactionPaths(id: string) {

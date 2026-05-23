@@ -8,7 +8,13 @@ import { db } from "@/db/client";
 import { installmentPlans, transactions } from "@/db/schema";
 import { currencies, parseMoneyToMinor } from "@/domain/finance";
 import { computeInstallmentStatus } from "@/domain/installment";
-import { nowIso } from "@/lib/dates";
+import {
+  createInstallmentPlanRecord,
+  deleteInstallmentPlanRecord,
+  setInstallmentStatus,
+  shiftInstallmentCompletedPeriods,
+  updateInstallmentPlanRecord,
+} from "@/features/installments/service";
 import { stringField as field } from "@/lib/form";
 
 const installmentSchema = z.object({
@@ -62,10 +68,8 @@ export async function createInstallmentPlan(
   }
 
   const parsed = result.data;
-
   let totalAmountMinor: number;
   let amountPerPeriodMinor: number;
-
   try {
     totalAmountMinor = Math.abs(parseMoneyToMinor(parsed.totalAmount, parsed.currency));
     amountPerPeriodMinor = Math.abs(parseMoneyToMinor(parsed.amountPerPeriod, parsed.currency));
@@ -77,17 +81,12 @@ export async function createInstallmentPlan(
     return { error: "金额不能为 0", values };
   }
 
-  // 校验原始交易
   const [originalTx] = await db
     .select()
     .from(transactions)
     .where(eq(transactions.id, originalTransactionId))
     .limit(1);
-
-  if (!originalTx) {
-    return { error: "原始交易不存在", values };
-  }
-
+  if (!originalTx) return { error: "原始交易不存在", values };
   if (originalTx.currency !== parsed.currency) {
     return { error: "分期币种必须与原始交易一致", values };
   }
@@ -95,25 +94,14 @@ export async function createInstallmentPlan(
   // 利息 / 手续费 = 期数 × 每期金额 − 总金额，自动派生
   const feeAmountMinor = parsed.periods * amountPerPeriodMinor - totalAmountMinor;
 
-  const timestamp = nowIso();
-
-  await db
-    .insert(installmentPlans)
-    .values({
-      id: crypto.randomUUID(),
-      originalTransactionId,
-      totalAmountMinor,
-      currency: parsed.currency,
-      periods: parsed.periods,
-      amountPerPeriodMinor,
-      firstPaymentOn: parsed.firstPaymentOn,
-      completedPeriods: 0,
-      status: "active",
-      feeAmountMinor,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    })
-    .run();
+  await createInstallmentPlanRecord(originalTransactionId, {
+    totalAmountMinor,
+    currency: parsed.currency,
+    periods: parsed.periods,
+    amountPerPeriodMinor,
+    firstPaymentOn: parsed.firstPaymentOn,
+    feeAmountMinor,
+  });
 
   revalidatePath("/");
   revalidatePath("/installments");
@@ -143,7 +131,6 @@ export async function updateInstallmentPlan(
   const parsed = result.data;
   let totalAmountMinor: number;
   let amountPerPeriodMinor: number;
-
   try {
     totalAmountMinor = Math.abs(parseMoneyToMinor(parsed.totalAmount, parsed.currency));
     amountPerPeriodMinor = Math.abs(parseMoneyToMinor(parsed.amountPerPeriod, parsed.currency));
@@ -158,10 +145,7 @@ export async function updateInstallmentPlan(
     .from(installmentPlans)
     .where(eq(installmentPlans.id, id))
     .limit(1);
-
-  if (!existing) {
-    return { error: "分期计划不存在", values };
-  }
+  if (!existing) return { error: "分期计划不存在", values };
 
   if (parsed.periods < existing.completedPeriods) {
     return { error: `期数不能小于已完成期数 ${existing.completedPeriods}`, values };
@@ -173,20 +157,15 @@ export async function updateInstallmentPlan(
     existing.status === "cancelled",
   );
 
-  await db
-    .update(installmentPlans)
-    .set({
-      totalAmountMinor,
-      currency: parsed.currency,
-      periods: parsed.periods,
-      amountPerPeriodMinor,
-      firstPaymentOn: parsed.firstPaymentOn,
-      feeAmountMinor,
-      status: newStatus,
-      updatedAt: nowIso(),
-    })
-    .where(eq(installmentPlans.id, id))
-    .run();
+  await updateInstallmentPlanRecord(id, {
+    totalAmountMinor,
+    currency: parsed.currency,
+    periods: parsed.periods,
+    amountPerPeriodMinor,
+    firstPaymentOn: parsed.firstPaymentOn,
+    feeAmountMinor,
+    status: newStatus,
+  });
 
   revalidatePath("/");
   revalidatePath("/installments");
@@ -195,29 +174,7 @@ export async function updateInstallmentPlan(
 }
 
 export async function markInstallmentPeriodPaid(id: string) {
-  const [existing] = await db
-    .select()
-    .from(installmentPlans)
-    .where(eq(installmentPlans.id, id))
-    .limit(1);
-
-  if (!existing) return;
-  if (existing.status === "cancelled") return;
-  if (existing.completedPeriods >= existing.periods) return;
-
-  const newCompleted = existing.completedPeriods + 1;
-  const newStatus = computeInstallmentStatus(newCompleted, existing.periods, false);
-
-  await db
-    .update(installmentPlans)
-    .set({
-      completedPeriods: newCompleted,
-      status: newStatus,
-      updatedAt: nowIso(),
-    })
-    .where(eq(installmentPlans.id, id))
-    .run();
-
+  await shiftInstallmentCompletedPeriods(id, 1);
   revalidatePath("/");
   revalidatePath("/installments");
   revalidatePath(`/installments/${id}`);
@@ -225,32 +182,7 @@ export async function markInstallmentPeriodPaid(id: string) {
 }
 
 export async function unmarkInstallmentPeriodPaid(id: string) {
-  const [existing] = await db
-    .select()
-    .from(installmentPlans)
-    .where(eq(installmentPlans.id, id))
-    .limit(1);
-
-  if (!existing) return;
-  if (existing.completedPeriods === 0) return;
-
-  const newCompleted = existing.completedPeriods - 1;
-  const newStatus = computeInstallmentStatus(
-    newCompleted,
-    existing.periods,
-    existing.status === "cancelled",
-  );
-
-  await db
-    .update(installmentPlans)
-    .set({
-      completedPeriods: newCompleted,
-      status: newStatus,
-      updatedAt: nowIso(),
-    })
-    .where(eq(installmentPlans.id, id))
-    .run();
-
+  await shiftInstallmentCompletedPeriods(id, -1);
   revalidatePath("/");
   revalidatePath("/installments");
   revalidatePath(`/installments/${id}`);
@@ -258,12 +190,7 @@ export async function unmarkInstallmentPeriodPaid(id: string) {
 }
 
 export async function cancelInstallmentPlan(id: string) {
-  await db
-    .update(installmentPlans)
-    .set({ status: "cancelled", updatedAt: nowIso() })
-    .where(eq(installmentPlans.id, id))
-    .run();
-
+  await setInstallmentStatus(id, "cancelled");
   revalidatePath("/");
   revalidatePath("/installments");
   revalidatePath(`/installments/${id}`);
@@ -276,17 +203,9 @@ export async function reopenInstallmentPlan(id: string) {
     .from(installmentPlans)
     .where(eq(installmentPlans.id, id))
     .limit(1);
-
   if (!existing) return;
-
   const status = computeInstallmentStatus(existing.completedPeriods, existing.periods, false);
-
-  await db
-    .update(installmentPlans)
-    .set({ status, updatedAt: nowIso() })
-    .where(eq(installmentPlans.id, id))
-    .run();
-
+  await setInstallmentStatus(id, status);
   revalidatePath("/");
   revalidatePath("/installments");
   revalidatePath(`/installments/${id}`);
@@ -294,7 +213,7 @@ export async function reopenInstallmentPlan(id: string) {
 }
 
 export async function deleteInstallmentPlan(id: string) {
-  await db.delete(installmentPlans).where(eq(installmentPlans.id, id)).run();
+  await deleteInstallmentPlanRecord(id);
   revalidatePath("/");
   revalidatePath("/installments");
   redirect("/installments");

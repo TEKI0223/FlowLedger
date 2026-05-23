@@ -3,18 +3,23 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
-import { accounts, recurringItems, transactions } from "@/db/schema";
+import { accounts, recurringItems } from "@/db/schema";
 import {
   currencies,
-  getTransactionBalanceImpacts,
   parseMoneyToMinor,
   type Currency,
   type Transaction,
 } from "@/domain/finance";
-import { getNextOccurrence, recurringFrequencies } from "@/domain/recurring";
-import { nowIso } from "@/lib/dates";
+import { recurringFrequencies } from "@/domain/recurring";
+import {
+  confirmRecurringItemAtomic,
+  createRecurringItemRecord,
+  deleteRecurringItemRecord,
+  skipRecurringItemRecord,
+  updateRecurringItemRecord,
+} from "@/features/recurring/service";
 import { normalize, stringField as field } from "@/lib/form";
 
 const recurringSchema = z
@@ -78,26 +83,22 @@ function extract(formData: FormData): RecurringFormValues {
     targetAccountId: field(formData, "targetAccountId"),
     paymentMethodId: field(formData, "paymentMethodId"),
     note: field(formData, "note"),
-    // 未传 enabled 时（例如表单未渲染该复选框）默认启用
     enabled: formData.has("enabled") ? formData.get("enabled") === "on" : true,
   };
 }
 
-function parseAmount(
-  rawAmount: string | undefined,
+/** 周期项金额可空（变动金额场景）。amountFixed=true 时必填。 */
+function parseRecurringAmount(
+  raw: string | undefined,
   amountFixed: boolean,
-  currency: "JPY" | "CNY",
+  currency: Currency,
 ): { ok: true; amountMinor: number | null } | { ok: false; error: string } {
-  if (!rawAmount || rawAmount.trim() === "") {
-    if (amountFixed) {
-      return { ok: false, error: "固定金额时需要填写金额" };
-    }
+  if (!raw || raw.trim() === "") {
+    if (amountFixed) return { ok: false, error: "固定金额时需要填写金额" };
     return { ok: true, amountMinor: null };
   }
-
   try {
-    const minor = Math.abs(parseMoneyToMinor(rawAmount, currency));
-    return { ok: true, amountMinor: minor };
+    return { ok: true, amountMinor: Math.abs(parseMoneyToMinor(raw, currency)) };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "金额格式不正确" };
   }
@@ -130,35 +131,24 @@ export async function createRecurringItem(
   }
 
   const parsed = result.data;
-  const amountResult = parseAmount(parsed.amount, parsed.amountFixed, parsed.currency);
+  const amount = parseRecurringAmount(parsed.amount, parsed.amountFixed, parsed.currency);
+  if (!amount.ok) return { error: amount.error, values };
 
-  if (!amountResult.ok) {
-    return { error: amountResult.error, values };
-  }
-
-  const timestamp = nowIso();
-
-  await db
-    .insert(recurringItems)
-    .values({
-      id: crypto.randomUUID(),
-      name: parsed.name,
-      type: parsed.type,
-      amountMinor: amountResult.amountMinor,
-      amountFixed: parsed.amountFixed,
-      currency: parsed.currency,
-      frequency: parsed.frequency,
-      nextDate: parsed.nextDate,
-      categoryId: parsed.categoryId,
-      sourceAccountId: parsed.sourceAccountId,
-      targetAccountId: parsed.targetAccountId,
-      paymentMethodId: parsed.paymentMethodId,
-      note: parsed.note,
-      enabled: parsed.enabled,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    })
-    .run();
+  await createRecurringItemRecord({
+    name: parsed.name,
+    type: parsed.type,
+    amountMinor: amount.amountMinor,
+    amountFixed: parsed.amountFixed,
+    currency: parsed.currency,
+    frequency: parsed.frequency,
+    nextDate: parsed.nextDate,
+    categoryId: parsed.categoryId,
+    sourceAccountId: parsed.sourceAccountId,
+    targetAccountId: parsed.targetAccountId,
+    paymentMethodId: parsed.paymentMethodId,
+    note: parsed.note,
+    enabled: parsed.enabled,
+  });
 
   revalidatePath("/");
   revalidatePath("/recurring");
@@ -193,32 +183,24 @@ export async function updateRecurringItem(
   }
 
   const parsed = result.data;
-  const amountResult = parseAmount(parsed.amount, parsed.amountFixed, parsed.currency);
+  const amount = parseRecurringAmount(parsed.amount, parsed.amountFixed, parsed.currency);
+  if (!amount.ok) return { error: amount.error, values };
 
-  if (!amountResult.ok) {
-    return { error: amountResult.error, values };
-  }
-
-  await db
-    .update(recurringItems)
-    .set({
-      name: parsed.name,
-      type: parsed.type,
-      amountMinor: amountResult.amountMinor,
-      amountFixed: parsed.amountFixed,
-      currency: parsed.currency,
-      frequency: parsed.frequency,
-      nextDate: parsed.nextDate,
-      categoryId: parsed.categoryId,
-      sourceAccountId: parsed.sourceAccountId,
-      targetAccountId: parsed.targetAccountId,
-      paymentMethodId: parsed.paymentMethodId,
-      note: parsed.note,
-      enabled: parsed.enabled,
-      updatedAt: nowIso(),
-    })
-    .where(eq(recurringItems.id, id))
-    .run();
+  await updateRecurringItemRecord(id, {
+    name: parsed.name,
+    type: parsed.type,
+    amountMinor: amount.amountMinor,
+    amountFixed: parsed.amountFixed,
+    currency: parsed.currency,
+    frequency: parsed.frequency,
+    nextDate: parsed.nextDate,
+    categoryId: parsed.categoryId,
+    sourceAccountId: parsed.sourceAccountId,
+    targetAccountId: parsed.targetAccountId,
+    paymentMethodId: parsed.paymentMethodId,
+    note: parsed.note,
+    enabled: parsed.enabled,
+  });
 
   revalidatePath("/");
   revalidatePath("/recurring");
@@ -227,8 +209,7 @@ export async function updateRecurringItem(
 }
 
 export async function deleteRecurringItem(id: string) {
-  await db.delete(recurringItems).where(eq(recurringItems.id, id)).run();
-
+  await deleteRecurringItemRecord(id);
   revalidatePath("/");
   revalidatePath("/recurring");
   redirect("/recurring");
@@ -259,15 +240,11 @@ export async function confirmRecurringItem(
   };
 
   const [row] = await db.select().from(recurringItems).where(eq(recurringItems.id, id)).limit(1);
+  if (!row) return { error: "周期项不存在或已被删除", values };
 
-  if (!row) {
-    return { error: "周期项不存在或已被删除", values };
-  }
-
-  // 解析金额：固定则用模板自带，可由用户覆盖；变动金额必填
+  // 金额：固定 → 模板自带，可被用户覆盖；变动 → 用户必填
   const userAmountRaw = normalize(values.amount);
   let amountMinor: number;
-
   try {
     if (userAmountRaw) {
       amountMinor = Math.abs(parseMoneyToMinor(userAmountRaw, row.currency));
@@ -280,16 +257,8 @@ export async function confirmRecurringItem(
     return { error: error instanceof Error ? error.message : "金额格式不正确", values };
   }
 
-  if (amountMinor === 0) {
-    return { error: "金额不能为 0", values };
-  }
+  if (amountMinor === 0) return { error: "金额不能为 0", values };
 
-  const occurredOn = normalize(values.occurredOn) ?? row.nextDate;
-  const noteFromUser = normalize(values.note);
-  const noteFromTemplate = row.note ?? undefined;
-  const note = noteFromUser ?? noteFromTemplate;
-
-  // 账户币种校验
   try {
     await assertAccountCurrencies(
       row.sourceAccountId,
@@ -300,6 +269,9 @@ export async function confirmRecurringItem(
   } catch (error) {
     return { error: error instanceof Error ? error.message : "账户配置不完整", values };
   }
+
+  const occurredOn = normalize(values.occurredOn) ?? row.nextDate;
+  const note = normalize(values.note) ?? row.note ?? undefined;
 
   const transaction: Transaction = {
     id: crypto.randomUUID(),
@@ -313,47 +285,11 @@ export async function confirmRecurringItem(
     note,
   };
 
-  const nextDate = getNextOccurrence(row.nextDate, row.frequency);
-  const timestamp = nowIso();
-
-  await db.transaction(async (tx) => {
-    await tx
-      .insert(transactions)
-      .values({
-        id: transaction.id,
-        occurredOn: transaction.occurredOn,
-        type: transaction.type,
-        amountMinor: transaction.money.amountMinor,
-        currency: transaction.money.currency,
-        categoryId: transaction.categoryId,
-        sourceAccountId: transaction.sourceAccountId,
-        targetAccountId: transaction.targetAccountId,
-        paymentMethodId: transaction.paymentMethodId,
-        recurringItemId: row.id,
-        includeInExpenseStats: transaction.type === "expense",
-        includeInCashflowStats: true,
-        note: transaction.note,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      })
-      .run();
-
-    for (const impact of getTransactionBalanceImpacts(transaction)) {
-      await tx
-        .update(accounts)
-        .set({
-          balanceMinor: sql`${accounts.balanceMinor} + ${impact.amountMinor}`,
-          updatedAt: timestamp,
-        })
-        .where(eq(accounts.id, impact.accountId))
-        .run();
-    }
-
-    await tx
-      .update(recurringItems)
-      .set({ nextDate, updatedAt: timestamp })
-      .where(eq(recurringItems.id, row.id))
-      .run();
+  await confirmRecurringItemAtomic({
+    recurringItemId: row.id,
+    recurringNextDate: row.nextDate,
+    recurringFrequency: row.frequency,
+    transaction,
   });
 
   revalidatePath("/");
@@ -365,25 +301,14 @@ export async function confirmRecurringItem(
 }
 
 export async function skipRecurringItem(id: string) {
-  const [row] = await db.select().from(recurringItems).where(eq(recurringItems.id, id)).limit(1);
-
-  if (!row) {
-    return;
-  }
-
-  const nextDate = getNextOccurrence(row.nextDate, row.frequency);
-
-  await db
-    .update(recurringItems)
-    .set({ nextDate, updatedAt: nowIso() })
-    .where(eq(recurringItems.id, row.id))
-    .run();
-
+  await skipRecurringItemRecord(id);
   revalidatePath("/");
   revalidatePath("/recurring");
   revalidatePath("/recurring/pending");
   redirect("/recurring/pending?skipped=1");
 }
+
+// ── 业务校验（确认时用，不属于通用 service） ─────────────────────────────
 
 async function assertAccountCurrencies(
   sourceAccountId: string | null,
@@ -425,4 +350,3 @@ function assertRequiredAccountsForRecurring(row: {
     throw new Error("转出账户和转入账户不能相同");
   }
 }
-
