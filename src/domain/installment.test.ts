@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  classifyInstallmentFee,
   computeInstallmentDueDates,
   computeInstallmentStatus,
 } from "./installment";
@@ -32,6 +33,52 @@ describe("computeInstallmentDueDates", () => {
 
   it("0 期返回空数组", () => {
     expect(computeInstallmentDueDates("2026-05-10", 0)).toEqual([]);
+  });
+});
+
+describe("classifyInstallmentFee", () => {
+  it("整除时无利息", () => {
+    // 12000 / 12 = 1000，12 × 1000 = 12000，fee = 0
+    expect(classifyInstallmentFee(0, 12)).toEqual({
+      kind: "none",
+      totalMinor: 0,
+      perPeriodMinor: 0,
+    });
+  });
+
+  it("rounding 容差以内当无利息（JPY 10000/3）", () => {
+    // floor(10000/3) = 3333，3 × 3333 = 9999，fee = -1，|fee| < periods=3
+    expect(classifyInstallmentFee(-1, 3)).toEqual({
+      kind: "none",
+      totalMinor: 0,
+      perPeriodMinor: 0,
+    });
+  });
+
+  it("12 期 rounding 上限 ±11 都算无利息", () => {
+    expect(classifyInstallmentFee(-11, 12).kind).toBe("none");
+    expect(classifyInstallmentFee(11, 12).kind).toBe("none");
+  });
+
+  it("超过容差按实际利息显示", () => {
+    // 12 期 ¥12 利息 = 每期 ¥1
+    expect(classifyInstallmentFee(12, 12)).toEqual({
+      kind: "interest",
+      totalMinor: 12,
+      perPeriodMinor: 1,
+    });
+  });
+
+  it("负数大于容差按回扣显示", () => {
+    expect(classifyInstallmentFee(-1200, 12)).toEqual({
+      kind: "rebate",
+      totalMinor: 1200,
+      perPeriodMinor: 100,
+    });
+  });
+
+  it("periods 为 0 也不会崩", () => {
+    expect(classifyInstallmentFee(100, 0).kind).toBe("none");
   });
 });
 

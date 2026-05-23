@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatMinorForInput, formatMoney, transactionTypeLabels } from "@/domain/finance";
 import {
+  classifyInstallmentFee,
   computeInstallmentDueDates,
   installmentStatusLabels,
   type InstallmentStatus,
@@ -84,22 +85,26 @@ export default async function InstallmentDetailPage({ params }: Props) {
               <p className="text-xl font-semibold tabular-nums">
                 {formatMoney({ amountMinor: plan.totalAmountMinor, currency: plan.currency })}
               </p>
-              {plan.feeAmountMinor && plan.feeAmountMinor > 0 ? (
-                <p className="text-xs text-adjustment">
-                  含利息{" "}
-                  {formatMoney({ amountMinor: plan.feeAmountMinor, currency: plan.currency })}
-                </p>
-              ) : plan.feeAmountMinor && plan.feeAmountMinor < 0 ? (
-                <p className="text-xs text-income">
-                  回扣{" "}
-                  {formatMoney({
-                    amountMinor: -plan.feeAmountMinor,
-                    currency: plan.currency,
-                  })}
-                </p>
-              ) : (
-                <p className="text-xs text-muted-foreground">无利息</p>
-              )}
+              {(() => {
+                const fee = classifyInstallmentFee(plan.feeAmountMinor ?? 0, plan.periods);
+                if (fee.kind === "interest") {
+                  return (
+                    <p className="text-xs text-adjustment">
+                      含利息{" "}
+                      {formatMoney({ amountMinor: fee.totalMinor, currency: plan.currency })}
+                    </p>
+                  );
+                }
+                if (fee.kind === "rebate") {
+                  return (
+                    <p className="text-xs text-income">
+                      回扣{" "}
+                      {formatMoney({ amountMinor: fee.totalMinor, currency: plan.currency })}
+                    </p>
+                  );
+                }
+                return <p className="text-xs text-muted-foreground">无利息</p>;
+              })()}
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">已扣</p>

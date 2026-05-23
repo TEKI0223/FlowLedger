@@ -16,6 +16,7 @@ import {
   parseMoneyToMinor,
   type Currency,
 } from "@/domain/finance";
+import { classifyInstallmentFee } from "@/domain/installment";
 
 const initialState: InstallmentActionState = {};
 
@@ -74,8 +75,13 @@ export function InstallmentForm({ action, defaults = {}, submitLabel }: Installm
   const autoPerPeriod = computeAutoPerPeriod(totalAmount, periodsNum, currency);
   const amountPerPeriod = userEditedPerPeriod ? manualPerPeriod : autoPerPeriod;
 
-  // 利息（手续费）= 期数 × 每期金额 − 总金额
-  const interestSummary = computeInterest(totalAmount, periodsNum, amountPerPeriod, currency);
+  // 利息（手续费）= 期数 × 每期金额 − 总金额；
+  // 容差：rounding 误差视为 0（见 classifyInstallmentFee）
+  const rawFeeMinor = computeRawFee(totalAmount, periodsNum, amountPerPeriod, currency);
+  const interestSummary =
+    rawFeeMinor === null
+      ? null
+      : classifyInstallmentFee(rawFeeMinor, periodsNum);
 
   return (
     <>
@@ -162,9 +168,9 @@ export function InstallmentForm({ action, defaults = {}, submitLabel }: Installm
 
         {interestSummary ? (
           <div className="rounded-md border border-border bg-muted/40 px-3 py-2.5 text-sm">
-            {interestSummary.totalMinor === 0 ? (
+            {interestSummary.kind === "none" ? (
               <p className="text-muted-foreground">无利息分期</p>
-            ) : interestSummary.totalMinor > 0 ? (
+            ) : interestSummary.kind === "interest" ? (
               <p>
                 <span className="text-muted-foreground">利息：</span>
                 <span className="font-semibold tabular-nums text-adjustment">
@@ -190,7 +196,7 @@ export function InstallmentForm({ action, defaults = {}, submitLabel }: Installm
                 <span className="font-semibold tabular-nums text-income">
                   每期 −
                   {formatMoney({
-                    amountMinor: -interestSummary.perPeriodMinor,
+                    amountMinor: interestSummary.perPeriodMinor,
                     currency,
                   })}
                 </span>
@@ -199,7 +205,7 @@ export function InstallmentForm({ action, defaults = {}, submitLabel }: Installm
                 </span>
                 <span className="font-semibold tabular-nums text-income">
                   {formatMoney({
-                    amountMinor: -interestSummary.totalMinor,
+                    amountMinor: interestSummary.totalMinor,
                     currency,
                   })}
                 </span>
@@ -231,21 +237,19 @@ function computeAutoPerPeriod(
   }
 }
 
-function computeInterest(
+function computeRawFee(
   totalAmount: string,
   periods: number,
   amountPerPeriod: string,
   currency: Currency,
-): { totalMinor: number; perPeriodMinor: number } | null {
+): number | null {
   if (!totalAmount || !amountPerPeriod) return null;
   if (!Number.isFinite(periods) || periods < 1) return null;
   try {
     const totalMinor = parseMoneyToMinor(totalAmount, currency);
     const perMinor = parseMoneyToMinor(amountPerPeriod, currency);
     if (totalMinor <= 0 || perMinor <= 0) return null;
-    const totalInterestMinor = periods * perMinor - totalMinor;
-    const perPeriodInterestMinor = Math.round(totalInterestMinor / periods);
-    return { totalMinor: totalInterestMinor, perPeriodMinor: perPeriodInterestMinor };
+    return periods * perMinor - totalMinor;
   } catch {
     return null;
   }

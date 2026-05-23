@@ -35,3 +35,35 @@ export function computeInstallmentStatus(
   if (completedPeriods >= totalPeriods) return "completed";
   return "active";
 }
+
+export type InstallmentFeeKind = "none" | "interest" | "rebate";
+
+export type InstallmentFeeSummary = {
+  kind: InstallmentFeeKind;
+  totalMinor: number;
+  perPeriodMinor: number;
+};
+
+/**
+ * 把 fee（= 期数 × 每期金额 − 总金额，有符号）分类为：
+ *  - "none"      无利息（含因整数除法产生的微小 rounding 误差）
+ *  - "interest"  含利息（fee > 0）
+ *  - "rebate"    回扣 / 折让（fee < 0）
+ *
+ * 容差：|fee| < 期数（即每期平均偏差不到 1 个最小货币单位）视为 rounding，不算真实利息。
+ * 12 期 JPY 容差 ¥11；12 期 CNY 容差 ¥0.11。
+ */
+export function classifyInstallmentFee(
+  feeMinor: number,
+  periods: number,
+): InstallmentFeeSummary {
+  if (periods <= 0 || Math.abs(feeMinor) < periods) {
+    return { kind: "none", totalMinor: 0, perPeriodMinor: 0 };
+  }
+  const absMinor = Math.abs(feeMinor);
+  return {
+    kind: feeMinor > 0 ? "interest" : "rebate",
+    totalMinor: absMinor,
+    perPeriodMinor: Math.round(absMinor / periods),
+  };
+}
