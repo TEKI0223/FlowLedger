@@ -111,6 +111,22 @@ export function TransactionForm({
 
   const [targetBalance, setTargetBalance] = useState<string>("");
 
+  // 「按 props/state 变化反向同步本地状态」的 React 官方模式（render 阶段调用 setState）：
+  // 每次 action 返回新的 state.values（错误回填），把已返回的值复制到本地受控状态。
+  // 用 prevState 标记避免无限循环。
+  // ref: https://react.dev/reference/react/useState#storing-information-from-previous-renders
+  const [prevState, setPrevState] = useState(state);
+  if (state !== prevState) {
+    setPrevState(state);
+    const v = state.values;
+    if (v) {
+      if (v.type) setType(v.type as TransactionType);
+      if (v.currency) setCurrency(v.currency as Currency);
+      if (v.sourceAccountId !== undefined) setSourceAccountId(v.sourceAccountId);
+      if (v.targetAccountId !== undefined) setTargetAccountId(v.targetAccountId);
+    }
+  }
+
   const fieldConfig = accountFieldsByType[type];
 
   // 是否启用"输入实际余额"模式：仅 create 模式下的 adjustment
@@ -119,15 +135,19 @@ export function TransactionForm({
   const targetAccount = lookups.accounts.find((a) => a.id === targetAccountId) ?? null;
   const currentBalanceMinor = targetAccount?.balanceMinor ?? 0;
 
-  // 校准模式下基于"目标余额 - 当前余额"算 delta
-  const computedDelta = useTargetBalanceUI ? computeDelta(targetBalance, currency, currentBalanceMinor) : null;
+  // 校准模式下基于"目标余额 - 当前余额"算 delta；同时把解析错误暴露出来
+  const targetBalanceResult = useTargetBalanceUI
+    ? parseTargetBalance(targetBalance, currency, currentBalanceMinor)
+    : null;
 
-  // amount 输入框的实际值：校准模式用 computedDelta；其他模式用用户输入
-  const amountFieldValue = useTargetBalanceUI
-    ? computedDelta !== null
-      ? formatMinorForInput({ amountMinor: computedDelta, currency })
-      : ""
-    : undefined;
+  // amount 输入框的实际值：校准模式用 delta（解析成功才有）；其他模式用用户输入
+  const amountFieldValue =
+    useTargetBalanceUI && targetBalanceResult?.ok
+      ? formatMinorForInput({ amountMinor: targetBalanceResult.delta, currency })
+      : useTargetBalanceUI
+        ? ""
+        : undefined;
+
 
   function handlePaymentMethodChange(event: React.ChangeEvent<HTMLSelectElement>) {
     const newPmId = event.target.value;
@@ -196,22 +216,27 @@ export function TransactionForm({
                 className="h-11 text-base tabular-nums"
               />
             </div>
-            {computedDelta !== null && targetAccount ? (
+            {targetAccount && targetBalanceResult?.ok ? (
               <p className="text-xs text-muted-foreground">
                 差额：
                 <span
                   className={
-                    computedDelta > 0
+                    targetBalanceResult.delta > 0
                       ? "text-income font-semibold tabular-nums"
-                      : computedDelta < 0
+                      : targetBalanceResult.delta < 0
                         ? "text-expense font-semibold tabular-nums"
                         : "font-semibold tabular-nums"
                   }
                 >
-                  {computedDelta >= 0 ? "+" : ""}
-                  {formatMoney({ amountMinor: computedDelta, currency: targetAccount.currency })}
+                  {targetBalanceResult.delta >= 0 ? "+" : ""}
+                  {formatMoney({
+                    amountMinor: targetBalanceResult.delta,
+                    currency: targetAccount.currency,
+                  })}
                 </span>
               </p>
+            ) : targetAccount && targetBalanceResult && !targetBalanceResult.ok ? (
+              <p className="text-xs text-destructive">{targetBalanceResult.error}</p>
             ) : null}
             {/* 实际提交的 amount 字段 */}
             <input type="hidden" name="amount" value={amountFieldValue ?? ""} />
@@ -365,24 +390,36 @@ export function TransactionForm({
           />
         </div>
 
-        <SubmitButton>{submitLabel}</SubmitButton>
+        <SubmitButton
+          disabled={Boolean(targetBalanceResult && !targetBalanceResult.ok)}
+        >
+          {submitLabel}
+        </SubmitButton>
       </form>
     </>
   );
 }
 
-function computeDelta(
+type TargetBalanceResult =
+  | { ok: true; delta: number }
+  | { ok: false; error: string }
+  | null;
+
+function parseTargetBalance(
   targetBalanceInput: string,
   currency: Currency,
   currentBalanceMinor: number,
-): number | null {
+): TargetBalanceResult {
   const trimmed = targetBalanceInput.trim();
   if (!trimmed) return null;
 
   try {
     const targetMinor = parseMoneyToMinor(trimmed, currency);
-    return targetMinor - currentBalanceMinor;
-  } catch {
-    return null;
+    return { ok: true, delta: targetMinor - currentBalanceMinor };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "金额格式不正确",
+    };
   }
 }
