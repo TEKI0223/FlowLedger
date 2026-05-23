@@ -27,6 +27,8 @@ import {
 } from "@/features/quick-entry/quick-entry-modal";
 import { countPendingRecurringItems } from "@/features/recurring/data";
 import { countPendingRefunds } from "@/features/refunds/data";
+import { isAuthEnabled } from "@/lib/auth";
+import { LogoutButton } from "./logout-button";
 import { listTransactions } from "@/features/transactions/data";
 import { cn } from "@/lib/utils";
 import type { ActionTileTheme } from "@/components/ui/action-tile";
@@ -352,6 +354,14 @@ export default async function Home({ searchParams }: HomeProps) {
               >
                 打开交易页
               </Link>
+              {isAuthEnabled() ? (
+                <>
+                  <Separator />
+                  <div className="flex justify-end">
+                    <LogoutButton />
+                  </div>
+                </>
+              ) : null}
             </CardContent>
           </Card>
         </aside>

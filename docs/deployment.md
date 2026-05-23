@@ -54,29 +54,38 @@ unset DATABASE_URL DATABASE_AUTH_TOKEN
 
 ### 2.2 配置环境变量
 
-Project Settings → Environment Variables，加两个（Production + Preview 都勾上）：
+Project Settings → Environment Variables，加三个（Production + Preview 都勾上）：
 
 | Name | Value |
 |------|-------|
 | `DATABASE_URL` | `libsql://flowledger-<your-org>.turso.io` |
 | `DATABASE_AUTH_TOKEN` | （turso db tokens create 输出） |
+| `FLOWLEDGER_PASSWORD` | 你想用的访问密码（强密码） |
 
 ### 2.3 首次部署
 
-Deploy。部署完了访问 vercel 给的域名，应该能看到首页 + seed 账户余额都是 0。
+Deploy。部署完了访问 vercel 给的域名，应该先看到登录页，输入 `FLOWLEDGER_PASSWORD` 设的密码 → 跳到首页。
 
-## 3. 访问保护
+## 3. 访问保护：内置密码门
 
-部署到 Vercel 之后域名是公开的——FlowLedger 没做登录系统，**默认任何人访问都能看到/编辑你的财务数据**。三种保护方案：
+FlowLedger 内置最小密码认证。只要 `FLOWLEDGER_PASSWORD` env var 有值，所有路径（除了 `/login`）都强制跳登录。
 
-1. **Vercel Pro 的 Password Protection**（最简单）：Project Settings → Deployment Protection →
-   开启密码保护。给整个项目设一个密码。需要 Pro 计划。
-2. **不绑定自定义域名**：Vercel 默认域名长且不规则（`flowledger-xxx-zhang.vercel.app`），
-   不主动分享别人猜不到。算"安全 by obscurity"，凑合够个人用。
-3. **Cloudflare Access** 等外层认证：把项目放到 Cloudflare 后面，用 Cloudflare Access
-   做基于邮箱的访问控制。免费但配置复杂。
+实现细节：
+- session 是 JWT，存在 HttpOnly + Secure + SameSite=lax cookie 里，30 天 TTL
+- JWT 的签名 secret **从 `FLOWLEDGER_PASSWORD` 派生**（SHA-256）
+- 改密码 → 旧 secret 不匹配 → 所有现存 session 立即失效（不用手动登出）
 
-我自己用 2 就够，敏感场景再考虑 1 / 3。
+### 怎么改密码
+
+Vercel Settings → Environment Variables → 改 `FLOWLEDGER_PASSWORD` → Save → Redeploy。所有设备会跳回登录页。
+
+### 不想用密码门？
+
+不设 `FLOWLEDGER_PASSWORD` 这个 env var，middleware 看到没配就完全透传。结合 Vercel 默认那串长域名（`flowledger-xxxx-username.vercel.app`），别人猜不到就够个人用。属于 security by obscurity，单用户可以接受。
+
+### 想要 OAuth / 多用户
+
+把内置密码门拆掉换 [Auth.js](https://authjs.dev/) + Turso adapter。第一版没做是因为对单用户记账过度。要换的时候删 `middleware.ts`、`src/app/login`、`src/app/actions/auth.ts`、`src/lib/auth.ts`，按 Auth.js 文档重新接入。
 
 ## 4. 日常维护
 
