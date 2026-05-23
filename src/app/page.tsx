@@ -8,6 +8,7 @@ import {
   ReceiptIcon,
   RepeatIcon,
   WalletIcon,
+  ZapIcon,
 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -301,6 +302,14 @@ export default async function Home({ searchParams }: HomeProps) {
                 >
                   <CreditCardIcon className="size-3" />
                   信用卡账单
+                  <ArrowRightIcon className="size-3" />
+                </Link>
+                <Link
+                  href="/templates"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  <ZapIcon className="size-3" />
+                  快捷模板
                   <ArrowRightIcon className="size-3" />
                 </Link>
               </div>
