@@ -1,14 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isAuthEnabled, SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 
 const PUBLIC_PATHS = ["/login"];
 
 export async function middleware(req: NextRequest) {
-  // 没设密码 → 完全透传（开发期默认状态）
-  if (!isAuthEnabled()) {
-    return NextResponse.next();
-  }
-
   const { pathname } = req.nextUrl;
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();

@@ -3,18 +3,12 @@ import { jwtVerify, SignJWT } from "jose";
 export const SESSION_COOKIE = "flowledger_session";
 const SESSION_TTL_DAYS = 30;
 
-/**
- * 是否启用了密码门？通过 FLOWLEDGER_PASSWORD 是否设置来判断。
- * 未设置时允许所有访问（开发期方便）。
- */
-export function isAuthEnabled(): boolean {
-  return Boolean(process.env.FLOWLEDGER_PASSWORD);
-}
-
 async function getSecret(): Promise<Uint8Array> {
   const password = process.env.FLOWLEDGER_PASSWORD;
   if (!password) {
-    throw new Error("FLOWLEDGER_PASSWORD not set; auth is not enabled");
+    throw new Error(
+      "FLOWLEDGER_PASSWORD is not set. The app requires a password — add it to .env.local (dev) or environment variables (production).",
+    );
   }
   // 从密码派生 32 字节 secret（SHA-256），不需要单独维护 SESSION_SECRET。
   // 改密码 → 旧 session 自动失效。
