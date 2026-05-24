@@ -81,14 +81,6 @@ export async function deleteQuickEntryTemplateRecord(id: string): Promise<void> 
   await db.delete(quickEntryTemplates).where(eq(quickEntryTemplates.id, id)).run();
 }
 
-export async function resetQuickEntryTemplateUsageRecord(id: string): Promise<void> {
-  await db
-    .update(quickEntryTemplates)
-    .set({ usageCount: 0, lastUsedAt: null, updatedAt: nowIso() })
-    .where(eq(quickEntryTemplates.id, id))
-    .run();
-}
-
 /** 累加模板使用次数。失败静默，不阻断主流程。 */
 export async function bumpQuickEntryTemplateUsage(id: string): Promise<void> {
   try {

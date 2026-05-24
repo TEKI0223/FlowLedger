@@ -16,7 +16,15 @@ export const accounts = sqliteTable("accounts", {
 export const paymentMethods = sqliteTable("payment_methods", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
+  type: text("type", { enum: ["card", "wallet", "cash", "bank_transfer", "other"] })
+    .notNull()
+    .default("other"),
+  currency: text("currency", { enum: ["JPY", "CNY"] })
+    .notNull()
+    .default("JPY"),
   defaultAccountId: text("default_account_id").references(() => accounts.id),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+  note: text("note"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });

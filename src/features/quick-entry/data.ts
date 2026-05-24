@@ -1,11 +1,12 @@
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, categories, paymentMethods, quickEntryTemplates } from "@/db/schema";
+import { buildCategoryPathLabelMap } from "@/features/categories/data";
 
 type QuickEntryTemplateRow = typeof quickEntryTemplates.$inferSelect;
 
 export type HydratedQuickEntryTemplate = QuickEntryTemplateRow & {
-  category: typeof categories.$inferSelect | null;
+  category: (typeof categories.$inferSelect & { label: string }) | null;
   sourceAccount: typeof accounts.$inferSelect | null;
   targetAccount: typeof accounts.$inferSelect | null;
   paymentMethod: typeof paymentMethods.$inferSelect | null;
@@ -125,12 +126,7 @@ async function hydrateQuickEntryTemplates(templateRows: QuickEntryTemplateRow[])
           .from(accounts)
           .where(inArray(accounts.id, [...accountIds]))
       : [],
-    categoryIds.size > 0
-      ? db
-          .select()
-          .from(categories)
-          .where(inArray(categories.id, [...categoryIds]))
-      : [],
+    categoryIds.size > 0 ? db.select().from(categories) : [],
     paymentMethodIds.size > 0
       ? db
           .select()
@@ -140,7 +136,13 @@ async function hydrateQuickEntryTemplates(templateRows: QuickEntryTemplateRow[])
   ]);
 
   const accountById = new Map(accountRows.map((account) => [account.id, account]));
-  const categoryById = new Map(categoryRows.map((category) => [category.id, category]));
+  const categoryLabelById = buildCategoryPathLabelMap(categoryRows);
+  const categoryById = new Map(
+    categoryRows.map((category) => [
+      category.id,
+      { ...category, label: categoryLabelById.get(category.id) ?? category.name },
+    ]),
+  );
   const paymentMethodById = new Map(
     paymentMethodRows.map((paymentMethod) => [paymentMethod.id, paymentMethod]),
   );

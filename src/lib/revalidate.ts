@@ -73,6 +73,19 @@ export function templatePaths(id?: string) {
   return compactPaths("/", "/templates", id && `/templates/${id}`);
 }
 
+export function paymentMethodPaths(id?: string) {
+  return compactPaths(
+    "/",
+    "/manage",
+    "/manage/payment-methods",
+    "/entry",
+    "/transactions",
+    "/templates",
+    "/recurring",
+    id && `/manage/payment-methods/${id}`,
+  );
+}
+
 function compactPaths(...paths: Array<string | false | undefined>) {
   return paths.filter((path): path is string => Boolean(path));
 }

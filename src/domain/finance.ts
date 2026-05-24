@@ -1,10 +1,12 @@
 export const currencies = ["JPY", "CNY"] as const;
 export const transactionTypes = ["income", "expense", "transfer", "adjustment"] as const;
 export const accountTypes = ["cash", "bank", "credit_card", "wallet"] as const;
+export const paymentMethodTypes = ["card", "wallet", "cash", "bank_transfer", "other"] as const;
 
 export type Currency = (typeof currencies)[number];
 export type TransactionType = (typeof transactionTypes)[number];
 export type AccountType = (typeof accountTypes)[number];
+export type PaymentMethodType = (typeof paymentMethodTypes)[number];
 
 export const currencyMinorUnits: Record<Currency, number> = {
   JPY: 0,
@@ -28,6 +30,14 @@ export const accountTypeLabels: Record<AccountType, string> = {
   bank: "银行",
   credit_card: "信用卡",
   wallet: "余额账户",
+};
+
+export const paymentMethodTypeLabels: Record<PaymentMethodType, string> = {
+  card: "银行卡",
+  wallet: "电子钱包",
+  cash: "现金",
+  bank_transfer: "银行转账",
+  other: "其他",
 };
 
 export type Money = {

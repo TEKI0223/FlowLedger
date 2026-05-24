@@ -6,7 +6,6 @@ import { currencies, parseMoneyToMinor } from "@/domain/finance";
 import {
   createQuickEntryTemplateRecord,
   deleteQuickEntryTemplateRecord,
-  resetQuickEntryTemplateUsageRecord,
   updateQuickEntryTemplateRecord,
 } from "@/features/quick-entry/service";
 import { normalize, stringField as field } from "@/lib/form";
@@ -54,7 +53,7 @@ function extract(formData: FormData): QuickEntryTemplateFormValues {
     targetAccountId: field(formData, "targetAccountId"),
     paymentMethodId: field(formData, "paymentMethodId"),
     note: field(formData, "note"),
-    enabled: formData.has("enabled") ? formData.get("enabled") === "on" : true,
+    enabled: formData.get("enabled") === "on",
   };
 }
 
@@ -164,10 +163,4 @@ export async function deleteQuickEntryTemplate(id: string) {
   await deleteQuickEntryTemplateRecord(id);
   revalidatePaths(templatePaths());
   redirect("/templates");
-}
-
-export async function resetQuickEntryTemplateUsage(id: string) {
-  await resetQuickEntryTemplateUsageRecord(id);
-  revalidatePaths(templatePaths(id));
-  redirect(`/templates/${id}`);
 }

@@ -43,16 +43,16 @@ const accounts = [
 ];
 
 const paymentMethods = [
-  ["credit-card-a", "信用卡 A", "jpy-credit-card-a"],
-  ["credit-card-b", "信用卡 B", "jpy-credit-card-b"],
-  ["apple-pay", "Apple Pay", "jpy-credit-card-a"],
-  ["paypay", "PayPay", "paypay"],
-  ["wechat-pay", "微信支付", "wechat-balance"],
-  ["alipay", "支付宝", "alipay-balance"],
-  ["jpy-cash", "日元现金", "jpy-cash"],
-  ["cny-cash", "人民币现金", "cny-cash"],
-  ["jp-bank-transfer", "日本银行转账", "jp-bank-main"],
-  ["cny-bank-transfer", "人民币银行卡", "cny-bank-main"],
+  ["credit-card-a", "信用卡 A", "card", "JPY", "jpy-credit-card-a"],
+  ["credit-card-b", "信用卡 B", "card", "JPY", "jpy-credit-card-b"],
+  ["apple-pay", "Apple Pay", "wallet", "JPY", "jpy-credit-card-a"],
+  ["paypay", "PayPay", "wallet", "JPY", "paypay"],
+  ["wechat-pay", "微信支付", "wallet", "CNY", "wechat-balance"],
+  ["alipay", "支付宝", "wallet", "CNY", "alipay-balance"],
+  ["jpy-cash", "日元现金", "cash", "JPY", "jpy-cash"],
+  ["cny-cash", "人民币现金", "cash", "CNY", "cny-cash"],
+  ["jp-bank-transfer", "日本银行转账", "bank_transfer", "JPY", "jp-bank-main"],
+  ["cny-bank-transfer", "人民币银行卡", "card", "CNY", "cny-bank-main"],
 ];
 
 const quickEntryTemplates = [
@@ -542,10 +542,12 @@ const SQL_ACCOUNT = `
 `;
 
 const SQL_PAYMENT_METHOD = `
-  insert into payment_methods (id, name, default_account_id, created_at, updated_at)
-  values (?, ?, ?, ?, ?)
+  insert into payment_methods (id, name, type, currency, default_account_id, created_at, updated_at)
+  values (?, ?, ?, ?, ?, ?, ?)
   on conflict(id) do update set
     name = excluded.name,
+    type = excluded.type,
+    currency = excluded.currency,
     default_account_id = excluded.default_account_id,
     updated_at = excluded.updated_at
 `;

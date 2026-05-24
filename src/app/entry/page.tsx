@@ -41,19 +41,8 @@ export default async function EntryPage({ searchParams }: EntryPageProps) {
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
-      <header className="flex items-center justify-between gap-2 pb-5">
-        <div className="flex justify-start">
-          <Link
-            href="/entry?mode=detail"
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "sm" }),
-              "h-8 gap-1 text-xs text-muted-foreground",
-            )}
-          >
-            <SlidersHorizontalIcon className="size-3.5" />
-            打开详细录入
-          </Link>
-        </div>
+      <header className="flex items-center justify-between gap-3 pb-5">
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">记一笔</h1>
         <Link
           href="/templates"
           className={cn(
@@ -67,7 +56,21 @@ export default async function EntryPage({ searchParams }: EntryPageProps) {
       </header>
 
       {mode === "quick" ? (
-        <section>
+        <section className="grid gap-3">
+          <Link
+            href="/entry?mode=detail"
+            className="flex min-h-14 items-center justify-between gap-3 rounded-xl bg-card px-4 py-3 text-left ring-1 ring-foreground/10 transition-all hover:-translate-y-px hover:shadow-md hover:ring-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0 active:shadow-sm"
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                <SlidersHorizontalIcon className="size-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">自定义</p>
+                <p className="truncate text-xs text-muted-foreground">打开完整交易表单</p>
+              </div>
+            </div>
+          </Link>
           <QuickEntryModal templates={quickEntryModalTemplates} />
         </section>
       ) : null}

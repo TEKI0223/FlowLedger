@@ -320,12 +320,34 @@ export function TransactionForm({
               defaultValue={values?.categoryId ?? defaults.categoryId ?? ""}
             >
               <option value="">无分类</option>
-            {lookups.categories.map((category) => (
-              <option value={category.id} key={category.id}>
-                {category.label}
-              </option>
-            ))}
+              {lookups.categories.map((category) => (
+                <option value={category.id} key={category.id}>
+                  {category.label}
+                </option>
+              ))}
             </NativeSelect>
+          </div>
+        ) : null}
+
+        {fieldConfig.showSource ? (
+          <div className="grid gap-2">
+            <Label htmlFor="paymentMethodId">支付方式</Label>
+            <NativeSelect
+              id="paymentMethodId"
+              name="paymentMethodId"
+              defaultValue={values?.paymentMethodId ?? defaults.paymentMethodId ?? ""}
+              onChange={handlePaymentMethodChange}
+            >
+              <option value="">不选择</option>
+              {lookups.paymentMethods.map((paymentMethod) => (
+                <option value={paymentMethod.id} key={paymentMethod.id}>
+                  {paymentMethod.name}
+                </option>
+              ))}
+            </NativeSelect>
+            <p className="text-xs text-muted-foreground">
+              选择后会自动把支付方式的默认资金来源填到{fieldConfig.sourceLabel}
+            </p>
           </div>
         ) : null}
 
@@ -378,28 +400,6 @@ export function TransactionForm({
             </NativeSelect>
           </div>
         </div>
-
-        {fieldConfig.showSource ? (
-          <div className="grid gap-2">
-            <Label htmlFor="paymentMethodId">支付方式</Label>
-            <NativeSelect
-              id="paymentMethodId"
-              name="paymentMethodId"
-              defaultValue={values?.paymentMethodId ?? defaults.paymentMethodId ?? ""}
-              onChange={handlePaymentMethodChange}
-            >
-              <option value="">不选择</option>
-              {lookups.paymentMethods.map((paymentMethod) => (
-                <option value={paymentMethod.id} key={paymentMethod.id}>
-                  {paymentMethod.name}
-                </option>
-              ))}
-            </NativeSelect>
-            <p className="text-xs text-muted-foreground">
-              选择后会自动把支付方式的默认资金来源填到{fieldConfig.sourceLabel}
-            </p>
-          </div>
-        ) : null}
 
         <div className="grid gap-2">
           <Label htmlFor="note">备注</Label>

@@ -6,6 +6,7 @@ import {
   FolderTreeIcon,
   LayersIcon,
   LogOutIcon,
+  MousePointerClickIcon,
   ReceiptIcon,
   RepeatIcon,
   SettingsIcon,
@@ -33,6 +34,12 @@ const manageItems = [
     description: "管理分类层级和常用排序",
     href: "/categories",
     icon: FolderTreeIcon,
+  },
+  {
+    label: "支付方式",
+    description: "维护付款工具、默认账户和启用状态",
+    href: "/manage/payment-methods",
+    icon: MousePointerClickIcon,
   },
   {
     label: "周期项目",
@@ -94,7 +101,7 @@ export default function ManagePage() {
                   <Icon className="size-4" />
                 </div>
                 <div className="min-w-0 space-y-0.5">
-                <p className="truncate text-sm font-medium">{item.label}</p>
+                  <p className="truncate text-sm font-medium">{item.label}</p>
                   <p className="truncate text-xs text-muted-foreground">{item.description}</p>
                 </div>
               </div>

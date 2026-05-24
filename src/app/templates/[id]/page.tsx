@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { ZapIcon } from "lucide-react";
 import { TemplateForm } from "../template-form";
 import { DeleteTemplateButton } from "../delete-template-button";
-import { ResetUsageButton } from "../reset-usage-button";
 import { updateQuickEntryTemplate } from "@/app/actions/quick-entry-templates";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatMinorForInput } from "@/domain/finance";
@@ -72,17 +71,6 @@ export default async function EditTemplatePage({ params }: Props) {
             }}
             submitLabel="保存修改"
           />
-        </CardContent>
-      </Card>
-
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="text-base">维护操作</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex flex-wrap items-center gap-1">
-            <ResetUsageButton id={template.id} />
-          </div>
         </CardContent>
       </Card>
     </main>

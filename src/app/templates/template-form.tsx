@@ -193,6 +193,28 @@ export function TemplateForm({ action, lookups, defaults = {}, submitLabel }: Te
           </NativeSelect>
         </div>
 
+        {fieldConfig.showSource ? (
+          <div className="grid gap-2">
+            <Label htmlFor="paymentMethodId">支付方式</Label>
+            <NativeSelect
+              id="paymentMethodId"
+              name="paymentMethodId"
+              defaultValue={values?.paymentMethodId ?? defaults.paymentMethodId ?? ""}
+              onChange={handlePaymentMethodChange}
+            >
+              <option value="">不选择</option>
+              {lookups.paymentMethods.map((paymentMethod) => (
+                <option value={paymentMethod.id} key={paymentMethod.id}>
+                  {paymentMethod.name}
+                </option>
+              ))}
+            </NativeSelect>
+            <p className="text-xs text-muted-foreground">
+              选择后会自动填入对应的{fieldConfig.sourceLabel}
+            </p>
+          </div>
+        ) : null}
+
         <div
           className={
             fieldConfig.showSource && fieldConfig.showTarget
@@ -233,28 +255,6 @@ export function TemplateForm({ action, lookups, defaults = {}, submitLabel }: Te
             </NativeSelect>
           </div>
         </div>
-
-        {fieldConfig.showSource ? (
-          <div className="grid gap-2">
-            <Label htmlFor="paymentMethodId">支付方式</Label>
-            <NativeSelect
-              id="paymentMethodId"
-              name="paymentMethodId"
-              defaultValue={values?.paymentMethodId ?? defaults.paymentMethodId ?? ""}
-              onChange={handlePaymentMethodChange}
-            >
-              <option value="">不选择</option>
-              {lookups.paymentMethods.map((paymentMethod) => (
-                <option value={paymentMethod.id} key={paymentMethod.id}>
-                  {paymentMethod.name}
-                </option>
-              ))}
-            </NativeSelect>
-            <p className="text-xs text-muted-foreground">
-              选择后会自动填入对应的{fieldConfig.sourceLabel}
-            </p>
-          </div>
-        ) : null}
 
         <div className="grid gap-2">
           <Label htmlFor="note">默认备注</Label>

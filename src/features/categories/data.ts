@@ -169,3 +169,7 @@ export function buildCategoryOptions(rows: CategoryRow[]): CategoryOption[] {
 
   return options;
 }
+
+export function buildCategoryPathLabelMap(rows: CategoryRow[]): Map<string, string> {
+  return new Map(buildCategoryOptions(rows).map((category) => [category.id, category.label]));
+}
