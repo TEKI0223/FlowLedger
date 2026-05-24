@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, ZapIcon } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { listAllQuickEntryTemplates } from "@/features/quick-entry/data";
@@ -16,7 +16,10 @@ export default async function TemplatesPage() {
     <main className="mx-auto w-full max-w-6xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">快捷模板</h2>
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <ZapIcon className="size-4 text-muted-foreground" />
+            快捷模板
+          </h2>
           <div className="flex items-center gap-3">
             <span className="text-xs text-muted-foreground">
               {templates.length} 个模板 · {enabledCount} 个启用
