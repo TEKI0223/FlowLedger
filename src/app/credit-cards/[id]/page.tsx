@@ -1,16 +1,19 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarIcon, CreditCardIcon, LayersIcon, ReceiptIcon } from "lucide-react";
+import { CalendarIcon, CreditCardIcon, LayersIcon, PencilIcon, ReceiptIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { InlineAlert } from "@/components/ui/inline-alert";
 import { Separator } from "@/components/ui/separator";
 import { formatMoney, transactionTypeLabels } from "@/domain/finance";
+import { formatAccountName } from "@/features/accounts/labels";
 import {
   getCreditCard,
   listCardStatements,
   type StatementSummary,
 } from "@/features/credit-cards/data";
+import { DeleteCreditCardButton } from "@/features/credit-cards/delete-credit-card-button";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -19,10 +22,14 @@ type CreditCardDetailProps = {
   params: Promise<{
     id: string;
   }>;
+  searchParams: Promise<{ error?: string }>;
 };
 
-export default async function CreditCardDetailPage({ params }: CreditCardDetailProps) {
-  const { id } = await params;
+export default async function CreditCardDetailPage({
+  params,
+  searchParams,
+}: CreditCardDetailProps) {
+  const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const card = await getCreditCard(id);
 
   if (!card) {
@@ -35,17 +42,44 @@ export default async function CreditCardDetailPage({ params }: CreditCardDetailP
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
-      <header className="space-y-1 pb-5">
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight md:text-3xl">
-          <CreditCardIcon className="size-6 text-muted-foreground" />
-          {card.account.name}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          账单日每月 {card.closingDay} 号（
-          {card.cycleBoundary === "inclusive" ? "含当天" : "不含当天"}） · 扣款日 {card.paymentDay}{" "}
-          号{card.repaymentAccount ? ` · 还款账户：${card.repaymentAccount.name}` : ""}
-        </p>
+      <header className="space-y-3 pb-5">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight md:text-3xl">
+            <CreditCardIcon className="size-6 text-muted-foreground" />
+            {formatAccountName(card.account)}
+          </h1>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/credit-cards/${card.id}/edit`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 text-xs")}
+            >
+              <PencilIcon className="size-3.5" />
+              编辑
+            </Link>
+            <DeleteCreditCardButton id={card.id} name={formatAccountName(card.account)} />
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+          <span className="rounded-md border border-border px-2 py-1">
+            账单日每月 {card.closingDay} 号
+            {card.cycleBoundary === "inclusive" ? "（含当天）" : "（不含当天）"}
+          </span>
+          <span className="rounded-md border border-border px-2 py-1">
+            扣款日每月 {card.paymentDay} 号
+          </span>
+          <span className="rounded-md border border-border px-2 py-1">
+            还款账户：
+            {card.repaymentAccount ? formatAccountName(card.repaymentAccount) : "未设置"}
+          </span>
+          {!card.enabled ? (
+            <Badge variant="outline" className="text-xs">
+              停用
+            </Badge>
+          ) : null}
+        </div>
       </header>
+
+      {error ? <InlineAlert tone="danger">{error}</InlineAlert> : null}
 
       {current ? <CurrentStatementCard card={card} statement={current} /> : null}
 

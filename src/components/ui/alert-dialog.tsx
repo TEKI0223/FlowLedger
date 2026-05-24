@@ -72,7 +72,7 @@ function AlertDialogFooter({ className, ...props }: React.ComponentProps<"div">)
     <div
       data-slot="alert-dialog-footer"
       className={cn(
-        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end [&_[data-slot=alert-dialog-action]]:w-full [&_[data-slot=alert-dialog-cancel]]:w-full sm:[&_[data-slot=alert-dialog-action]]:w-auto sm:[&_[data-slot=alert-dialog-cancel]]:w-auto",
+        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end [&>form]:w-full [&_[data-slot=alert-dialog-action]]:w-full [&_[data-slot=alert-dialog-cancel]]:w-full [&_form_button]:w-full sm:[&>form]:w-auto sm:[&_[data-slot=alert-dialog-action]]:w-auto sm:[&_[data-slot=alert-dialog-cancel]]:w-auto sm:[&_form_button]:w-auto",
         className,
       )}
       {...props}

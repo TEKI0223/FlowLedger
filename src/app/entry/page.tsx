@@ -4,6 +4,7 @@ import { TransactionForm } from "@/features/transactions/transaction-form";
 import { createEntryTransaction } from "@/app/actions/transactions";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { InlineAlert } from "@/components/ui/inline-alert";
 import { getTransactionLookups } from "@/features/lookups/data";
 import { listQuickEntryTemplates } from "@/features/quick-entry/data";
 import {
@@ -22,13 +23,14 @@ export const dynamic = "force-dynamic";
 type EntryPageProps = {
   searchParams: Promise<{
     mode?: string;
+    saved?: string;
   }>;
 };
 
 type EntryMode = "quick" | "detail";
 
 export default async function EntryPage({ searchParams }: EntryPageProps) {
-  const [{ mode: modeParam }, lookups, quickEntryTemplates] = await Promise.all([
+  const [{ mode: modeParam, saved }, lookups, quickEntryTemplates] = await Promise.all([
     searchParams,
     getTransactionLookups(),
     listQuickEntryTemplates(),
@@ -57,6 +59,7 @@ export default async function EntryPage({ searchParams }: EntryPageProps) {
 
       {mode === "quick" ? (
         <section className="grid gap-3">
+          {saved === "1" ? <InlineAlert>记录成功</InlineAlert> : null}
           <Link
             href="/entry?mode=detail"
             className="flex min-h-14 items-center justify-between gap-3 rounded-xl bg-card px-4 py-3 text-left ring-1 ring-foreground/10 transition-all hover:-translate-y-px hover:shadow-md hover:ring-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-0 active:shadow-sm"

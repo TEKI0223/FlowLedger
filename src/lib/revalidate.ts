@@ -86,6 +86,18 @@ export function paymentMethodPaths(id?: string) {
   );
 }
 
+export function creditCardPaths(id?: string, accountId?: string) {
+  return compactPaths(
+    "/",
+    "/accounts",
+    "/credit-cards",
+    "/manage",
+    "/manage/payment-methods",
+    id && `/credit-cards/${id}`,
+    accountId && `/accounts/${accountId}`,
+  );
+}
+
 function compactPaths(...paths: Array<string | false | undefined>) {
   return paths.filter((path): path is string => Boolean(path));
 }

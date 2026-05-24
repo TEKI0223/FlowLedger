@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, inArray, lte, ne, notInArray } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, ne, notInArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, creditCards, installmentPlans, transactions } from "@/db/schema";
 import {
@@ -24,8 +24,7 @@ export async function listCreditCards(): Promise<HydratedCreditCard[]> {
   const cardRows = await db
     .select()
     .from(creditCards)
-    .where(eq(creditCards.enabled, true))
-    .orderBy(asc(creditCards.id));
+    .orderBy(desc(creditCards.enabled), asc(creditCards.id));
 
   return hydrate(cardRows);
 }
@@ -34,6 +33,20 @@ export async function getCreditCard(id: string): Promise<HydratedCreditCard | nu
   const rows = await db.select().from(creditCards).where(eq(creditCards.id, id)).limit(1);
   const [card] = await hydrate(rows);
   return card ?? null;
+}
+
+export async function listCreditCardAccountOptions() {
+  return db
+    .select({
+      id: accounts.id,
+      name: accounts.name,
+      lastDigits: accounts.lastDigits,
+      type: accounts.type,
+      currency: accounts.currency,
+    })
+    .from(accounts)
+    .where(ne(accounts.type, "credit_card"))
+    .orderBy(asc(accounts.currency), asc(accounts.type), asc(accounts.name));
 }
 
 export type StatementTransaction = {

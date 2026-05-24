@@ -7,6 +7,7 @@ import {
   recurringItems,
   transactions,
 } from "@/db/schema";
+import { syncAllCreditCardPaymentMethods } from "@/features/credit-cards/service";
 
 export type PaymentMethodRow = typeof paymentMethods.$inferSelect;
 
@@ -23,6 +24,8 @@ export type PaymentMethodWithRefs = PaymentMethodRow & {
 };
 
 export async function listPaymentMethods(): Promise<PaymentMethodWithRefs[]> {
+  await syncAllCreditCardPaymentMethods();
+
   const rows = await db
     .select({
       id: paymentMethods.id,

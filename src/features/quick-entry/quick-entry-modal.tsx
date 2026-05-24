@@ -17,6 +17,7 @@ export type QuickEntryModalTemplate = {
   meta: string;
   context: string;
   amountHint: string;
+  amountDefault?: string;
   theme: ActionTileTheme;
   typeLabel: string;
   type: "income" | "expense" | "transfer" | "adjustment" | "temporary";
@@ -70,6 +71,7 @@ export function QuickEntryModal({ templates }: QuickEntryModalProps) {
                   mode="template"
                   templateId={selectedTemplate.id}
                   currency={selectedTemplate.currency}
+                  amountDefault={selectedTemplate.amountDefault}
                   autoFocusAmount
                 />
               )}

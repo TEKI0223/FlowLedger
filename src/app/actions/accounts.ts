@@ -65,6 +65,10 @@ export async function createAccount(
   }
 
   const parsed = result.data;
+  if (parsed.type === "credit_card") {
+    return { error: "信用卡请在信用卡页面新增", values };
+  }
+
   const amount = parseAmount(parsed.initialBalance ?? "0", parsed.currency);
   if (!amount.ok) {
     return { error: amount.error, values };

@@ -1,5 +1,5 @@
 import type { ActionTileTheme } from "@/components/ui/action-tile";
-import { formatMoney, transactionTypeLabels } from "@/domain/finance";
+import { formatMinorForInput, formatMoney, transactionTypeLabels } from "@/domain/finance";
 import type { HydratedQuickEntryTemplate } from "./data";
 import type { QuickEntryModalTemplate } from "./quick-entry-modal";
 
@@ -12,6 +12,7 @@ export function toQuickEntryModalTemplate(
     meta: templateMeta(template),
     context: templateContext(template),
     amountHint: amountHint(template),
+    amountDefault: amountDefault(template),
     theme: templateTheme(template),
     typeLabel: transactionTypeLabels[template.type],
     type: template.type,
@@ -58,6 +59,17 @@ function amountHint(template: HydratedQuickEntryTemplate) {
   }
 
   return formatMoney({
+    amountMinor: template.amountMinor,
+    currency: template.currency,
+  });
+}
+
+function amountDefault(template: HydratedQuickEntryTemplate) {
+  if (template.amountMinor === null) {
+    return undefined;
+  }
+
+  return formatMinorForInput({
     amountMinor: template.amountMinor,
     currency: template.currency,
   });

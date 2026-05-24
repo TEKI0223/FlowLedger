@@ -1,9 +1,12 @@
-import { asc } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, categories, paymentMethods } from "@/db/schema";
 import { buildCategoryOptions } from "@/features/categories/data";
+import { syncAllCreditCardPaymentMethods } from "@/features/credit-cards/service";
 
 export async function getTransactionLookups() {
+  await syncAllCreditCardPaymentMethods();
+
   const [accountRows, categoryRows, paymentMethodRows] = await Promise.all([
     db
       .select({
@@ -16,7 +19,11 @@ export async function getTransactionLookups() {
       .from(accounts)
       .orderBy(asc(accounts.currency), asc(accounts.name)),
     db.select().from(categories),
-    db.select().from(paymentMethods).orderBy(asc(paymentMethods.name)),
+    db
+      .select()
+      .from(paymentMethods)
+      .where(eq(paymentMethods.enabled, true))
+      .orderBy(asc(paymentMethods.name)),
   ]);
 
   return {

@@ -90,7 +90,7 @@ export async function createEntryTransaction(
 
   await createTransactionRecord(result.transaction);
   revalidatePaths(transactionPaths(result.transaction.id));
-  return { success: "记录成功" };
+  redirect("/entry?saved=1");
 }
 
 export async function updateTransaction(
@@ -163,7 +163,7 @@ export async function createQuickEntryTransaction(
   await createTransactionRecord(result.transaction);
   await bumpQuickEntryTemplateUsage(template.id);
   revalidatePaths(transactionPaths(result.transaction.id));
-  return { success: "记录成功" };
+  redirect("/entry?saved=1");
 }
 
 export async function createTemporaryTransaction(
@@ -194,7 +194,7 @@ export async function createTemporaryTransaction(
 
   await createTransactionRecord(result.transaction);
   revalidatePaths(transactionPaths(result.transaction.id));
-  return { success: "记录成功" };
+  redirect("/entry?saved=1");
 }
 
 // ── 内部：表单 → Transaction 的解析 + 业务校验 ────────────────────────────

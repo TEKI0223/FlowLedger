@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowRightIcon, CreditCardIcon } from "lucide-react";
+import { ArrowRightIcon, CreditCardIcon, PlusIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatMoney } from "@/domain/finance";
 import { listCardStatements, listCreditCards } from "@/features/credit-cards/data";
@@ -23,12 +24,21 @@ export default async function CreditCardsPage() {
     <main className="mx-auto w-full max-w-6xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">信用卡</h2>
-        <span className="text-xs text-muted-foreground">{cards.length} 张卡</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-muted-foreground">{cards.length} 张卡</span>
+          <Link
+            href="/credit-cards/new"
+            className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-8 gap-1")}
+          >
+            <PlusIcon className="size-3.5" />
+            新增
+          </Link>
+        </div>
       </div>
 
       {cards.length === 0 ? (
         <Card size="sm" className="px-4 py-6 text-center text-sm text-muted-foreground">
-          还没有启用的信用卡。
+          还没有信用卡。先新增一张信用卡。
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
@@ -49,6 +59,11 @@ export default async function CreditCardsPage() {
                       <span className="flex items-center gap-2">
                         <CreditCardIcon className="size-4 text-muted-foreground" />
                         {card.account.name}
+                        {!card.enabled ? (
+                          <Badge variant="outline" className="text-xs">
+                            停用
+                          </Badge>
+                        ) : null}
                       </span>
                       <ArrowRightIcon className="size-4 text-muted-foreground" />
                     </CardTitle>

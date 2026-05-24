@@ -12,6 +12,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { accountTypeLabels, currencies, currencyLabels } from "@/domain/finance";
 
 const initialState: AccountActionState = {};
+const creatableAccountTypeEntries = Object.entries(accountTypeLabels).filter(
+  ([value]) => value !== "credit_card",
+);
 
 export function NewAccountForm() {
   const [state, formAction] = useActionState<AccountActionState, FormData>(
@@ -51,7 +54,7 @@ export function NewAccountForm() {
         <div className="grid gap-2">
           <Label htmlFor="type">账户类型</Label>
           <NativeSelect id="type" name="type" required defaultValue={values?.type ?? "bank"}>
-            {Object.entries(accountTypeLabels).map(([value, label]) => (
+            {creatableAccountTypeEntries.map(([value, label]) => (
               <option value={value} key={value}>
                 {label}
               </option>
