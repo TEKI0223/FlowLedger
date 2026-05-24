@@ -2,15 +2,18 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { categories, quickEntryTemplates, recurringItems, transactions } from "@/db/schema";
 import { nowIso } from "@/lib/dates";
+import { defaultCategoryIconKey, resolveCategoryIconKey, type CategoryIconKey } from "./icon-utils";
 
 export type CategoryInput = {
   name: string;
   parentId?: string;
+  iconKey?: CategoryIconKey;
 };
 
 export async function createCategoryRecord(input: CategoryInput): Promise<string> {
   const id = crypto.randomUUID();
   const timestamp = nowIso();
+  const iconKey = await defaultIconKeyForNewCategory(input);
 
   await db
     .insert(categories)
@@ -18,6 +21,7 @@ export async function createCategoryRecord(input: CategoryInput): Promise<string
       id,
       name: input.name,
       parentId: input.parentId,
+      iconKey,
       usageCount: 0,
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -25,6 +29,16 @@ export async function createCategoryRecord(input: CategoryInput): Promise<string
     .run();
 
   return id;
+}
+
+async function defaultIconKeyForNewCategory(input: CategoryInput): Promise<CategoryIconKey> {
+  if (input.iconKey) return input.iconKey;
+  if (!input.parentId) return defaultCategoryIconKey;
+
+  const categoryRows = await db.select().from(categories);
+  const categoryById = new Map(categoryRows.map((category) => [category.id, category]));
+
+  return resolveCategoryIconKey(categoryById.get(input.parentId), categoryById);
 }
 
 export async function updateCategoryRecord(id: string, input: CategoryInput): Promise<void> {

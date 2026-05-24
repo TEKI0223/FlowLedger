@@ -2,7 +2,12 @@ import Link from "next/link";
 import { ArrowRightIcon, FolderTreeIcon, PlusIcon } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { CategoryIconLabel } from "@/features/categories/category-icon-label";
 import { listCategories, type CategoryRow } from "@/features/categories/data";
+import {
+  buildResolvedCategoryIconKeyMap,
+  type CategoryIconKey,
+} from "@/features/categories/icon-utils";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function CategoriesPage() {
   const categories = await listCategories();
   const { roots, childrenByParent } = groupCategories(categories);
+  const iconKeyById = buildResolvedCategoryIconKeyMap(categories);
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
@@ -17,10 +23,7 @@ export default async function CategoriesPage() {
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">交易分类</h1>
         </div>
-        <Link
-          href="/categories/new"
-          className={cn(buttonVariants({ size: "sm" }), "h-8 shrink-0")}
-        >
+        <Link href="/categories/new" className={cn(buttonVariants({ size: "sm" }), "h-8 shrink-0")}>
           <PlusIcon className="size-3.5" />
           新增
         </Link>
@@ -41,6 +44,7 @@ export default async function CategoriesPage() {
               key={category.id}
               category={category}
               childrenByParent={childrenByParent}
+              iconKeyById={iconKeyById}
             />
           ))}
         </div>
@@ -52,9 +56,11 @@ export default async function CategoriesPage() {
 function CategoryGroup({
   category,
   childrenByParent,
+  iconKeyById,
 }: {
   category: CategoryRow;
   childrenByParent: Map<string, CategoryRow[]>;
+  iconKeyById: Map<string, CategoryIconKey>;
 }) {
   return (
     <Card size="sm" className="py-0">
@@ -62,6 +68,7 @@ function CategoryGroup({
         <CategoryTreeRows
           category={category}
           childrenByParent={childrenByParent}
+          iconKeyById={iconKeyById}
           level={0}
           visited={new Set()}
         />
@@ -73,11 +80,13 @@ function CategoryGroup({
 function CategoryTreeRows({
   category,
   childrenByParent,
+  iconKeyById,
   level,
   visited,
 }: {
   category: CategoryRow;
   childrenByParent: Map<string, CategoryRow[]>;
+  iconKeyById: Map<string, CategoryIconKey>;
   level: number;
   visited: Set<string>;
 }) {
@@ -89,12 +98,18 @@ function CategoryTreeRows({
 
   return (
     <>
-      <CategoryLink category={category} childCount={childCategories.length} level={level} />
+      <CategoryLink
+        category={category}
+        childCount={childCategories.length}
+        iconKey={iconKeyById.get(category.id)}
+        level={level}
+      />
       {childCategories.map((child) => (
         <CategoryTreeRows
           key={child.id}
           category={child}
           childrenByParent={childrenByParent}
+          iconKeyById={iconKeyById}
           level={level + 1}
           visited={nextVisited}
         />
@@ -106,10 +121,12 @@ function CategoryTreeRows({
 function CategoryLink({
   category,
   childCount,
+  iconKey,
   level,
 }: {
   category: CategoryRow;
   childCount: number;
+  iconKey?: CategoryIconKey;
   level: number;
 }) {
   const visibleLevel = Math.min(level, 5);
@@ -129,7 +146,11 @@ function CategoryLink({
           />
         ) : null}
         <div className="min-w-0">
-          <p className={cn("truncate font-medium", level > 0 && "text-sm")}>{category.name}</p>
+          <CategoryIconLabel
+            iconKey={iconKey}
+            name={category.name}
+            labelClassName={cn("font-medium", level > 0 && "text-sm")}
+          />
           <p className="truncate text-xs text-muted-foreground">
             使用 {category.usageCount} 次{childCount > 0 ? ` · ${childCount} 个子类` : ""}
           </p>

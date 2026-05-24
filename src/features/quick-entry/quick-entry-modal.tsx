@@ -19,6 +19,7 @@ export type QuickEntryModalTemplate = {
   amountHint: string;
   amountDefault?: string;
   theme: ActionTileTheme;
+  categoryIconKey?: string | null;
   typeLabel: string;
   type: "income" | "expense" | "transfer" | "adjustment" | "temporary";
   currency: "JPY" | "CNY";
@@ -40,6 +41,7 @@ export function QuickEntryModal({ templates }: QuickEntryModalProps) {
             meta={template.meta}
             amountHint={template.amountHint}
             theme={template.theme}
+            categoryIconKey={template.categoryIconKey}
             onClick={() => setSelectedTemplate(template)}
             key={template.id}
           />

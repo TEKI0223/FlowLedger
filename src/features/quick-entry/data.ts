@@ -2,11 +2,17 @@ import { asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, categories, paymentMethods, quickEntryTemplates } from "@/db/schema";
 import { buildCategoryPathLabelMap } from "@/features/categories/data";
+import {
+  buildResolvedCategoryIconKeyMap,
+  type CategoryIconKey,
+} from "@/features/categories/icon-utils";
 
 type QuickEntryTemplateRow = typeof quickEntryTemplates.$inferSelect;
 
 export type HydratedQuickEntryTemplate = QuickEntryTemplateRow & {
-  category: (typeof categories.$inferSelect & { label: string }) | null;
+  category:
+    | (typeof categories.$inferSelect & { label: string; resolvedIconKey: CategoryIconKey })
+    | null;
   sourceAccount: typeof accounts.$inferSelect | null;
   targetAccount: typeof accounts.$inferSelect | null;
   paymentMethod: typeof paymentMethods.$inferSelect | null;
@@ -137,10 +143,15 @@ async function hydrateQuickEntryTemplates(templateRows: QuickEntryTemplateRow[])
 
   const accountById = new Map(accountRows.map((account) => [account.id, account]));
   const categoryLabelById = buildCategoryPathLabelMap(categoryRows);
+  const categoryIconKeyById = buildResolvedCategoryIconKeyMap(categoryRows);
   const categoryById = new Map(
     categoryRows.map((category) => [
       category.id,
-      { ...category, label: categoryLabelById.get(category.id) ?? category.name },
+      {
+        ...category,
+        label: categoryLabelById.get(category.id) ?? category.name,
+        resolvedIconKey: categoryIconKeyById.get(category.id) ?? "other",
+      },
     ]),
   );
   const paymentMethodById = new Map(

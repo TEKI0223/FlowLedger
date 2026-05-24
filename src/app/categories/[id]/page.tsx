@@ -7,6 +7,7 @@ import { DeleteCategoryButton } from "@/features/categories/delete-category-butt
 import { buttonVariants } from "@/components/ui/button";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CategoryIconLabel } from "@/features/categories/category-icon-label";
 import { getCategory, listParentCategoryOptions } from "@/features/categories/data";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +31,14 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     <main className="mx-auto w-full max-w-xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
       <header className="flex flex-col gap-3 pb-5">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{category.name}</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+            <CategoryIconLabel
+              iconKey={category.resolvedIconKey}
+              name={category.name}
+              className="max-w-full"
+              labelClassName="tracking-tight"
+            />
+          </h1>
           <div className="flex items-center gap-2">
             <Link
               href={`/categories/new?parentId=${category.id}`}

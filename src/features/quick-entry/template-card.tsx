@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatMoney, transactionTypeLabels } from "@/domain/finance";
 import { transactionTypeColorClass } from "@/domain/transaction-style";
+import { CategoryIconLabel } from "@/features/categories/category-icon-label";
 import type { HydratedQuickEntryTemplate } from "./data";
 
 type TemplateCardProps = {
@@ -14,7 +15,6 @@ export function TemplateCard({ template }: TemplateCardProps) {
   const accountRoute = formatAccountRoute(template);
   const paymentRoute = [template.paymentMethod?.name, accountRoute].filter(Boolean).join(" - ");
   const categoryPath = template.category?.label ?? "无分类";
-  const meta = [categoryPath, paymentRoute].filter(Boolean).join(" · ");
 
   return (
     <Link
@@ -52,7 +52,15 @@ export function TemplateCard({ template }: TemplateCardProps) {
                 })}
               </p>
             ) : null}
-            <p className="truncate text-xs text-muted-foreground">{meta}</p>
+            <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+              <CategoryIconLabel
+                iconKey={template.category?.resolvedIconKey}
+                name={categoryPath}
+                className="max-w-[55%]"
+                labelClassName="text-xs"
+              />
+              {paymentRoute ? <span className="truncate">· {paymentRoute}</span> : null}
+            </div>
             {template.note ? (
               <p className="truncate text-xs text-muted-foreground/90">{template.note}</p>
             ) : null}

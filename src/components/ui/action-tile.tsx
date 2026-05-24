@@ -10,6 +10,7 @@ import {
   ArrowLeftRightIcon,
   CircleHelpIcon,
 } from "lucide-react";
+import { CategoryIcon } from "@/features/categories/category-icon-label";
 import { cn } from "@/lib/utils";
 
 export type ActionTileTheme =
@@ -26,6 +27,7 @@ type ActionTileProps = {
   meta: string;
   amountHint: string;
   theme?: ActionTileTheme;
+  categoryIconKey?: string | null;
   onClick: () => void;
 };
 
@@ -54,6 +56,7 @@ export function ActionTile({
   meta,
   amountHint,
   theme = "wallet",
+  categoryIconKey,
   onClick,
 }: ActionTileProps) {
   const Icon = themeIcon[theme];
@@ -71,14 +74,18 @@ export function ActionTile({
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
       )}
     >
-      <div
-        className={cn(
-          "inline-flex h-9 w-9 items-center justify-center rounded-lg",
-          themeBadge[theme],
-        )}
-      >
-        <Icon className="size-4" />
-      </div>
+      {categoryIconKey ? (
+        <CategoryIcon iconKey={categoryIconKey} />
+      ) : (
+        <div
+          className={cn(
+            "inline-flex h-9 w-9 items-center justify-center rounded-lg",
+            themeBadge[theme],
+          )}
+        >
+          <Icon className="size-4" />
+        </div>
+      )}
       <div className="flex-1">
         <p className="text-sm font-semibold text-foreground">{title}</p>
         <p className="text-xs text-muted-foreground">{meta}</p>

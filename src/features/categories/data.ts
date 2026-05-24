@@ -1,6 +1,7 @@
 import { asc, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { categories, quickEntryTemplates, recurringItems, transactions } from "@/db/schema";
+import { buildResolvedCategoryIconKeyMap, type CategoryIconKey } from "./icon-utils";
 
 export type CategoryRow = typeof categories.$inferSelect;
 
@@ -10,12 +11,14 @@ export type CategoryOption = {
   label: string;
   level: number;
   usageCount: number;
+  iconKey: CategoryIconKey;
 };
 
 export type CategoryWithRefs = CategoryRow & {
   transactionCount: number;
   templateCount: number;
   recurringCount: number;
+  resolvedIconKey: CategoryIconKey;
 };
 
 export async function listCategories(): Promise<CategoryRow[]> {
@@ -39,8 +42,10 @@ export async function listParentCategoryOptions(excludeId?: string): Promise<Cat
 }
 
 export async function getCategory(id: string): Promise<CategoryWithRefs | null> {
-  const [category] = await db.select().from(categories).where(eq(categories.id, id)).limit(1);
+  const rows = await listCategories();
+  const category = rows.find((row) => row.id === id);
   if (!category) return null;
+  const iconKeyById = buildResolvedCategoryIconKeyMap(rows);
 
   const [refs] = await db
     .select({
@@ -69,6 +74,7 @@ export async function getCategory(id: string): Promise<CategoryWithRefs | null> 
     transactionCount: refs?.transactionCount ?? 0,
     templateCount: refs?.templateCount ?? 0,
     recurringCount: refs?.recurringCount ?? 0,
+    resolvedIconKey: iconKeyById.get(category.id) ?? "other",
   };
 }
 
@@ -118,6 +124,7 @@ function getDescendantCategoryIds(rows: CategoryRow[], parentId: string): string
 
 export function buildCategoryOptions(rows: CategoryRow[]): CategoryOption[] {
   const ids = new Set(rows.map((category) => category.id));
+  const iconKeyById = buildResolvedCategoryIconKeyMap(rows);
   const childrenByParent = new Map<string, CategoryRow[]>();
   const roots: CategoryRow[] = [];
 
@@ -154,6 +161,7 @@ export function buildCategoryOptions(rows: CategoryRow[]): CategoryOption[] {
       label: nextPath.join("/"),
       level,
       usageCount: category.usageCount,
+      iconKey: iconKeyById.get(category.id) ?? "other",
     });
 
     const nextVisited = new Set(visited);

@@ -33,6 +33,7 @@ export const categories = sqliteTable("categories", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   parentId: text("parent_id"),
+  iconKey: text("icon_key"),
   usageCount: integer("usage_count").notNull().default(0),
   lastUsedAt: text("last_used_at"),
   createdAt: text("created_at").notNull(),
