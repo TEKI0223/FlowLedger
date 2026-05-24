@@ -48,7 +48,7 @@ export default async function CategoriesPage() {
             <CategoryGroup
               key={category.id}
               category={category}
-              childCategories={childrenByParent.get(category.id) ?? []}
+              childrenByParent={childrenByParent}
             />
           ))}
         </div>
@@ -59,37 +59,89 @@ export default async function CategoriesPage() {
 
 function CategoryGroup({
   category,
-  childCategories,
+  childrenByParent,
 }: {
   category: CategoryRow;
-  childCategories: CategoryRow[];
+  childrenByParent: Map<string, CategoryRow[]>;
 }) {
   return (
     <Card size="sm" className="py-0">
-      <CategoryLink category={category} isRoot />
-      {childCategories.length > 0 ? (
-        <div className="divide-y divide-border border-t border-border">
-          {childCategories.map((child) => (
-            <CategoryLink category={child} key={child.id} />
-          ))}
-        </div>
-      ) : null}
+      <div className="divide-y divide-border">
+        <CategoryTreeRows
+          category={category}
+          childrenByParent={childrenByParent}
+          level={0}
+          visited={new Set()}
+        />
+      </div>
     </Card>
   );
 }
 
-function CategoryLink({ category, isRoot = false }: { category: CategoryRow; isRoot?: boolean }) {
+function CategoryTreeRows({
+  category,
+  childrenByParent,
+  level,
+  visited,
+}: {
+  category: CategoryRow;
+  childrenByParent: Map<string, CategoryRow[]>;
+  level: number;
+  visited: Set<string>;
+}) {
+  if (visited.has(category.id)) return null;
+
+  const nextVisited = new Set(visited);
+  nextVisited.add(category.id);
+  const childCategories = childrenByParent.get(category.id) ?? [];
+
+  return (
+    <>
+      <CategoryLink category={category} childCount={childCategories.length} level={level} />
+      {childCategories.map((child) => (
+        <CategoryTreeRows
+          key={child.id}
+          category={child}
+          childrenByParent={childrenByParent}
+          level={level + 1}
+          visited={nextVisited}
+        />
+      ))}
+    </>
+  );
+}
+
+function CategoryLink({
+  category,
+  childCount,
+  level,
+}: {
+  category: CategoryRow;
+  childCount: number;
+  level: number;
+}) {
+  const visibleLevel = Math.min(level, 5);
+
   return (
     <Link
       href={`/categories/${category.id}`}
-      className={cn(
-        "flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/60",
-        !isRoot && "pl-8",
-      )}
+      className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/60"
+      style={{ paddingLeft: `${1 + visibleLevel * 1.125}rem` }}
     >
-      <div className="min-w-0">
-        <p className={cn("truncate font-medium", !isRoot && "text-sm")}>{category.name}</p>
-        <p className="text-xs text-muted-foreground">使用 {category.usageCount} 次</p>
+      <div className="flex min-w-0 items-center gap-3">
+        {level > 0 ? (
+          <span
+            aria-hidden="true"
+            className="h-8 w-px shrink-0 bg-border"
+            style={{ marginLeft: `${Math.max(0, visibleLevel - 1) * 0.125}rem` }}
+          />
+        ) : null}
+        <div className="min-w-0">
+          <p className={cn("truncate font-medium", level > 0 && "text-sm")}>{category.name}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            使用 {category.usageCount} 次{childCount > 0 ? ` · ${childCount} 个子类` : ""}
+          </p>
+        </div>
       </div>
       <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground" />
     </Link>

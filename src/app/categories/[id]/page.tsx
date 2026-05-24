@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeftIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { updateCategory } from "@/app/actions/categories";
 import { CategoryForm } from "@/app/categories/category-form";
 import { DeleteCategoryButton } from "@/app/categories/delete-category-button";
+import { buttonVariants } from "@/components/ui/button";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCategory, listParentCategoryOptions } from "@/features/categories/data";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -26,22 +28,21 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
-      <header className="flex items-start justify-between gap-3 pb-5">
-        <div className="space-y-1">
+      <header className="flex flex-col gap-3 pb-5">
+        <div className="flex items-center justify-end gap-2">
           <Link
-            href="/categories"
-            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+            href={`/categories/new?parentId=${category.id}`}
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 text-xs")}
           >
-            <ArrowLeftIcon className="size-3" />
-            交易分类
+            <PlusIcon className="size-3.5" />
+            添加子类
           </Link>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{category.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            使用 {category.usageCount} 次
-            {category.lastUsedAt ? ` · 最近使用 ${category.lastUsedAt.slice(0, 10)}` : ""}
-          </p>
+          <DeleteCategoryButton id={category.id} name={category.name} />
         </div>
-        <DeleteCategoryButton id={category.id} name={category.name} />
+        <p className="text-sm text-muted-foreground">
+          使用 {category.usageCount} 次
+          {category.lastUsedAt ? ` · 最近使用 ${category.lastUsedAt.slice(0, 10)}` : ""}
+        </p>
       </header>
 
       {error ? <InlineAlert tone="danger">{error}</InlineAlert> : null}

@@ -7,8 +7,15 @@ import { listParentCategoryOptions } from "@/features/categories/data";
 
 export const dynamic = "force-dynamic";
 
-export default async function NewCategoryPage() {
-  const parentOptions = await listParentCategoryOptions();
+type NewCategoryPageProps = {
+  searchParams: Promise<{ parentId?: string }>;
+};
+
+export default async function NewCategoryPage({ searchParams }: NewCategoryPageProps) {
+  const [{ parentId }, parentOptions] = await Promise.all([
+    searchParams,
+    listParentCategoryOptions(),
+  ]);
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
@@ -33,6 +40,7 @@ export default async function NewCategoryPage() {
           <CategoryForm
             action={createCategory}
             parentOptions={parentOptions}
+            defaults={{ parentId }}
             submitLabel="保存分类"
           />
         </CardContent>

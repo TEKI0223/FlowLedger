@@ -1,6 +1,7 @@
-import { asc, desc } from "drizzle-orm";
+import { asc } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, categories, paymentMethods } from "@/db/schema";
+import { buildCategoryOptions } from "@/features/categories/data";
 
 export async function getTransactionLookups() {
   const [accountRows, categoryRows, paymentMethodRows] = await Promise.all([
@@ -13,16 +14,13 @@ export async function getTransactionLookups() {
       })
       .from(accounts)
       .orderBy(asc(accounts.currency), asc(accounts.name)),
-    db
-      .select()
-      .from(categories)
-      .orderBy(desc(categories.usageCount), asc(categories.name)),
+    db.select().from(categories),
     db.select().from(paymentMethods).orderBy(asc(paymentMethods.name)),
   ]);
 
   return {
     accounts: accountRows,
-    categories: categoryRows,
+    categories: buildCategoryOptions(categoryRows),
     paymentMethods: paymentMethodRows,
   };
 }

@@ -25,7 +25,7 @@ const initialState: TransactionActionState = {};
 
 type Lookups = {
   accounts: Array<{ id: string; name: string; currency: Currency; balanceMinor: number }>;
-  categories: Array<{ id: string; name: string }>;
+  categories: Array<{ id: string; label: string }>;
   paymentMethods: Array<{ id: string; name: string; defaultAccountId: string | null }>;
 };
 
@@ -313,11 +313,11 @@ export function TransactionForm({
               defaultValue={values?.categoryId ?? defaults.categoryId ?? ""}
             >
               <option value="">无分类</option>
-              {lookups.categories.map((category) => (
-                <option value={category.id} key={category.id}>
-                  {category.name}
-                </option>
-              ))}
+            {lookups.categories.map((category) => (
+              <option value={category.id} key={category.id}>
+                {category.label}
+              </option>
+            ))}
             </NativeSelect>
           </div>
         ) : null}

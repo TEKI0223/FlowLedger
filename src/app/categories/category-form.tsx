@@ -13,7 +13,7 @@ const initialState: CategoryActionState = {};
 type ParentOption = {
   id: string;
   name: string;
-  parentId: string | null;
+  label: string;
 };
 
 type CategoryFormProps = {
@@ -64,8 +64,7 @@ export function CategoryForm({
             <option value="">无父分类</option>
             {parentOptions.map((category) => (
               <option value={category.id} key={category.id}>
-                {category.parentId ? "· " : ""}
-                {category.name}
+                {category.label}
               </option>
             ))}
           </NativeSelect>

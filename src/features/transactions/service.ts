@@ -180,7 +180,7 @@ async function syncCategoryUsage(
   await applyCategoryUsageDelta(tx, nextCategoryId, 1, timestamp);
 }
 
-async function applyCategoryUsageDelta(
+export async function applyCategoryUsageDelta(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
   categoryId: string | undefined,
   delta: 1 | -1,

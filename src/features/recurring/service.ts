@@ -3,7 +3,7 @@ import { db } from "@/db/client";
 import { recurringItems, transactions } from "@/db/schema";
 import { getTransactionBalanceImpacts, type Currency, type Transaction } from "@/domain/finance";
 import { getNextOccurrence, type RecurringFrequency } from "@/domain/recurring";
-import { applyBalanceImpacts } from "@/features/transactions/service";
+import { applyBalanceImpacts, applyCategoryUsageDelta } from "@/features/transactions/service";
 import { nowIso } from "@/lib/dates";
 
 export type RecurringInput = {
@@ -128,6 +128,7 @@ export async function confirmRecurringItemAtomic(params: {
       .run();
 
     await applyBalanceImpacts(tx, getTransactionBalanceImpacts(transaction), timestamp);
+    await applyCategoryUsageDelta(tx, transaction.categoryId, 1, timestamp);
 
     await tx
       .update(recurringItems)

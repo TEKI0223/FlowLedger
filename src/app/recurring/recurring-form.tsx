@@ -25,7 +25,7 @@ type RecurringType = keyof typeof RECURRING_TYPE_LABELS;
 
 type Lookups = {
   accounts: Array<{ id: string; name: string; currency: Currency }>;
-  categories: Array<{ id: string; name: string }>;
+  categories: Array<{ id: string; label: string }>;
   paymentMethods: Array<{ id: string; name: string; defaultAccountId: string | null }>;
 };
 
@@ -212,7 +212,7 @@ export function RecurringForm({ action, lookups, defaults = {}, submitLabel }: R
             <option value="">无分类</option>
             {lookups.categories.map((category) => (
               <option value={category.id} key={category.id}>
-                {category.name}
+                {category.label}
               </option>
             ))}
           </NativeSelect>

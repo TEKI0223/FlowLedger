@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { getCategory } from "@/features/categories/data";
+import { getCategory, wouldCreateCategoryCycle } from "@/features/categories/data";
 import {
   createCategoryRecord,
   deleteCategoryRecord,
@@ -67,8 +67,8 @@ export async function updateCategory(
     return { error: result.error.issues[0]?.message ?? "分类内容不完整", values };
   }
 
-  if (result.data.parentId === id) {
-    return { error: "父分类不能选择自己", values };
+  if (await wouldCreateCategoryCycle(id, result.data.parentId)) {
+    return { error: "不能把分类移动到自己或自己的子分类下面", values };
   }
 
   await updateCategoryRecord(id, result.data);
