@@ -62,13 +62,20 @@ export type AccountBalanceImpact = {
   amountMinor: number;
 };
 
-export function formatMoney({ amountMinor, currency }: Money): string {
-  return new Intl.NumberFormat(currency === "JPY" ? "ja-JP" : "zh-CN", {
-    style: "currency",
-    currency,
+type FormatMoneyOptions = {
+  showCurrencyCode?: boolean;
+};
+
+export function formatMoney(
+  { amountMinor, currency }: Money,
+  { showCurrencyCode = true }: FormatMoneyOptions = {},
+): string {
+  const value = new Intl.NumberFormat(currency === "JPY" ? "ja-JP" : "zh-CN", {
     maximumFractionDigits: currencyMinorUnits[currency],
     minimumFractionDigits: currencyMinorUnits[currency],
   }).format(amountMinor / 10 ** currencyMinorUnits[currency]);
+
+  return showCurrencyCode ? `${currency} ${value}` : value;
 }
 
 export function formatMinorForInput({ amountMinor, currency }: Money): string {

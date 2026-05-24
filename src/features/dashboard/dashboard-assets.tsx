@@ -36,11 +36,17 @@ export function DashboardAssets({ summary, accounts }: DashboardAssetsProps) {
           <div className="grid grid-cols-2 gap-3">
             <AssetMetric
               label="JPY"
-              value={formatMoney({ amountMinor: summary.assets.JPY, currency: "JPY" })}
+              value={formatMoney(
+                { amountMinor: summary.assets.JPY, currency: "JPY" },
+                { showCurrencyCode: false },
+              )}
             />
             <AssetMetric
               label="CNY"
-              value={formatMoney({ amountMinor: summary.assets.CNY, currency: "CNY" })}
+              value={formatMoney(
+                { amountMinor: summary.assets.CNY, currency: "CNY" },
+                { showCurrencyCode: false },
+              )}
             />
           </div>
 
@@ -139,7 +145,10 @@ function AccountCurrencyGroup({
             >
               <span className="truncate text-sm">{account.name}</span>
               <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold tabular-nums">
-                {formatMoney({ amountMinor: account.balanceMinor, currency: account.currency })}
+                {formatMoney(
+                  { amountMinor: account.balanceMinor, currency: account.currency },
+                  { showCurrencyCode: false },
+                )}
                 <ArrowRightIcon className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
               </span>
             </Link>

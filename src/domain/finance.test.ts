@@ -49,20 +49,26 @@ describe("parseMoneyToMinor", () => {
 });
 
 describe("formatMoney", () => {
-  it("formats JPY without decimals", () => {
-    const formatted = formatMoney({ amountMinor: 1200, currency: "JPY" });
-    expect(formatted).toMatch(/1,200/);
-    expect(formatted).not.toMatch(/\./);
+  it("formats JPY with currency code and no decimals", () => {
+    expect(formatMoney({ amountMinor: 1200, currency: "JPY" })).toBe("JPY 1,200");
   });
 
-  it("formats CNY with 2 decimals", () => {
-    const formatted = formatMoney({ amountMinor: 3850, currency: "CNY" });
-    expect(formatted).toMatch(/38\.50/);
+  it("formats CNY with currency code and 2 decimals", () => {
+    expect(formatMoney({ amountMinor: 3850, currency: "CNY" })).toBe("CNY 38.50");
+  });
+
+  it("can hide the currency code when the surrounding UI labels the currency", () => {
+    expect(formatMoney({ amountMinor: 1200, currency: "JPY" }, { showCurrencyCode: false })).toBe(
+      "1,200",
+    );
+    expect(formatMoney({ amountMinor: 3850, currency: "CNY" }, { showCurrencyCode: false })).toBe(
+      "38.50",
+    );
   });
 
   it("handles zero", () => {
-    expect(formatMoney({ amountMinor: 0, currency: "JPY" })).toMatch(/0/);
-    expect(formatMoney({ amountMinor: 0, currency: "CNY" })).toMatch(/0\.00/);
+    expect(formatMoney({ amountMinor: 0, currency: "JPY" })).toBe("JPY 0");
+    expect(formatMoney({ amountMinor: 0, currency: "CNY" })).toBe("CNY 0.00");
   });
 });
 
