@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeftIcon } from "lucide-react";
-import { TransactionForm } from "@/app/transactions/transaction-form";
+import { TransactionForm } from "@/features/transactions/transaction-form";
 import { createTransaction } from "@/app/actions/transactions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { accountTypeLabels, formatMoney } from "@/domain/finance";

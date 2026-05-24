@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LayersIcon, ReceiptIcon } from "lucide-react";
-import { DeleteTransactionButton } from "../delete-transaction-button";
-import { TransactionForm } from "../transaction-form";
+import { DeleteTransactionButton } from "@/features/transactions/delete-transaction-button";
+import { TransactionForm } from "@/features/transactions/transaction-form";
 import { updateTransaction } from "@/app/actions/transactions";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

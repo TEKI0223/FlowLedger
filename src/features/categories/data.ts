@@ -151,7 +151,7 @@ export function buildCategoryOptions(rows: CategoryRow[]): CategoryOption[] {
     options.push({
       id: category.id,
       name: category.name,
-      label: nextPath.join(" / "),
+      label: nextPath.join("/"),
       level,
       usageCount: category.usageCount,
     });

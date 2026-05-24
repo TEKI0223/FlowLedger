@@ -1,6 +1,7 @@
 import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, categories, paymentMethods, transactions } from "@/db/schema";
+import { buildCategoryOptions } from "@/features/categories/data";
 
 export async function listTransactions(limit = 50) {
   const transactionRows = await db
@@ -54,12 +55,7 @@ async function hydrateTransactions(transactionRows: Array<typeof transactions.$i
           .from(accounts)
           .where(inArray(accounts.id, [...accountIds]))
       : [],
-    categoryIds.size > 0
-      ? db
-          .select()
-          .from(categories)
-          .where(inArray(categories.id, [...categoryIds]))
-      : [],
+    categoryIds.size > 0 ? db.select().from(categories) : [],
     paymentMethodIds.size > 0
       ? db
           .select()
@@ -70,6 +66,9 @@ async function hydrateTransactions(transactionRows: Array<typeof transactions.$i
 
   const accountById = new Map(accountRows.map((account) => [account.id, account]));
   const categoryById = new Map(categoryRows.map((category) => [category.id, category]));
+  const categoryLabelById = new Map(
+    buildCategoryOptions(categoryRows).map((category) => [category.id, category.label]),
+  );
   const paymentMethodById = new Map(
     paymentMethodRows.map((paymentMethod) => [paymentMethod.id, paymentMethod]),
   );
@@ -82,9 +81,22 @@ async function hydrateTransactions(transactionRows: Array<typeof transactions.$i
     targetAccount: transaction.targetAccountId
       ? (accountById.get(transaction.targetAccountId) ?? null)
       : null,
-    category: transaction.categoryId ? (categoryById.get(transaction.categoryId) ?? null) : null,
+    category: transaction.categoryId
+      ? addCategoryLabel(
+          categoryById.get(transaction.categoryId) ?? null,
+          categoryLabelById.get(transaction.categoryId),
+        )
+      : null,
     paymentMethod: transaction.paymentMethodId
       ? (paymentMethodById.get(transaction.paymentMethodId) ?? null)
       : null,
   }));
+}
+
+function addCategoryLabel<T extends { id: string }>(
+  category: T | null,
+  label: string | undefined,
+): (T & { label: string }) | null {
+  if (!category) return null;
+  return { ...category, label: label ?? "" };
 }

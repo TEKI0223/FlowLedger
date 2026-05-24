@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeftIcon } from "lucide-react";
 import { createCategory } from "@/app/actions/categories";
-import { CategoryForm } from "@/app/categories/category-form";
+import { CategoryForm } from "@/features/categories/category-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { listParentCategoryOptions } from "@/features/categories/data";
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SlidersHorizontalIcon, ZapIcon } from "lucide-react";
-import { TransactionForm } from "@/app/transactions/transaction-form";
+import { TransactionForm } from "@/features/transactions/transaction-form";
 import { createEntryTransaction } from "@/app/actions/transactions";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
