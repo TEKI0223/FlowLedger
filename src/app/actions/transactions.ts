@@ -51,6 +51,7 @@ export type TransactionFormValues = {
 
 export type TransactionActionState = {
   error?: string;
+  success?: string;
   values?: TransactionFormValues;
 };
 
@@ -78,6 +79,18 @@ export async function createTransaction(
   await createTransactionRecord(result.transaction);
   revalidatePaths(transactionPaths(result.transaction.id));
   redirect("/transactions");
+}
+
+export async function createEntryTransaction(
+  _prev: TransactionActionState,
+  formData: FormData,
+): Promise<TransactionActionState> {
+  const result = await buildTransactionFromForm(formData, crypto.randomUUID());
+  if (!result.ok) return { error: result.error, values: result.values };
+
+  await createTransactionRecord(result.transaction);
+  revalidatePaths(transactionPaths(result.transaction.id));
+  return { success: "记录成功" };
 }
 
 export async function updateTransaction(
@@ -150,7 +163,7 @@ export async function createQuickEntryTransaction(
   await createTransactionRecord(result.transaction);
   await bumpQuickEntryTemplateUsage(template.id);
   revalidatePaths(transactionPaths(result.transaction.id));
-  redirect("/?saved=quick-entry");
+  return { success: "记录成功" };
 }
 
 export async function createTemporaryTransaction(
@@ -181,7 +194,7 @@ export async function createTemporaryTransaction(
 
   await createTransactionRecord(result.transaction);
   revalidatePaths(transactionPaths(result.transaction.id));
-  redirect("/?saved=temporary");
+  return { success: "记录成功" };
 }
 
 // ── 内部：表单 → Transaction 的解析 + 业务校验 ────────────────────────────

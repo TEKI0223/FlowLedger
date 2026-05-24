@@ -4,6 +4,7 @@ import {
   ArrowRightIcon,
   CreditCardIcon,
   DownloadIcon,
+  FolderTreeIcon,
   LayersIcon,
   LogOutIcon,
   ReceiptIcon,
@@ -27,6 +28,12 @@ const manageItems = [
     description: "维护日常快捷记账模板",
     href: "/templates",
     icon: ZapIcon,
+  },
+  {
+    label: "交易分类",
+    description: "管理分类层级和常用排序",
+    href: "/categories",
+    icon: FolderTreeIcon,
   },
   {
     label: "周期项目",

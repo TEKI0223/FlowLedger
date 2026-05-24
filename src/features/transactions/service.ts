@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { accounts, transactions } from "@/db/schema";
+import { accounts, categories, transactions } from "@/db/schema";
 import {
   getTransactionBalanceImpacts,
   type AccountBalanceImpact,
@@ -81,6 +81,7 @@ export async function createTransactionRecord(
       .run();
 
     await applyBalanceImpacts(tx, getTransactionBalanceImpacts(transaction), timestamp);
+    await applyCategoryUsageDelta(tx, transaction.categoryId, 1, timestamp);
   });
 }
 
@@ -117,6 +118,7 @@ export async function replaceTransactionRecord(
       .run();
 
     await applyBalanceImpacts(tx, getTransactionBalanceImpacts(next), timestamp);
+    await syncCategoryUsage(tx, previous.categoryId, next.categoryId, timestamp);
   });
 }
 
@@ -129,6 +131,7 @@ export async function deleteTransactionRecord(previous: Transaction): Promise<vo
   await db.transaction(async (tx) => {
     await applyBalanceImpacts(tx, invertImpacts(getTransactionBalanceImpacts(previous)), timestamp);
     await tx.delete(transactions).where(eq(transactions.id, previous.id)).run();
+    await applyCategoryUsageDelta(tx, previous.categoryId, -1, timestamp);
   });
 }
 
@@ -163,4 +166,42 @@ export function rowToTransaction(row: {
     paymentMethodId: row.paymentMethodId ?? undefined,
     note: row.note ?? undefined,
   };
+}
+
+async function syncCategoryUsage(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  previousCategoryId: string | undefined,
+  nextCategoryId: string | undefined,
+  timestamp: string,
+): Promise<void> {
+  if (previousCategoryId === nextCategoryId) return;
+
+  await applyCategoryUsageDelta(tx, previousCategoryId, -1, timestamp);
+  await applyCategoryUsageDelta(tx, nextCategoryId, 1, timestamp);
+}
+
+async function applyCategoryUsageDelta(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  categoryId: string | undefined,
+  delta: 1 | -1,
+  timestamp: string,
+): Promise<void> {
+  if (!categoryId) return;
+
+  await tx
+    .update(categories)
+    .set(
+      delta > 0
+        ? {
+            usageCount: sql`max(${categories.usageCount} + 1, 0)`,
+            lastUsedAt: timestamp,
+            updatedAt: timestamp,
+          }
+        : {
+            usageCount: sql`max(${categories.usageCount} - 1, 0)`,
+            updatedAt: timestamp,
+          },
+    )
+    .where(eq(categories.id, categoryId))
+    .run();
 }

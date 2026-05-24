@@ -21,6 +21,18 @@ export function transactionPaths(id?: string) {
   return compactPaths("/", "/accounts", "/transactions", id && `/transactions/${id}`);
 }
 
+export function categoryPaths(id?: string) {
+  return compactPaths(
+    "/",
+    "/entry",
+    "/categories",
+    "/transactions",
+    "/templates",
+    "/recurring",
+    id && `/categories/${id}`,
+  );
+}
+
 export function recurringPaths(id?: string) {
   return compactPaths("/", "/recurring", "/recurring/pending", id && `/recurring/${id}`);
 }

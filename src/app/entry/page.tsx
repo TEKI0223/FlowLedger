@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { SlidersHorizontalIcon, ZapIcon } from "lucide-react";
 import { TransactionForm } from "@/app/transactions/transaction-form";
-import { createTransaction } from "@/app/actions/transactions";
+import { createEntryTransaction } from "@/app/actions/transactions";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTransactionLookups } from "@/features/lookups/data";
@@ -80,7 +80,7 @@ export default async function EntryPage({ searchParams }: EntryPageProps) {
             </CardHeader>
             <CardContent>
               <TransactionForm
-                action={createTransaction}
+                action={createEntryTransaction}
                 lookups={lookups}
                 defaults={{
                   occurredOn: todayIsoDate(),

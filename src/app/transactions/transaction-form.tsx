@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import type { TransactionActionState } from "@/app/actions/transactions";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
@@ -98,6 +98,7 @@ export function TransactionForm({
     action,
     initialState,
   );
+  const formRef = useRef<HTMLFormElement>(null);
   const values = state.values;
 
   const initialType = (values?.type as TransactionType) ?? defaults.type;
@@ -129,8 +130,20 @@ export function TransactionForm({
       if (v.currency) setCurrency(v.currency as Currency);
       if (v.sourceAccountId !== undefined) setSourceAccountId(v.sourceAccountId);
       if (v.targetAccountId !== undefined) setTargetAccountId(v.targetAccountId);
+    } else if (state.success) {
+      setType(defaults.type);
+      setCurrency(defaults.currency);
+      setSourceAccountId(defaults.sourceAccountId ?? "");
+      setTargetAccountId(defaults.targetAccountId ?? "");
+      setTargetBalance("");
     }
   }
+
+  useEffect(() => {
+    if (state.success) {
+      formRef.current?.reset();
+    }
+  }, [state.success]);
 
   const fieldConfig = accountFieldsByType[type];
 
@@ -165,8 +178,9 @@ export function TransactionForm({
 
   return (
     <>
+      {state.success ? <InlineAlert>{state.success}</InlineAlert> : null}
       {state.error ? <InlineAlert tone="danger">{state.error}</InlineAlert> : null}
-      <form id={id} action={formAction} className="grid gap-4">
+      <form ref={formRef} id={id} action={formAction} className="grid gap-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="occurredOn">日期</Label>

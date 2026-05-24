@@ -47,6 +47,7 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
     action,
     initialState,
   );
+  const formRef = useRef<HTMLFormElement>(null);
   const amountInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -54,6 +55,13 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
       amountInputRef.current?.focus();
     }
   }, [props.autoFocusAmount]);
+
+  useEffect(() => {
+    if (state.success) {
+      formRef.current?.reset();
+      amountInputRef.current?.focus();
+    }
+  }, [state.success]);
 
   const currency = props.mode === "template" ? props.currency : "JPY";
   const amountDefault =
@@ -68,8 +76,9 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
 
   return (
     <>
+      {state.success ? <InlineAlert>{state.success}</InlineAlert> : null}
       {state.error ? <InlineAlert tone="danger">{state.error}</InlineAlert> : null}
-      <form action={formAction} className="grid gap-4">
+      <form ref={formRef} action={formAction} className="grid gap-4">
         <div className="grid gap-2">
           <Label htmlFor="quick-amount">金额</Label>
           <MoneyInput
@@ -129,7 +138,7 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
           <SubmitButton>{submitLabel}</SubmitButton>
-          {showTemplateEditLink ? (
+          {props.mode === "template" && showTemplateEditLink ? (
             <Link
               href={`/templates/${props.templateId}`}
               className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 text-base")}

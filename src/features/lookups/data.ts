@@ -1,4 +1,4 @@
-import { asc } from "drizzle-orm";
+import { asc, desc } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, categories, paymentMethods } from "@/db/schema";
 
@@ -13,7 +13,10 @@ export async function getTransactionLookups() {
       })
       .from(accounts)
       .orderBy(asc(accounts.currency), asc(accounts.name)),
-    db.select().from(categories).orderBy(asc(categories.name)),
+    db
+      .select()
+      .from(categories)
+      .orderBy(desc(categories.usageCount), asc(categories.name)),
     db.select().from(paymentMethods).orderBy(asc(paymentMethods.name)),
   ]);
 
