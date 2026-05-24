@@ -10,11 +10,12 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
 import { currencies, currencyLabels, type Currency } from "@/domain/finance";
+import { formatAccountName } from "@/features/accounts/labels";
 
 const initialState: RefundTrackerActionState = {};
 
 type Lookups = {
-  accounts: Array<{ id: string; name: string; currency: Currency }>;
+  accounts: Array<{ id: string; name: string; lastDigits: string | null; currency: Currency }>;
 };
 
 type Defaults = {
@@ -104,7 +105,7 @@ export function RefundTrackerForm({
             <option value="">不指定</option>
             {accountsForCurrency.map((account) => (
               <option value={account.id} key={account.id}>
-                {account.name} · {account.currency}
+                {formatAccountName(account)} · {account.currency}
               </option>
             ))}
           </NativeSelect>

@@ -3,6 +3,7 @@ import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 export const accounts = sqliteTable("accounts", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
+  lastDigits: text("last_digits"),
   type: text("type", { enum: ["cash", "bank", "credit_card", "wallet"] }).notNull(),
   currency: text("currency", { enum: ["JPY", "CNY"] }).notNull(),
   balanceMinor: integer("balance_minor").notNull().default(0),

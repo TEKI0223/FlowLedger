@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  ArrowLeftIcon,
   ArrowDownToLineIcon,
   ArrowUpFromLineIcon,
   PencilIcon,
@@ -19,6 +18,7 @@ import {
   transactionTypeLabels,
 } from "@/domain/finance";
 import { getAccountDetail } from "@/features/accounts/data";
+import { formatAccountName } from "@/features/accounts/labels";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -42,15 +42,10 @@ export default async function AccountDetailPage({ params }: AccountDetailPagePro
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
       <header className="space-y-2 pb-5">
-        <Link
-          href="/accounts"
-          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeftIcon className="size-3" />
-          账户
-        </Link>
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{account.name}</h1>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+            {formatAccountName(account)}
+          </h1>
           <Badge variant="secondary" className="text-xs">
             {accountTypeLabels[account.type]}
           </Badge>
@@ -86,55 +81,57 @@ export default async function AccountDetailPage({ params }: AccountDetailPagePro
         />
       </section>
 
-      <section className="mt-6">
-        <h2 className="mb-3 text-lg font-semibold">快捷操作</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <section className="mt-4" aria-label="快捷操作">
+        <div className="grid grid-cols-4 gap-2">
           <Link
             href={`/accounts/${account.id}/calibrate`}
             className={cn(
-              buttonVariants({ variant: "outline", size: "lg" }),
-              "h-auto min-h-16 flex-col gap-1 text-sm",
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "h-10 min-w-0 gap-1 text-xs",
             )}
           >
-            <ScaleIcon className="size-4" />
-            余额校准
+            <ScaleIcon className="size-3.5" />
+            <span className="truncate">校准</span>
           </Link>
           <Link
             href={`/accounts/${account.id}/topup`}
             className={cn(
-              buttonVariants({ variant: "outline", size: "lg" }),
-              "h-auto min-h-16 flex-col gap-1 text-sm",
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "h-10 min-w-0 gap-1 text-xs",
             )}
           >
-            <ArrowDownToLineIcon className="size-4" />
-            {account.type === "credit_card" ? "还款" : "充值 / 转入"}
+            <ArrowDownToLineIcon className="size-3.5" />
+            <span className="truncate">{account.type === "credit_card" ? "还款" : "转入"}</span>
           </Link>
           <Link
             href={`/accounts/${account.id}/spend`}
             className={cn(
-              buttonVariants({ variant: "outline", size: "lg" }),
-              "h-auto min-h-16 flex-col gap-1 text-sm",
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "h-10 min-w-0 gap-1 text-xs",
             )}
           >
-            <ArrowUpFromLineIcon className="size-4" />
-            消费 / 转出
+            <ArrowUpFromLineIcon className="size-3.5" />
+            <span className="truncate">转出</span>
           </Link>
           <Link
             href={`/accounts/${account.id}/edit`}
             className={cn(
-              buttonVariants({ variant: "outline", size: "lg" }),
-              "h-auto min-h-16 flex-col gap-1 text-sm",
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "h-10 min-w-0 gap-1 text-xs",
             )}
           >
-            <PencilIcon className="size-4" />
-            编辑账户
+            <PencilIcon className="size-3.5" />
+            <span className="truncate">编辑</span>
           </Link>
         </div>
       </section>
 
       {pending.length > 0 ? (
-        <section className="mt-6">
-          <h2 className="mb-3 text-lg font-semibold">待处理周期项</h2>
+        <section className="mt-5">
+          <div className="mb-2 flex items-center gap-2">
+            <RepeatIcon className="size-4 text-muted-foreground" />
+            <h2 className="text-sm font-medium">待处理周期项</h2>
+          </div>
           <Card size="sm" className="divide-y divide-border py-0">
             {pending.map((item) => (
               <article key={item.id} className="flex items-center justify-between gap-3 px-4 py-3">

@@ -19,12 +19,19 @@ import {
   type Currency,
   type TransactionType,
 } from "@/domain/finance";
+import { formatAccountName } from "@/features/accounts/labels";
 import { todayIsoDate } from "@/lib/dates";
 
 const initialState: TransactionActionState = {};
 
 type Lookups = {
-  accounts: Array<{ id: string; name: string; currency: Currency; balanceMinor: number }>;
+  accounts: Array<{
+    id: string;
+    name: string;
+    lastDigits: string | null;
+    currency: Currency;
+    balanceMinor: number;
+  }>;
   categories: Array<{ id: string; label: string }>;
   paymentMethods: Array<{ id: string; name: string; defaultAccountId: string | null }>;
 };
@@ -340,7 +347,7 @@ export function TransactionForm({
               <option value="">不选择</option>
               {lookups.accounts.map((account) => (
                 <option value={account.id} key={account.id}>
-                  {account.name} · {account.currency}
+                  {formatAccountName(account)} · {account.currency}
                 </option>
               ))}
             </NativeSelect>
@@ -365,7 +372,7 @@ export function TransactionForm({
               <option value="">不选择</option>
               {lookups.accounts.map((account) => (
                 <option value={account.id} key={account.id}>
-                  {account.name} · {account.currency}
+                  {formatAccountName(account)} · {account.currency}
                 </option>
               ))}
             </NativeSelect>

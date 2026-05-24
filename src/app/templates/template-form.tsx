@@ -16,6 +16,7 @@ import {
   type Currency,
   type TransactionType,
 } from "@/domain/finance";
+import { formatAccountName } from "@/features/accounts/labels";
 
 const initialState: QuickEntryTemplateActionState = {};
 
@@ -50,7 +51,7 @@ const accountFieldsByType: Record<
 };
 
 type Lookups = {
-  accounts: Array<{ id: string; name: string; currency: Currency }>;
+  accounts: Array<{ id: string; name: string; lastDigits: string | null; currency: Currency }>;
   categories: Array<{ id: string; label: string }>;
   paymentMethods: Array<{ id: string; name: string; defaultAccountId: string | null }>;
 };
@@ -210,7 +211,7 @@ export function TemplateForm({ action, lookups, defaults = {}, submitLabel }: Te
               <option value="">不选择</option>
               {lookups.accounts.map((account) => (
                 <option value={account.id} key={account.id}>
-                  {account.name} · {account.currency}
+                  {formatAccountName(account)} · {account.currency}
                 </option>
               ))}
             </NativeSelect>
@@ -226,7 +227,7 @@ export function TemplateForm({ action, lookups, defaults = {}, submitLabel }: Te
               <option value="">不选择</option>
               {lookups.accounts.map((account) => (
                 <option value={account.id} key={account.id}>
-                  {account.name} · {account.currency}
+                  {formatAccountName(account)} · {account.currency}
                 </option>
               ))}
             </NativeSelect>

@@ -9,6 +9,7 @@ export async function getTransactionLookups() {
       .select({
         id: accounts.id,
         name: accounts.name,
+        lastDigits: accounts.lastDigits,
         currency: accounts.currency,
         balanceMinor: accounts.balanceMinor,
       })

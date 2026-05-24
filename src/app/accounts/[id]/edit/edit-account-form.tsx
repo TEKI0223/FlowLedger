@@ -22,6 +22,7 @@ type EditAccountFormProps = {
   account: {
     id: string;
     name: string;
+    lastDigits: string | null;
     type: AccountType;
     currency: Currency;
     includeInNetWorth: boolean;
@@ -45,6 +46,18 @@ export function EditAccountForm({ account }: EditAccountFormProps) {
             name="name"
             required
             defaultValue={values?.name ?? account.name}
+            className="h-11 text-base"
+          />
+        </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor="lastDigits">尾号</Label>
+          <Input
+            id="lastDigits"
+            name="lastDigits"
+            maxLength={8}
+            placeholder="可选，例如 1234"
+            defaultValue={values?.lastDigits ?? account.lastDigits ?? ""}
             className="h-11 text-base"
           />
         </div>

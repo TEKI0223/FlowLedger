@@ -6,6 +6,7 @@ import { nowIso } from "@/lib/dates";
 
 export type CreateAccountInput = {
   name: string;
+  lastDigits?: string;
   type: AccountType;
   currency: Currency;
   balanceMinor: number;
@@ -22,6 +23,7 @@ export async function createAccountRecord(input: CreateAccountInput): Promise<st
     .values({
       id,
       name: input.name,
+      lastDigits: input.lastDigits,
       type: input.type,
       currency: input.currency,
       balanceMinor: input.balanceMinor,
@@ -37,6 +39,7 @@ export async function createAccountRecord(input: CreateAccountInput): Promise<st
 
 export type UpdateAccountInput = {
   name: string;
+  lastDigits?: string;
   type: AccountType;
   currency: Currency;
   includeInNetWorth: boolean;
@@ -48,6 +51,7 @@ export async function updateAccountRecord(id: string, input: UpdateAccountInput)
     .update(accounts)
     .set({
       name: input.name,
+      lastDigits: input.lastDigits,
       type: input.type,
       currency: input.currency,
       includeInNetWorth: input.includeInNetWorth,

@@ -37,6 +37,18 @@ export function NewAccountForm() {
         </div>
 
         <div className="grid gap-2">
+          <Label htmlFor="lastDigits">尾号</Label>
+          <Input
+            id="lastDigits"
+            name="lastDigits"
+            maxLength={8}
+            placeholder="可选，例如 1234"
+            defaultValue={values?.lastDigits ?? ""}
+            className="h-11 text-base"
+          />
+        </div>
+
+        <div className="grid gap-2">
           <Label htmlFor="type">账户类型</Label>
           <NativeSelect id="type" name="type" required defaultValue={values?.type ?? "bank"}>
             {Object.entries(accountTypeLabels).map(([value, label]) => (

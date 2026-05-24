@@ -1,0 +1,1 @@
+ALTER TABLE `accounts` ADD `last_digits` text;

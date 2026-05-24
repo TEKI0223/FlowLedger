@@ -9,6 +9,7 @@ import { accountPaths, revalidatePaths } from "@/lib/revalidate";
 
 const accountSchema = z.object({
   name: z.string().trim().min(1, "请输入账户名称"),
+  lastDigits: z.string().trim().max(8, "尾号最多 8 个字符").optional(),
   type: z.enum(accountTypes),
   currency: z.enum(currencies),
   includeInNetWorth: z.boolean(),
@@ -18,6 +19,7 @@ const accountSchema = z.object({
 
 export type AccountFormValues = {
   name?: string;
+  lastDigits?: string;
   type?: string;
   currency?: string;
   includeInNetWorth?: boolean;
@@ -33,6 +35,7 @@ export type AccountActionState = {
 function extractValues(formData: FormData): AccountFormValues {
   return {
     name: stringField(formData, "name"),
+    lastDigits: stringField(formData, "lastDigits"),
     type: stringField(formData, "type"),
     currency: stringField(formData, "currency"),
     includeInNetWorth: formData.get("includeInNetWorth") === "on",
@@ -49,6 +52,7 @@ export async function createAccount(
 
   const result = accountSchema.safeParse({
     name: values.name,
+    lastDigits: values.lastDigits || undefined,
     type: values.type,
     currency: values.currency,
     includeInNetWorth: values.includeInNetWorth,
@@ -68,6 +72,7 @@ export async function createAccount(
 
   await createAccountRecord({
     name: parsed.name,
+    lastDigits: parsed.lastDigits,
     type: parsed.type,
     currency: parsed.currency,
     balanceMinor: amount.amountMinor,
@@ -88,6 +93,7 @@ export async function updateAccount(
 
   const result = accountSchema.omit({ initialBalance: true }).safeParse({
     name: values.name,
+    lastDigits: values.lastDigits || undefined,
     type: values.type,
     currency: values.currency,
     includeInNetWorth: values.includeInNetWorth,
@@ -102,6 +108,7 @@ export async function updateAccount(
 
   await updateAccountRecord(id, {
     name: parsed.name,
+    lastDigits: parsed.lastDigits,
     type: parsed.type,
     currency: parsed.currency,
     includeInNetWorth: parsed.includeInNetWorth,

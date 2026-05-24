@@ -5,6 +5,7 @@ import { EditAccountForm } from "./edit-account-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatMoney } from "@/domain/finance";
 import { getAccount } from "@/features/accounts/data";
+import { formatAccountName } from "@/features/accounts/labels";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function AccountEditPage({ params }: AccountEditPageProps) 
           className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
           <ArrowLeftIcon className="size-3" />
-          {account.name}
+          {formatAccountName(account)}
         </Link>
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">编辑账户</h1>
         <p className="text-sm text-muted-foreground tabular-nums">
