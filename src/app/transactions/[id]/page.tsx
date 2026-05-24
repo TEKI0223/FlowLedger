@@ -6,7 +6,6 @@ import { TransactionForm } from "@/features/transactions/transaction-form";
 import { updateTransaction } from "@/app/actions/transactions";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FormActionBar } from "@/components/ui/form-action-bar";
 import { formatMinorForInput } from "@/domain/finance";
 import { getTransactionLookups } from "@/features/lookups/data";
 import { getTransaction } from "@/features/transactions/data";
@@ -36,6 +35,16 @@ export default async function TransactionEditPage({ params }: TransactionEditPag
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
+      <header className="space-y-3 pb-5">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">交易详情</h1>
+          <DeleteTransactionButton
+            id={transaction.id}
+            className="h-8 border border-destructive/25 bg-destructive/10 px-3 text-xs"
+          />
+        </div>
+      </header>
+
       {transaction.type === "expense" ? (
         <div className="mb-4 grid grid-cols-2 gap-2">
           <Link
@@ -76,25 +85,9 @@ export default async function TransactionEditPage({ params }: TransactionEditPag
             }}
             submitLabel="保存修改"
             mode="edit"
-            id="transaction-edit-form"
-            hideSubmit
           />
         </CardContent>
       </Card>
-
-      <div className="mt-4">
-        <FormActionBar
-          formId="transaction-edit-form"
-          submitLabel="保存修改"
-          cancelHref="/transactions"
-          dangerAction={
-            <DeleteTransactionButton
-              id={transaction.id}
-              className="h-11 border border-destructive/25 bg-destructive/10 px-3"
-            />
-          }
-        />
-      </div>
     </main>
   );
 }
