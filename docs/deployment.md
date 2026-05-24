@@ -33,10 +33,12 @@ export DATABASE_URL='libsql://flowledger-<your-org>.turso.io'
 export DATABASE_AUTH_TOKEN='<上一步拿到的 token>'
 
 npm run db:migrate          # 把 src/db/migrations/* 应用到 Turso
-npm run db:seed             # seed 默认账户 / 分类 / 支付方式 / 快捷模板 / 汇率
+npm run db:seed             # seed 默认交易分类
 ```
 
-跑完之后用 `turso db shell flowledger "select count(*) from accounts"` 之类的命令验证一下。
+跑完之后用 `turso db shell flowledger "select count(*) from categories"` 之类的命令验证一下。
+
+`npm run db:seed:dev` 只用于本地开发测试数据，会写入示例账户、支付方式、快捷模板、信用卡和汇率。这个命令默认拒绝写入远程数据库，不要对正式库执行。
 
 ⚠️ 跑完 **unset 这两个变量**，免得后面本地 `npm run dev` 不小心连到 Turso：
 

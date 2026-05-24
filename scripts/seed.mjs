@@ -19,38 +19,28 @@ if (url.startsWith("file:")) {
 
 const now = new Date().toISOString();
 
-const accounts = [
-  ["jpy-cash", "日元现金", "cash", "JPY", 0, 1, "现金账户"],
-  ["jp-bank-main", "日本银行账户", "bank", "JPY", 0, 1, "工资和信用卡还款主账户"],
-  ["jpy-credit-card-a", "日元信用卡 A", "credit_card", "JPY", 0, 0, "默认信用卡"],
-  ["jpy-credit-card-b", "日元信用卡 B", "credit_card", "JPY", 0, 0, "备用信用卡"],
-  ["paypay", "PayPay", "wallet", "JPY", 0, 1, "日元余额型账户"],
-  ["cny-bank-main", "人民币银行卡", "bank", "CNY", 0, 1, "人民币主账户"],
-  ["wechat-balance", "微信余额", "wallet", "CNY", 0, 1, "人民币余额型账户"],
-  ["alipay-balance", "支付宝余额", "wallet", "CNY", 0, 1, "人民币余额型账户"],
-  ["cny-cash", "人民币现金", "cash", "CNY", 0, 1, "现金账户"],
-];
-
-const paymentMethods = [
-  ["credit-card-a", "信用卡 A", "jpy-credit-card-a"],
-  ["credit-card-b", "信用卡 B", "jpy-credit-card-b"],
-  ["apple-pay", "Apple Pay", "jpy-credit-card-a"],
-  ["paypay", "PayPay", "paypay"],
-  ["wechat-pay", "微信支付", "wechat-balance"],
-  ["alipay", "支付宝", "alipay-balance"],
-  ["jpy-cash", "日元现金", "jpy-cash"],
-  ["cny-cash", "人民币现金", "cny-cash"],
-  ["jp-bank-transfer", "日本银行转账", "jp-bank-main"],
-  ["cny-bank-transfer", "人民币银行卡", "cny-bank-main"],
-];
-
 const categories = [
   ["housing", "居住", null],
   ["rent", "房租", "housing"],
-  ["utilities", "水电燃气", "housing"],
+  ["water", "水", "housing"],
+  ["electricity", "电", "housing"],
+  ["gas", "燃气", "housing"],
   ["internet", "网络", "housing"],
+  ["game", "游戏", null],
+  ["genshin-impact", "原神", "game"],
+  ["zenless-zone-zero", "绝区零", "game"],
+  ["ps5-software", "PS5 实体游戏", "game"],
+  ["other-game", "其他游戏", "game"],
   ["food", "饮食", null],
   ["grocery", "超市", "food"],
+  ["vagetables", "蔬菜", "grocery"],
+  ["fruits", "水果", "grocery"],
+  ["meat", "肉类", "grocery"],
+  ["seafood", "海鲜", "grocery"],
+  ["snacks", "零食", "grocery"],
+  ["beverages", "饮料", "grocery"],
+  ["alcohol", "酒", "grocery"],
+  ["milk", "乳制品", "grocery"],
   ["convenience-store", "便利店", "food"],
   ["dining", "外食", "food"],
   ["coffee", "咖啡", "food"],
@@ -58,148 +48,31 @@ const categories = [
   ["shopping", "购物", null],
   ["daily-goods", "日用品", "shopping"],
   ["electronics", "电子产品", "shopping"],
+  ["clothing", "服饰", "shopping"],
+  ["paper-towels", "厨房纸", "daily-goods"],
+  ["tissues", "面巾纸", "daily-goods"],
+  ["toilet-paper", "卷纸", "daily-goods"],
+  ["toothpaste", "牙膏", "daily-goods"],
+  ["shampoo", "洗发水", "daily-goods"],
+  ["skincare", "护肤品", "daily-goods"],
+  ["makeup", "彩妆", "daily-goods"],
+  ["face-wash", "洗面奶", "daily-goods"],
   ["subscription", "订阅", null],
+  ["iCloud", "iCloud", "subscription"],
   ["medical", "医疗", null],
+  ["medicine", "药品", "medical"],
+  ["doctor", "医生", "medical"],
   ["entertainment", "社交娱乐", null],
   ["travel", "旅行", null],
+  ["travel-transportation", "旅行交通", "travel"],
+  ["travel-accommodation", "旅行住宿", "travel"],
+  ["travel-food", "旅行饮食", "travel"],
+  ["gift", "礼物", null],
   ["fees-tax", "手续费和税费", null],
   ["income-salary", "工资", null],
   ["refund", "退款", null],
   ["other", "其他", null],
 ];
-
-const quickEntryTemplates = [
-  [
-    "grocery",
-    "超市",
-    "expense",
-    "JPY",
-    null,
-    "grocery",
-    "jp-bank-main",
-    null,
-    "apple-pay",
-    null,
-    10,
-    1,
-  ],
-  [
-    "convenience-store",
-    "便利店",
-    "expense",
-    "JPY",
-    null,
-    "convenience-store",
-    "paypay",
-    null,
-    "paypay",
-    null,
-    20,
-    1,
-  ],
-  [
-    "dining",
-    "外食",
-    "expense",
-    "JPY",
-    null,
-    "dining",
-    "jpy-credit-card-a",
-    null,
-    "credit-card-a",
-    null,
-    30,
-    1,
-  ],
-  ["coffee", "咖啡", "expense", "JPY", null, "coffee", "paypay", null, "paypay", null, 40, 1],
-  [
-    "transport",
-    "交通",
-    "expense",
-    "JPY",
-    null,
-    "transport",
-    "jpy-cash",
-    null,
-    "jpy-cash",
-    null,
-    50,
-    1,
-  ],
-  [
-    "online-shopping",
-    "网购",
-    "expense",
-    "JPY",
-    null,
-    "shopping",
-    "jpy-credit-card-a",
-    null,
-    "credit-card-a",
-    "平台标签待补充",
-    60,
-    1,
-  ],
-  [
-    "paypay-expense",
-    "PayPay 消费",
-    "expense",
-    "JPY",
-    null,
-    "other",
-    "paypay",
-    null,
-    "paypay",
-    null,
-    70,
-    1,
-  ],
-  [
-    "cash-expense",
-    "现金消费",
-    "expense",
-    "JPY",
-    null,
-    "other",
-    "jpy-cash",
-    null,
-    "jpy-cash",
-    null,
-    80,
-    1,
-  ],
-];
-
-const creditCards = [
-  ["credit-card-a", "jpy-credit-card-a", 25, 10, "jp-bank-main", 1],
-  ["credit-card-b", "jpy-credit-card-b", 25, 10, "jp-bank-main", 1],
-];
-
-const exchangeRates = [
-  ["cny-to-jpy", "CNY", "JPY", 21.5],
-  ["jpy-to-cny", "JPY", "CNY", 1 / 21.5],
-];
-
-const SQL_ACCOUNT = `
-  insert into accounts (id, name, type, currency, balance_minor, include_in_net_worth, note, created_at, updated_at)
-  values (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  on conflict(id) do update set
-    name = excluded.name,
-    type = excluded.type,
-    currency = excluded.currency,
-    include_in_net_worth = excluded.include_in_net_worth,
-    note = excluded.note,
-    updated_at = excluded.updated_at
-`;
-
-const SQL_PAYMENT_METHOD = `
-  insert into payment_methods (id, name, default_account_id, created_at, updated_at)
-  values (?, ?, ?, ?, ?)
-  on conflict(id) do update set
-    name = excluded.name,
-    default_account_id = excluded.default_account_id,
-    updated_at = excluded.updated_at
-`;
 
 const SQL_CATEGORY = `
   insert into categories (id, name, parent_id, created_at, updated_at)
@@ -210,62 +83,10 @@ const SQL_CATEGORY = `
     updated_at = excluded.updated_at
 `;
 
-const SQL_QUICK_ENTRY = `
-  insert into quick_entry_templates (
-    id, name, type, currency, amount_minor, category_id,
-    source_account_id, target_account_id, payment_method_id,
-    note, sort_order, enabled, created_at, updated_at
-  )
-  values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  on conflict(id) do update set
-    name = excluded.name,
-    type = excluded.type,
-    currency = excluded.currency,
-    amount_minor = excluded.amount_minor,
-    category_id = excluded.category_id,
-    source_account_id = excluded.source_account_id,
-    target_account_id = excluded.target_account_id,
-    payment_method_id = excluded.payment_method_id,
-    note = excluded.note,
-    sort_order = excluded.sort_order,
-    enabled = excluded.enabled,
-    updated_at = excluded.updated_at
-`;
-
-const SQL_CREDIT_CARD = `
-  insert into credit_cards (id, account_id, closing_day, payment_day, repayment_account_id, enabled, created_at, updated_at)
-  values (?, ?, ?, ?, ?, ?, ?, ?)
-  on conflict(id) do update set
-    account_id = excluded.account_id,
-    closing_day = excluded.closing_day,
-    payment_day = excluded.payment_day,
-    repayment_account_id = excluded.repayment_account_id,
-    enabled = excluded.enabled,
-    updated_at = excluded.updated_at
-`;
-
-const SQL_EXCHANGE_RATE = `
-  insert into exchange_rates (id, from_currency, to_currency, rate, updated_at)
-  values (?, ?, ?, ?, ?)
-  on conflict(id) do update set
-    from_currency = excluded.from_currency,
-    to_currency = excluded.to_currency,
-    rate = excluded.rate,
-    updated_at = excluded.updated_at
-`;
-
-// libsql 在 batch 里自动开启隐式事务（"deferred" 模式），全部成功才提交。
-const statements = [
-  ...accounts.map((row) => ({ sql: SQL_ACCOUNT, args: [...row, now, now] })),
-  ...paymentMethods.map((row) => ({ sql: SQL_PAYMENT_METHOD, args: [...row, now, now] })),
-  ...categories.map((row) => ({ sql: SQL_CATEGORY, args: [...row, now, now] })),
-  ...quickEntryTemplates.map((row) => ({ sql: SQL_QUICK_ENTRY, args: [...row, now, now] })),
-  ...creditCards.map((row) => ({ sql: SQL_CREDIT_CARD, args: [...row, now, now] })),
-  ...exchangeRates.map((row) => ({ sql: SQL_EXCHANGE_RATE, args: [...row, now] })),
-];
+const statements = categories.map((row) => ({ sql: SQL_CATEGORY, args: [...row, now, now] }));
 
 await client.batch(statements, "deferred");
 client.close();
 
 const target = url.startsWith("file:") ? url.slice("file:".length).split("?")[0] : url;
-console.log(`Seeded FlowLedger defaults into ${target}`);
+console.log(`Seeded FlowLedger default categories into ${target}`);
