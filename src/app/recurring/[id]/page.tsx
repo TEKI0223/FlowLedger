@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeftIcon } from "lucide-react";
+import { DeleteRecurringButton } from "../delete-recurring-button";
 import { RecurringForm } from "../recurring-form";
 import { updateRecurringItem } from "@/app/actions/recurring";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,14 +32,11 @@ export default async function RecurringEditPage({ params }: RecurringEditPagePro
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
       <header className="space-y-1 pb-5">
-        <Link
-          href="/recurring"
-          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeftIcon className="size-3" />
-          周期项目
-        </Link>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">编辑周期项</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">编辑周期项</h1>
+
+          <DeleteRecurringButton id={item.id} name={item.name} />
+        </div>
         <p className="text-sm text-muted-foreground">下次发生日期：{item.nextDate}</p>
       </header>
 

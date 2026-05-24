@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeftIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatMinorForInput, transactionTypeLabels } from "@/domain/finance";
@@ -39,15 +37,7 @@ export default async function QuickEntryPage({ params }: QuickEntryPageProps) {
   return (
     <main className="mx-auto w-full max-w-xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
       <header className="space-y-1 pb-5">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeftIcon className="size-3" />
-          首页
-        </Link>
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{template.name}</h1>
-        <p className="text-sm text-muted-foreground">快捷记账会使用模板里的账户、分类和支付方式</p>
       </header>
 
       <Card>
@@ -81,15 +71,7 @@ function TemporaryEntryPage() {
   return (
     <main className="mx-auto w-full max-w-xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
       <header className="space-y-1 pb-5">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeftIcon className="size-3" />
-          首页
-        </Link>
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">临时记录</h1>
-        <p className="text-sm text-muted-foreground">先保存一笔待补全支出，稍后从交易页编辑细节</p>
       </header>
 
       <Card>

@@ -29,15 +29,18 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   return (
     <main className="mx-auto w-full max-w-xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
       <header className="flex flex-col gap-3 pb-5">
-        <div className="flex items-center justify-end gap-2">
-          <Link
-            href={`/categories/new?parentId=${category.id}`}
-            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 text-xs")}
-          >
-            <PlusIcon className="size-3.5" />
-            添加子类
-          </Link>
-          <DeleteCategoryButton id={category.id} name={category.name} />
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{category.name}</h1>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/categories/new?parentId=${category.id}`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 text-xs")}
+            >
+              <PlusIcon className="size-3.5" />
+              添加子类
+            </Link>
+            <DeleteCategoryButton id={category.id} name={category.name} />
+          </div>
         </div>
         <p className="text-sm text-muted-foreground">
           使用 {category.usageCount} 次

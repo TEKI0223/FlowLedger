@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeftIcon, CalendarIcon, RepeatIcon } from "lucide-react";
+import { CalendarIcon, RepeatIcon } from "lucide-react";
 import { ConfirmRecurringForm } from "./confirm-recurring-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,17 +26,7 @@ export default async function RecurringPendingPage({ searchParams }: PendingPage
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
       <header className="space-y-1 pb-5">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeftIcon className="size-3" />
-          首页
-        </Link>
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">待确认周期项</h1>
-        <p className="text-sm text-muted-foreground">
-          确认后会生成正式交易并按周期推进下次发生日期；跳过仅推进日期，不记账
-        </p>
       </header>
 
       {confirmed ? <InlineAlert>已确认并记账，账户余额已更新。</InlineAlert> : null}

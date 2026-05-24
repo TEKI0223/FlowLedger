@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeftIcon, ArrowRightIcon, CreditCardIcon } from "lucide-react";
+import { ArrowRightIcon, CreditCardIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatMoney } from "@/domain/finance";
@@ -20,24 +20,15 @@ export default async function CreditCardsPage() {
   );
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
-      <header className="space-y-1 pb-5">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeftIcon className="size-3" />
-          首页
-        </Link>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">信用卡</h1>
-        <p className="text-sm text-muted-foreground">
-          按账单周期归属消费，扣款日提醒，还款转账核对
-        </p>
-      </header>
+    <main className="mx-auto w-full max-w-6xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">信用卡</h2>
+        <span className="text-xs text-muted-foreground">{cards.length} 张卡</span>
+      </div>
 
       {cards.length === 0 ? (
-        <Card size="sm" className="px-4 py-8 text-center text-sm text-muted-foreground">
-          还没有启用的信用卡。可以在账户中创建 credit_card 类型，并在 credit_cards 表配置账单日。
+        <Card size="sm" className="px-4 py-6 text-center text-sm text-muted-foreground">
+          还没有启用的信用卡。
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">

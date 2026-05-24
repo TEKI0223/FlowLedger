@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { ArrowLeftIcon, SettingsIcon } from "lucide-react";
+import { SettingsIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function ManageRatesPage() {
@@ -7,13 +6,6 @@ export default function ManageRatesPage() {
     <main className="mx-auto w-full max-w-3xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
       <header className="flex flex-col gap-3 pb-5">
         <div className="space-y-1">
-          <Link
-            href="/manage"
-            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeftIcon className="size-3" />
-            管理
-          </Link>
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">汇率</h1>
           <p className="text-sm text-muted-foreground">手动汇率编辑会在 S2.3 接入。</p>
         </div>

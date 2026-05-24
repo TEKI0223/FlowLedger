@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  ArrowLeftIcon,
   ArrowRightIcon,
   CreditCardIcon,
   DownloadIcon,
@@ -75,19 +74,9 @@ const manageItems = [
 
 export default function ManagePage() {
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
+    <main className="mx-auto w-full max-w-6xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
       <header className="flex flex-col gap-3 pb-5">
-        <div className="space-y-1">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeftIcon className="size-3" />
-            首页
-          </Link>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">管理</h1>
-          <p className="text-sm text-muted-foreground">低频维护入口统一放在这里。</p>
-        </div>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">管理</h1>
       </header>
 
       <Card size="sm" className="divide-y divide-border py-0">
@@ -105,7 +94,7 @@ export default function ManagePage() {
                   <Icon className="size-4" />
                 </div>
                 <div className="min-w-0 space-y-0.5">
-                  <p className="truncate text-sm font-medium">{item.label}</p>
+                <p className="truncate text-sm font-medium">{item.label}</p>
                   <p className="truncate text-xs text-muted-foreground">{item.description}</p>
                 </div>
               </div>
@@ -122,7 +111,6 @@ export default function ManagePage() {
           </div>
           <div className="space-y-0.5">
             <h2 className="text-sm font-medium">退出登录</h2>
-            <p className="text-xs text-muted-foreground">结束当前设备会话</p>
           </div>
         </div>
         <LogoutButton />

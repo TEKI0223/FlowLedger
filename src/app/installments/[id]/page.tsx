@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeftIcon, ArrowRightIcon, CalendarIcon, LayersIcon } from "lucide-react";
+import { ArrowRightIcon, CalendarIcon, LayersIcon } from "lucide-react";
 import { CancelInstallmentButton } from "../cancel-installment-button";
 import { DeleteInstallmentButton } from "../delete-installment-button";
 import { InstallmentForm } from "../installment-form";
@@ -51,21 +51,17 @@ export default async function InstallmentDetailPage({ params }: Props) {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
       <header className="space-y-1 pb-5">
-        <Link
-          href="/installments"
-          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeftIcon className="size-3" />
-          分期计划
-        </Link>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight md:text-3xl">
-            <LayersIcon className="size-6 text-muted-foreground" />
-            {plan.originalTransaction?.note ?? plan.category?.name ?? "分期计划"}
-          </h1>
-          <Badge variant="outline" className={cn("text-xs", statusBadgeClass[status])}>
-            {installmentStatusLabels[status]}
-          </Badge>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight md:text-3xl">
+              <LayersIcon className="size-6 text-muted-foreground" />
+              {plan.originalTransaction?.note ?? plan.category?.name ?? "分期计划"}
+            </h1>
+            <Badge variant="outline" className={cn("text-xs", statusBadgeClass[status])}>
+              {installmentStatusLabels[status]}
+            </Badge>
+          </div>
+          <DeleteInstallmentButton id={plan.id} />
         </div>
       </header>
 
@@ -137,7 +133,6 @@ export default async function InstallmentDetailPage({ params }: Props) {
 
           <div className="flex flex-wrap items-center gap-1">
             <CancelInstallmentButton id={plan.id} isCancelled={status === "cancelled"} />
-            <DeleteInstallmentButton id={plan.id} />
           </div>
         </CardContent>
       </Card>

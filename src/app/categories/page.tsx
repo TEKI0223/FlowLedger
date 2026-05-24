@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeftIcon, ArrowRightIcon, FolderTreeIcon, PlusIcon } from "lucide-react";
+import { ArrowRightIcon, FolderTreeIcon, PlusIcon } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { listCategories, type CategoryRow } from "@/features/categories/data";
@@ -15,15 +15,7 @@ export default async function CategoriesPage() {
     <main className="mx-auto w-full max-w-3xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
       <header className="flex items-start justify-between gap-3 pb-5">
         <div className="space-y-1">
-          <Link
-            href="/manage"
-            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeftIcon className="size-3" />
-            管理
-          </Link>
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">交易分类</h1>
-          <p className="text-sm text-muted-foreground">维护分类层级和常用排序。</p>
         </div>
         <Link
           href="/categories/new"
