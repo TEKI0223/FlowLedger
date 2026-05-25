@@ -27,6 +27,7 @@ type CategoryPickerProps = {
   name: string;
   categories: CategoryPickerOption[];
   defaultValue?: string;
+  emptyLabel?: string;
 };
 
 type RootGroup = {
@@ -39,6 +40,7 @@ export function CategoryPicker({
   name,
   categories,
   defaultValue = "",
+  emptyLabel = "无分类",
 }: CategoryPickerProps) {
   const [selectedId, setSelectedId] = useState(defaultValue);
   const [query, setQuery] = useState("");
@@ -86,7 +88,7 @@ export function CategoryPicker({
               labelClassName="text-sm font-medium"
             />
           ) : (
-            <span className="text-sm text-muted-foreground">无分类</span>
+            <span className="text-sm text-muted-foreground">{emptyLabel}</span>
           )}
           <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
         </button>
