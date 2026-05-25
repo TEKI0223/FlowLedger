@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   ArrowRightIcon,
   CreditCardIcon,
-  DownloadIcon,
   FolderTreeIcon,
   LayersIcon,
   LogOutIcon,
@@ -70,12 +69,6 @@ const manageItems = [
     description: "S2.3 接入手动汇率编辑",
     href: "/manage/rates",
     icon: SettingsIcon,
-  },
-  {
-    label: "数据导出",
-    description: "S2.3 接入交易与账户 CSV",
-    href: "/manage/export",
-    icon: DownloadIcon,
   },
 ];
 

@@ -16,3 +16,7 @@ export async function getExchangeRate(from: Currency, to: Currency): Promise<num
 
   return row?.rate ?? null;
 }
+
+export async function listExchangeRates() {
+  return db.select().from(exchangeRates);
+}
