@@ -13,6 +13,7 @@ export function toQuickEntryModalTemplate(
     context: templateContext(template),
     amountHint: amountHint(template),
     amountDefault: amountDefault(template),
+    usageCount: template.usageCount,
     theme: templateTheme(template),
     categoryIconKey: template.category?.resolvedIconKey,
     typeLabel: transactionTypeLabels[template.type],
@@ -37,11 +38,7 @@ export function temporaryQuickEntryTemplate(): QuickEntryModalTemplate {
 }
 
 function templateMeta(template: HydratedQuickEntryTemplate) {
-  const primary = template.category?.name ?? transactionTypeLabels[template.type];
-  const secondary =
-    template.paymentMethod?.name ?? template.sourceAccount?.name ?? template.targetAccount?.name;
-
-  return secondary ? `${primary} / ${secondary}` : primary;
+  return template.category?.label ?? transactionTypeLabels[template.type];
 }
 
 function templateContext(template: HydratedQuickEntryTemplate) {

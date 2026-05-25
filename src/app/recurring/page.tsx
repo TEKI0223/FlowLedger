@@ -13,7 +13,7 @@ export default async function RecurringPage() {
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
-      <section>
+      <section className="min-w-0">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">周期项目</h2>
           <div className="flex items-center gap-3">
@@ -33,7 +33,7 @@ export default async function RecurringPage() {
             还没有周期项目。先新建一个周期项目。
           </Card>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid min-w-0 gap-3">
             {items.map((item) => (
               <RecurringCard item={item} key={item.id} />
             ))}

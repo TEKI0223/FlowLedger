@@ -17,6 +17,7 @@ import {
   type TransactionType,
 } from "@/domain/finance";
 import { formatAccountName } from "@/features/accounts/labels";
+import { CategoryPicker, type CategoryPickerOption } from "@/features/categories/category-picker";
 
 const initialState: QuickEntryTemplateActionState = {};
 
@@ -52,7 +53,7 @@ const accountFieldsByType: Record<
 
 type Lookups = {
   accounts: Array<{ id: string; name: string; lastDigits: string | null; currency: Currency }>;
-  categories: Array<{ id: string; label: string }>;
+  categories: CategoryPickerOption[];
   paymentMethods: Array<{ id: string; name: string; defaultAccountId: string | null }>;
 };
 
@@ -179,18 +180,12 @@ export function TemplateForm({ action, lookups, defaults = {}, submitLabel }: Te
 
         <div className="grid gap-2">
           <Label htmlFor="categoryId">分类</Label>
-          <NativeSelect
-            id="categoryId"
+          <CategoryPicker
+            key={values?.categoryId ?? defaults.categoryId ?? "none"}
             name="categoryId"
+            categories={lookups.categories}
             defaultValue={values?.categoryId ?? defaults.categoryId ?? ""}
-          >
-            <option value="">无分类</option>
-            {lookups.categories.map((category) => (
-              <option value={category.id} key={category.id}>
-                {category.label}
-              </option>
-            ))}
-          </NativeSelect>
+          />
         </div>
 
         {fieldConfig.showSource ? (

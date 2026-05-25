@@ -31,6 +31,7 @@ type CategoryIconProps = {
 
 type CategoryIconLabelProps = CategoryIconProps & {
   name: string;
+  iconContainerClassName?: string;
   labelClassName?: string;
 };
 
@@ -100,12 +101,17 @@ export function CategoryIconLabel({
   iconKey,
   name,
   className,
+  iconContainerClassName,
   iconClassName,
   labelClassName,
 }: CategoryIconLabelProps) {
   return (
     <span className={cn("inline-flex min-w-0 items-center gap-2", className)}>
-      <CategoryIcon iconKey={iconKey} className="size-7 rounded-md" iconClassName={iconClassName} />
+      <CategoryIcon
+        iconKey={iconKey}
+        className={cn("size-7 rounded-md", iconContainerClassName)}
+        iconClassName={iconClassName}
+      />
       <span className={cn("truncate", labelClassName)}>{name}</span>
     </span>
   );
