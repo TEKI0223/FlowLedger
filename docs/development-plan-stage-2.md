@@ -84,8 +84,7 @@ Stage 2 的判断标准是：**自己能愿意每天用，且部署到 Vercel + 
 - Hero 区：本月支出 / 本月结余 / 折算净资产 三大数字，跟随系统暗色模式
 - 月度进度感：本月已过 N 天的隐性提示，比如"已过 18/30 天，已花 ¥85k"
 - 快捷模板网格上移到主区（不再藏在 sidebar）
-- 待办区合并：N 个待确认周期项 + N 笔退款未到账 +（新增）N 笔本月信用卡待还，按紧急度排序
-验收：
+- 待办区合并：N 个待确认周期项 + N 笔退款未到账 +（新增）N 笔本月信用卡待还，按紧急度排序验收：
 
 - 手机 iPhone 15（393×852）一屏能看到：hero + 快捷网格至少 4 个
 - 滚动一屏看完所有：hero + 快捷 + 待办 + 最近交易
@@ -156,7 +155,7 @@ Stage 2 的判断标准是：**自己能愿意每天用，且部署到 Vercel + 
 - Turso db create flowledger
 - 推 schema + seed 到 Turso
 - Vercel 项目接入 GitHub
-- 配置 env vars（DATABASE_URL / DATABASE_AUTH_TOKEN / FLOWLEDGER_PASSWORD）
+- 配置 env vars（DATABASE_URL / DATABASE_AUTH_TOKEN / FLOWLEDGER_USERS_JSON）
 - 首次部署
 - 手机添加到主屏，跑一遍真实记账流程
 - 30 分钟后再核对一次数据 — 确认全流程稳定

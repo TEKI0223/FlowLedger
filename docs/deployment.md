@@ -38,7 +38,8 @@ npm run db:seed             # seed 默认交易分类
 
 跑完之后用 `turso db shell flowledger "select count(*) from categories"` 之类的命令验证一下。
 
-`npm run db:seed:dev` 只用于本地开发测试数据，会写入示例账户、支付方式、快捷模板、信用卡和汇率。这个命令默认拒绝写入远程数据库，不要对正式库执行。
+`npm run db:seed:dev`
+只用于本地开发测试数据，会写入示例账户、支付方式、快捷模板、信用卡和汇率。这个命令默认拒绝写入远程数据库，不要对正式库执行。
 
 ⚠️ 跑完 **unset 这两个变量**，免得后面本地 `npm run dev` 不小心连到 Turso：
 
@@ -58,45 +59,54 @@ unset DATABASE_URL DATABASE_AUTH_TOKEN
 
 Project Settings → Environment Variables，加三个（Production + Preview 都勾上）：
 
-| Name                  | Value                                     |
-| --------------------- | ----------------------------------------- |
-| `DATABASE_URL`        | `libsql://flowledger-<your-org>.turso.io` |
-| `DATABASE_AUTH_TOKEN` | （turso db tokens create 输出）           |
-| `FLOWLEDGER_PASSWORD` | 你想用的访问密码（强密码）                |
+| Name                    | Value                                     |
+| ----------------------- | ----------------------------------------- |
+| `DATABASE_URL`          | `libsql://flowledger-<your-org>.turso.io` |
+| `DATABASE_AUTH_TOKEN`   | （turso db tokens create 输出）           |
+| `FLOWLEDGER_USERS_JSON` | 两个登录用户的 JSON 配置                  |
+
+`FLOWLEDGER_USERS_JSON` 示例：
+
+```json
+[
+  { "id": "zhang", "name": "zhang", "password": "生产强密码 1" },
+  { "id": "liu", "name": "liu", "password": "生产强密码 2" }
+]
+```
 
 ### 2.3 首次部署
 
-Deploy。部署完了访问 vercel 给的域名，应该先看到登录页，输入 `FLOWLEDGER_PASSWORD`
-设的密码 → 跳到首页。
+Deploy。部署完了访问 vercel 给的域名，应该先看到登录页，选择用户并输入对应密码 → 跳到首页。
 
-## 3. 访问保护：内置密码门
+## 3. 访问保护：内置双人密码门
 
-FlowLedger **强制启用密码门**——`FLOWLEDGER_PASSWORD` 是必需环境变量。所有路径（除
-`/login`）都强制登录。
+FlowLedger **强制启用登录保护**——`FLOWLEDGER_USERS_JSON` 是必需环境变量。所有路径（除
+`/login`）都强制登录。登录后 session 会携带当前用户 id，账户、支付方式、信用卡、交易、模板、周期项、退款和分期都会按当前用户隔离；分类和汇率是全局共享。
 
 本地开发也一样，把它写进 `.env.local`：
 
 ```bash
-echo 'FLOWLEDGER_PASSWORD=devpassword' >> .env.local
+echo 'FLOWLEDGER_USERS_JSON=[{"id":"zhang","name":"zhang","password":"devpassword"},{"id":"liu","name":"liu","password":"devpassword2"}]' >> .env.local
 ```
 
 实现细节：
 
 - session 是 JWT，存在 HttpOnly + Secure + SameSite=lax cookie 里，30 天 TTL
-- JWT 的签名 secret **从 `FLOWLEDGER_PASSWORD` 派生**（SHA-256）
-- 改密码 → 旧 secret 不匹配 → 所有现存 session 立即失效（不用手动登出）
+- JWT 的 `sub` 是当前用户 id
+- JWT 的签名 secret **从 `FLOWLEDGER_USERS_JSON` 派生**（SHA-256）
+- 改任一用户配置或密码 → 旧 secret 不匹配 → 所有现存 session 立即失效（不用手动登出）
 
-### 怎么改密码
+### 怎么改用户或密码
 
 - 本地：改 `.env.local`，重启 `npm run dev`
-- 生产：Vercel Settings → Environment Variables → 改 `FLOWLEDGER_PASSWORD` → Save → Redeploy
+- 生产：Vercel Settings → Environment Variables → 改 `FLOWLEDGER_USERS_JSON` → Save → Redeploy
 
 两种情况都会让所有设备跳回登录页。
 
-### 想要 OAuth / 多用户
+### 想要 OAuth / 更完整账号系统
 
 把内置密码门换 [Auth.js](https://authjs.dev/) + Turso
-adapter。第一版没做是因为对单用户记账过度。要换的时候删
+adapter。当前内置方案适合两人自用；要换的时候删
 `src/proxy.ts`、`src/app/login`、`src/app/actions/auth.ts`、`src/lib/auth.ts`，按 Auth.js 文档重新接入。
 
 ## 4. 日常维护

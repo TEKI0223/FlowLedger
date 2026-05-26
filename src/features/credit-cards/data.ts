@@ -10,6 +10,7 @@ import {
 } from "@/domain/credit-card";
 import type { Currency, TransactionType } from "@/domain/finance";
 import { computeInstallmentDueDates, type InstallmentStatus } from "@/domain/installment";
+import { getCurrentUserId } from "@/lib/auth";
 import { todayIsoDate } from "@/lib/dates";
 
 type CreditCardRow = typeof creditCards.$inferSelect;
@@ -21,21 +22,29 @@ export type HydratedCreditCard = CreditCardRow & {
 };
 
 export async function listCreditCards(): Promise<HydratedCreditCard[]> {
+  const ownerUserId = await getCurrentUserId();
   const cardRows = await db
     .select()
     .from(creditCards)
+    .where(eq(creditCards.ownerUserId, ownerUserId))
     .orderBy(desc(creditCards.enabled), asc(creditCards.id));
 
   return hydrate(cardRows);
 }
 
 export async function getCreditCard(id: string): Promise<HydratedCreditCard | null> {
-  const rows = await db.select().from(creditCards).where(eq(creditCards.id, id)).limit(1);
+  const ownerUserId = await getCurrentUserId();
+  const rows = await db
+    .select()
+    .from(creditCards)
+    .where(and(eq(creditCards.id, id), eq(creditCards.ownerUserId, ownerUserId)))
+    .limit(1);
   const [card] = await hydrate(rows);
   return card ?? null;
 }
 
 export async function listCreditCardAccountOptions() {
+  const ownerUserId = await getCurrentUserId();
   return db
     .select({
       id: accounts.id,
@@ -45,7 +54,7 @@ export async function listCreditCardAccountOptions() {
       currency: accounts.currency,
     })
     .from(accounts)
-    .where(ne(accounts.type, "credit_card"))
+    .where(and(ne(accounts.type, "credit_card"), eq(accounts.ownerUserId, ownerUserId)))
     .orderBy(asc(accounts.currency), asc(accounts.type), asc(accounts.name));
 }
 
@@ -91,6 +100,7 @@ export async function listCardStatements(
   card: HydratedCreditCard,
   count: number = 4,
 ): Promise<StatementSummary[]> {
+  const ownerUserId = await getCurrentUserId();
   const config: CreditCardConfig = {
     closingDay: card.closingDay,
     paymentDay: card.paymentDay,
@@ -134,6 +144,8 @@ export async function listCardStatements(
     .where(
       and(
         eq(transactions.sourceAccountId, cardAccountId),
+        eq(installmentPlans.ownerUserId, ownerUserId),
+        eq(transactions.ownerUserId, ownerUserId),
         ne(installmentPlans.status, "cancelled" satisfies InstallmentStatus),
       ),
     );
@@ -143,6 +155,7 @@ export async function listCardStatements(
   // 2. 普通消费查询，排除已挂分期的原始交易
   const cardExpensesConds = [
     eq(transactions.sourceAccountId, cardAccountId),
+    eq(transactions.ownerUserId, ownerUserId),
     eq(transactions.type, "expense"),
     gte(transactions.occurredOn, earliestStart),
     lte(transactions.occurredOn, latestEnd),
@@ -164,6 +177,7 @@ export async function listCardStatements(
       .where(
         and(
           eq(transactions.targetAccountId, cardAccountId),
+          eq(transactions.ownerUserId, ownerUserId),
           eq(transactions.type, "transfer"),
           gte(transactions.occurredOn, earliestStart),
           lte(transactions.occurredOn, latestEnd),
@@ -249,6 +263,7 @@ function toStatementTransaction(row: typeof transactions.$inferSelect): Statemen
 }
 
 async function hydrate(cardRows: CreditCardRow[]): Promise<HydratedCreditCard[]> {
+  const ownerUserId = await getCurrentUserId();
   const accountIds = new Set<string>();
   for (const card of cardRows) {
     accountIds.add(card.accountId);
@@ -262,7 +277,7 @@ async function hydrate(cardRows: CreditCardRow[]): Promise<HydratedCreditCard[]>
       ? await db
           .select()
           .from(accounts)
-          .where(inArray(accounts.id, [...accountIds]))
+          .where(and(inArray(accounts.id, [...accountIds]), eq(accounts.ownerUserId, ownerUserId)))
       : [];
   const accountById = new Map(accountRows.map((account) => [account.id, account]));
 

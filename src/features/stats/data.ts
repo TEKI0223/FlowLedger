@@ -13,6 +13,7 @@ import { buildCategoryOptions } from "@/features/categories/data";
 import { buildResolvedCategoryIconKeyMap } from "@/features/categories/icon-utils";
 import { getExchangeRate } from "@/features/exchange-rates/data";
 import { listCardStatements, listCreditCards } from "@/features/credit-cards/data";
+import { getCurrentUserId } from "@/lib/auth";
 import { ISO_DATE, todayIsoDate } from "@/lib/dates";
 
 export const statsRangeOptions = [
@@ -38,6 +39,7 @@ type CurrencyMonthMetric = {
 };
 
 export async function getStatsSummary(params: { range: StatsRange; categoryMonth?: string }) {
+  const ownerUserId = await getCurrentUserId();
   const today = todayIsoDate();
   const rateCnyToJpy = await getExchangeRate("CNY", "JPY");
   const currentMonth = today.slice(0, 7);
@@ -45,12 +47,12 @@ export async function getStatsSummary(params: { range: StatsRange; categoryMonth
 
   const [comparison, categoryRanking, monthlyTrend, netWorth, creditCardOverview, availableMonths] =
     await Promise.all([
-      getMonthlyComparison(),
-      getCategoryRanking({ range: params.range, month: rankingMonth, rateCnyToJpy }),
-      getMonthlyTrend(),
-      getNetWorthStats(rateCnyToJpy),
+      getMonthlyComparison(ownerUserId),
+      getCategoryRanking({ range: params.range, month: rankingMonth, rateCnyToJpy, ownerUserId }),
+      getMonthlyTrend(ownerUserId),
+      getNetWorthStats(rateCnyToJpy, ownerUserId),
       getCreditCardOverview(),
-      getAvailableTransactionMonths(),
+      getAvailableTransactionMonths(ownerUserId),
     ]);
 
   return {
@@ -66,12 +68,13 @@ export async function getStatsSummary(params: { range: StatsRange; categoryMonth
   };
 }
 
-async function getMonthlyComparison() {
+async function getMonthlyComparison(ownerUserId: string) {
   const thisMonth = dayjs().startOf("month");
   const months = [0, 1, 2].map((offset) => thisMonth.subtract(offset, "month"));
   const rows = await getTransactionRowsBetween(
     months[2].format(ISO_DATE),
     thisMonth.add(1, "month").startOf("month").format(ISO_DATE),
+    ownerUserId,
   );
   const metrics = months.map((month) => monthMetric(rows, month.format("YYYY-MM")));
   const average: MonthMetric = {
@@ -90,10 +93,12 @@ async function getCategoryRanking({
   range,
   month,
   rateCnyToJpy,
+  ownerUserId,
 }: {
   range: StatsRange;
   month: string;
   rateCnyToJpy: number | null;
+  ownerUserId: string;
 }) {
   const bounds = categoryRangeBounds(range, month);
   const rows = await db
@@ -102,6 +107,7 @@ async function getCategoryRanking({
     .where(
       and(
         eq(transactions.type, "expense"),
+        eq(transactions.ownerUserId, ownerUserId),
         eq(transactions.includeInExpenseStats, true),
         bounds.start ? gte(transactions.occurredOn, bounds.start) : undefined,
         bounds.end ? lt(transactions.occurredOn, bounds.end) : undefined,
@@ -174,12 +180,13 @@ async function getCategoryRanking({
   };
 }
 
-async function getMonthlyTrend() {
+async function getMonthlyTrend(ownerUserId: string) {
   const current = dayjs().startOf("month");
   const months = Array.from({ length: 12 }, (_, index) => current.subtract(11 - index, "month"));
   const rows = await getTransactionRowsBetween(
     months[0].format(ISO_DATE),
     current.add(1, "month").format(ISO_DATE),
+    ownerUserId,
   );
   const items = months.map((month) => {
     const key = month.format("YYYY-MM");
@@ -210,17 +217,22 @@ async function getMonthlyTrend() {
   };
 }
 
-async function getNetWorthStats(rateCnyToJpy: number | null) {
+async function getNetWorthStats(rateCnyToJpy: number | null, ownerUserId: string) {
   const [accountRows, recentRows] = await Promise.all([
     db
       .select()
       .from(accounts)
-      .where(eq(accounts.includeInNetWorth, true))
+      .where(and(eq(accounts.includeInNetWorth, true), eq(accounts.ownerUserId, ownerUserId)))
       .orderBy(asc(accounts.currency), asc(accounts.name)),
     db
       .select()
       .from(transactions)
-      .where(gte(transactions.occurredOn, dayjs().subtract(30, "day").format(ISO_DATE))),
+      .where(
+        and(
+          eq(transactions.ownerUserId, ownerUserId),
+          gte(transactions.occurredOn, dayjs().subtract(30, "day").format(ISO_DATE)),
+        ),
+      ),
   ]);
   const currentByCurrency = totalsByCurrency(
     accountRows.map((account) => ({
@@ -303,10 +315,11 @@ async function getCreditCardOverview() {
   }));
 }
 
-async function getAvailableTransactionMonths() {
+async function getAvailableTransactionMonths(ownerUserId: string) {
   const rows = await db
     .select({ month: sql<string>`substr(${transactions.occurredOn}, 1, 7)` })
     .from(transactions)
+    .where(eq(transactions.ownerUserId, ownerUserId))
     .groupBy(sql`substr(${transactions.occurredOn}, 1, 7)`)
     .orderBy(desc(sql`substr(${transactions.occurredOn}, 1, 7)`))
     .limit(12);
@@ -314,11 +327,17 @@ async function getAvailableTransactionMonths() {
   return rows.map((row) => row.month);
 }
 
-async function getTransactionRowsBetween(start: string, end: string) {
+async function getTransactionRowsBetween(start: string, end: string, ownerUserId: string) {
   return db
     .select()
     .from(transactions)
-    .where(and(gte(transactions.occurredOn, start), lt(transactions.occurredOn, end)));
+    .where(
+      and(
+        eq(transactions.ownerUserId, ownerUserId),
+        gte(transactions.occurredOn, start),
+        lt(transactions.occurredOn, end),
+      ),
+    );
 }
 
 function monthMetric(rows: Array<typeof transactions.$inferSelect>, month: string): MonthMetric {

@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { createSessionToken, SESSION_COOKIE } from "@/lib/auth";
+import { createSessionToken, findConfiguredUser, SESSION_COOKIE } from "@/lib/auth";
 
 export type LoginActionState = {
   error?: string;
@@ -13,23 +13,25 @@ export async function loginAction(
   formData: FormData,
 ): Promise<LoginActionState> {
   const password = formData.get("password");
+  const userId = formData.get("userId");
   const from = (formData.get("from") as string | null) ?? "/";
+
+  if (typeof userId !== "string" || userId.length === 0) {
+    return { error: "请选择用户" };
+  }
 
   if (typeof password !== "string" || password.length === 0) {
     return { error: "请输入密码" };
   }
 
-  const expected = process.env.FLOWLEDGER_PASSWORD;
-  if (!expected) {
-    // 部署时没配 FLOWLEDGER_PASSWORD，按 isAuthEnabled() 不会走到这里；保险起见明确报错。
-    return { error: "应用未配置 FLOWLEDGER_PASSWORD" };
-  }
+  const user = findConfiguredUser(userId);
+  if (!user) return { error: "用户不存在" };
 
-  if (!timingSafeEqual(password, expected)) {
+  if (!timingSafeEqual(password, user.password)) {
     return { error: "密码不正确" };
   }
 
-  const token = await createSessionToken();
+  const token = await createSessionToken(user.id);
   const jar = await cookies();
   jar.set(SESSION_COOKIE, token, {
     httpOnly: true,

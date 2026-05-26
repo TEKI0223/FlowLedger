@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, categories, transactions } from "@/db/schema";
 import {
@@ -9,6 +9,7 @@ import {
   type TransactionType,
 } from "@/domain/finance";
 import { nowIso } from "@/lib/dates";
+import { getCurrentUserId } from "@/lib/auth";
 
 /**
  * 把一组余额变动写到 accounts 表。在 tx 内调用时确保事务原子性。
@@ -53,6 +54,7 @@ export async function createTransactionRecord(
   transaction: Transaction,
   extras: CreateTransactionExtras = {},
 ): Promise<void> {
+  const ownerUserId = await getCurrentUserId();
   const timestamp = nowIso();
   const includeInExpenseStats = extras.includeInExpenseStats ?? transaction.type === "expense";
   const includeInCashflowStats = extras.includeInCashflowStats ?? transaction.type !== "adjustment";
@@ -62,6 +64,7 @@ export async function createTransactionRecord(
       .insert(transactions)
       .values({
         id: transaction.id,
+        ownerUserId,
         occurredOn: transaction.occurredOn,
         type: transaction.type,
         amountMinor: transaction.money.amountMinor,
@@ -93,6 +96,7 @@ export async function replaceTransactionRecord(
   previous: Transaction,
   next: Transaction,
 ): Promise<void> {
+  const ownerUserId = await getCurrentUserId();
   const timestamp = nowIso();
 
   await db.transaction(async (tx) => {
@@ -114,7 +118,7 @@ export async function replaceTransactionRecord(
         note: next.note,
         updatedAt: timestamp,
       })
-      .where(eq(transactions.id, id))
+      .where(and(eq(transactions.id, id), eq(transactions.ownerUserId, ownerUserId)))
       .run();
 
     await applyBalanceImpacts(tx, getTransactionBalanceImpacts(next), timestamp);
@@ -126,17 +130,26 @@ export async function replaceTransactionRecord(
  * 删除交易：回滚余额影响，再删除行。
  */
 export async function deleteTransactionRecord(previous: Transaction): Promise<void> {
+  const ownerUserId = await getCurrentUserId();
   const timestamp = nowIso();
 
   await db.transaction(async (tx) => {
     await applyBalanceImpacts(tx, invertImpacts(getTransactionBalanceImpacts(previous)), timestamp);
-    await tx.delete(transactions).where(eq(transactions.id, previous.id)).run();
+    await tx
+      .delete(transactions)
+      .where(and(eq(transactions.id, previous.id), eq(transactions.ownerUserId, ownerUserId)))
+      .run();
     await applyCategoryUsageDelta(tx, previous.categoryId, -1, timestamp);
   });
 }
 
 export async function loadTransaction(id: string): Promise<Transaction | null> {
-  const [row] = await db.select().from(transactions).where(eq(transactions.id, id)).limit(1);
+  const ownerUserId = await getCurrentUserId();
+  const [row] = await db
+    .select()
+    .from(transactions)
+    .where(and(eq(transactions.id, id), eq(transactions.ownerUserId, ownerUserId)))
+    .limit(1);
   if (!row) return null;
   return rowToTransaction(row);
 }

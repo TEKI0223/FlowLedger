@@ -1,10 +1,12 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, categories, paymentMethods } from "@/db/schema";
 import { buildCategoryOptions } from "@/features/categories/data";
 import { syncAllCreditCardPaymentMethods } from "@/features/credit-cards/service";
+import { getCurrentUserId } from "@/lib/auth";
 
 export async function getTransactionLookups() {
+  const ownerUserId = await getCurrentUserId();
   await syncAllCreditCardPaymentMethods();
 
   const [accountRows, categoryRows, paymentMethodRows] = await Promise.all([
@@ -17,12 +19,13 @@ export async function getTransactionLookups() {
         balanceMinor: accounts.balanceMinor,
       })
       .from(accounts)
+      .where(eq(accounts.ownerUserId, ownerUserId))
       .orderBy(asc(accounts.currency), asc(accounts.name)),
     db.select().from(categories),
     db
       .select()
       .from(paymentMethods)
-      .where(eq(paymentMethods.enabled, true))
+      .where(and(eq(paymentMethods.enabled, true), eq(paymentMethods.ownerUserId, ownerUserId)))
       .orderBy(asc(paymentMethods.name)),
   ]);
 

@@ -1,6 +1,7 @@
 import { and, asc, eq, inArray, lte } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, categories, paymentMethods, recurringItems } from "@/db/schema";
+import { getCurrentUserId } from "@/lib/auth";
 import { todayIsoDate } from "@/lib/dates";
 
 type RecurringItemRow = typeof recurringItems.$inferSelect;
@@ -13,12 +14,22 @@ export type HydratedRecurringItem = RecurringItemRow & {
 };
 
 export async function listRecurringItems(): Promise<HydratedRecurringItem[]> {
-  const rows = await db.select().from(recurringItems).orderBy(asc(recurringItems.nextDate));
+  const ownerUserId = await getCurrentUserId();
+  const rows = await db
+    .select()
+    .from(recurringItems)
+    .where(eq(recurringItems.ownerUserId, ownerUserId))
+    .orderBy(asc(recurringItems.nextDate));
   return hydrate(rows);
 }
 
 export async function getRecurringItem(id: string): Promise<HydratedRecurringItem | null> {
-  const rows = await db.select().from(recurringItems).where(eq(recurringItems.id, id)).limit(1);
+  const ownerUserId = await getCurrentUserId();
+  const rows = await db
+    .select()
+    .from(recurringItems)
+    .where(and(eq(recurringItems.id, id), eq(recurringItems.ownerUserId, ownerUserId)))
+    .limit(1);
   const [item] = await hydrate(rows);
   return item ?? null;
 }
@@ -26,25 +37,40 @@ export async function getRecurringItem(id: string): Promise<HydratedRecurringIte
 export async function listPendingRecurringItems(
   today: string = todayIsoDate(),
 ): Promise<HydratedRecurringItem[]> {
+  const ownerUserId = await getCurrentUserId();
   const rows = await db
     .select()
     .from(recurringItems)
-    .where(and(eq(recurringItems.enabled, true), lte(recurringItems.nextDate, today)))
+    .where(
+      and(
+        eq(recurringItems.enabled, true),
+        eq(recurringItems.ownerUserId, ownerUserId),
+        lte(recurringItems.nextDate, today),
+      ),
+    )
     .orderBy(asc(recurringItems.nextDate));
 
   return hydrate(rows);
 }
 
 export async function countPendingRecurringItems(today: string = todayIsoDate()): Promise<number> {
+  const ownerUserId = await getCurrentUserId();
   const rows = await db
     .select({ id: recurringItems.id })
     .from(recurringItems)
-    .where(and(eq(recurringItems.enabled, true), lte(recurringItems.nextDate, today)));
+    .where(
+      and(
+        eq(recurringItems.enabled, true),
+        eq(recurringItems.ownerUserId, ownerUserId),
+        lte(recurringItems.nextDate, today),
+      ),
+    );
 
   return rows.length;
 }
 
 async function hydrate(rows: RecurringItemRow[]): Promise<HydratedRecurringItem[]> {
+  const ownerUserId = await getCurrentUserId();
   const accountIds = new Set<string>();
   const categoryIds = new Set<string>();
   const paymentMethodIds = new Set<string>();
@@ -61,7 +87,7 @@ async function hydrate(rows: RecurringItemRow[]): Promise<HydratedRecurringItem[
       ? db
           .select()
           .from(accounts)
-          .where(inArray(accounts.id, [...accountIds]))
+          .where(and(inArray(accounts.id, [...accountIds]), eq(accounts.ownerUserId, ownerUserId)))
       : [],
     categoryIds.size > 0
       ? db
@@ -73,7 +99,12 @@ async function hydrate(rows: RecurringItemRow[]): Promise<HydratedRecurringItem[
       ? db
           .select()
           .from(paymentMethods)
-          .where(inArray(paymentMethods.id, [...paymentMethodIds]))
+          .where(
+            and(
+              inArray(paymentMethods.id, [...paymentMethodIds]),
+              eq(paymentMethods.ownerUserId, ownerUserId),
+            ),
+          )
       : [],
   ]);
 

@@ -1,7 +1,8 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts } from "@/db/schema";
 import type { AccountType, Currency } from "@/domain/finance";
+import { getCurrentUserId } from "@/lib/auth";
 import { nowIso } from "@/lib/dates";
 
 export type CreateAccountInput = {
@@ -15,6 +16,7 @@ export type CreateAccountInput = {
 };
 
 export async function createAccountRecord(input: CreateAccountInput): Promise<string> {
+  const ownerUserId = await getCurrentUserId();
   const id = crypto.randomUUID();
   const timestamp = nowIso();
 
@@ -22,6 +24,7 @@ export async function createAccountRecord(input: CreateAccountInput): Promise<st
     .insert(accounts)
     .values({
       id,
+      ownerUserId,
       name: input.name,
       lastDigits: input.lastDigits,
       type: input.type,
@@ -47,6 +50,7 @@ export type UpdateAccountInput = {
 };
 
 export async function updateAccountRecord(id: string, input: UpdateAccountInput): Promise<void> {
+  const ownerUserId = await getCurrentUserId();
   await db
     .update(accounts)
     .set({
@@ -58,6 +62,6 @@ export async function updateAccountRecord(id: string, input: UpdateAccountInput)
       note: input.note,
       updatedAt: nowIso(),
     })
-    .where(eq(accounts.id, id))
+    .where(and(eq(accounts.id, id), eq(accounts.ownerUserId, ownerUserId)))
     .run();
 }

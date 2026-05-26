@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, refundTrackers, transactions } from "@/db/schema";
 import { currencies, parseMoneyToMinor, type Currency } from "@/domain/finance";
@@ -16,6 +16,7 @@ import {
   updateRefundTrackerRecord,
 } from "@/features/refunds/service";
 import { normalize, stringField as field } from "@/lib/form";
+import { getCurrentUserId } from "@/lib/auth";
 import { refundPaths, revalidatePaths } from "@/lib/revalidate";
 
 // ── 创建 / 编辑 / 取消 / 删除 退款追踪 ───────────────────────────────────
@@ -56,6 +57,7 @@ export async function createRefundTracker(
   _prev: RefundTrackerActionState,
   formData: FormData,
 ): Promise<RefundTrackerActionState> {
+  const ownerUserId = await getCurrentUserId();
   const values = extract(formData);
 
   const result = refundTrackerSchema.safeParse({
@@ -71,6 +73,12 @@ export async function createRefundTracker(
   }
 
   const parsed = result.data;
+  const expectedAccountError = await validateExpectedAccount(
+    parsed.expectedAccountId,
+    parsed.currency,
+  );
+  if (expectedAccountError) return { error: expectedAccountError, values };
+
   let amountMinor: number;
   try {
     amountMinor = Math.abs(parseMoneyToMinor(parsed.amount, parsed.currency));
@@ -82,7 +90,9 @@ export async function createRefundTracker(
   const [originalTx] = await db
     .select()
     .from(transactions)
-    .where(eq(transactions.id, originalTransactionId))
+    .where(
+      and(eq(transactions.id, originalTransactionId), eq(transactions.ownerUserId, ownerUserId)),
+    )
     .limit(1);
   if (!originalTx) return { error: "原始交易不存在或已被删除", values };
 
@@ -104,6 +114,7 @@ export async function updateRefundTracker(
   _prev: RefundTrackerActionState,
   formData: FormData,
 ): Promise<RefundTrackerActionState> {
+  const ownerUserId = await getCurrentUserId();
   const values = extract(formData);
 
   const result = refundTrackerSchema.safeParse({
@@ -119,6 +130,12 @@ export async function updateRefundTracker(
   }
 
   const parsed = result.data;
+  const expectedAccountError = await validateExpectedAccount(
+    parsed.expectedAccountId,
+    parsed.currency,
+  );
+  if (expectedAccountError) return { error: expectedAccountError, values };
+
   let amountMinor: number;
   try {
     amountMinor = Math.abs(parseMoneyToMinor(parsed.amount, parsed.currency));
@@ -129,7 +146,7 @@ export async function updateRefundTracker(
   const [existing] = await db
     .select()
     .from(refundTrackers)
-    .where(eq(refundTrackers.id, id))
+    .where(and(eq(refundTrackers.id, id), eq(refundTrackers.ownerUserId, ownerUserId)))
     .limit(1);
   if (!existing) return { error: "退款追踪不存在", values };
 
@@ -166,10 +183,11 @@ export async function cancelRefundTracker(id: string) {
 }
 
 export async function deleteRefundTracker(id: string) {
+  const ownerUserId = await getCurrentUserId();
   const [existing] = await db
     .select()
     .from(refundTrackers)
-    .where(eq(refundTrackers.id, id))
+    .where(and(eq(refundTrackers.id, id), eq(refundTrackers.ownerUserId, ownerUserId)))
     .limit(1);
   if (!existing) return;
   // 安全网：已有到账时不允许直接删（UI 应已 disable）
@@ -208,6 +226,7 @@ export async function recordRefundReceipt(
   _prev: ReceiptActionState,
   formData: FormData,
 ): Promise<ReceiptActionState> {
+  const ownerUserId = await getCurrentUserId();
   const values: ReceiptFormValues = {
     amount: field(formData, "amount"),
     occurredOn: field(formData, "occurredOn"),
@@ -231,7 +250,7 @@ export async function recordRefundReceipt(
   const [tracker] = await db
     .select()
     .from(refundTrackers)
-    .where(eq(refundTrackers.id, trackerId))
+    .where(and(eq(refundTrackers.id, trackerId), eq(refundTrackers.ownerUserId, ownerUserId)))
     .limit(1);
   if (!tracker) return { error: "退款追踪不存在", values };
   if (tracker.status === "cancelled") {
@@ -249,7 +268,7 @@ export async function recordRefundReceipt(
   const [account] = await db
     .select()
     .from(accounts)
-    .where(eq(accounts.id, parsed.targetAccountId))
+    .where(and(eq(accounts.id, parsed.targetAccountId), eq(accounts.ownerUserId, ownerUserId)))
     .limit(1);
   if (!account) return { error: "到账账户不存在", values };
   if (account.currency !== tracker.currency) {
@@ -277,11 +296,14 @@ export async function recordRefundReceipt(
 }
 
 export async function deleteRefundReceipt(receiptTransactionId: string) {
+  const ownerUserId = await getCurrentUserId();
   // 先抓 trackerId 用于跳转
   const [receipt] = await db
     .select()
     .from(transactions)
-    .where(eq(transactions.id, receiptTransactionId))
+    .where(
+      and(eq(transactions.id, receiptTransactionId), eq(transactions.ownerUserId, ownerUserId)),
+    )
     .limit(1);
   const trackerId = receipt?.refundTrackerId ?? null;
 
@@ -289,4 +311,17 @@ export async function deleteRefundReceipt(receiptTransactionId: string) {
 
   revalidatePaths(refundPaths(trackerId ?? undefined));
   redirect(trackerId ? `/refunds/${trackerId}` : "/refunds");
+}
+
+async function validateExpectedAccount(accountId: string | undefined, currency: "JPY" | "CNY") {
+  if (!accountId) return null;
+  const ownerUserId = await getCurrentUserId();
+  const [account] = await db
+    .select()
+    .from(accounts)
+    .where(and(eq(accounts.id, accountId), eq(accounts.ownerUserId, ownerUserId)))
+    .limit(1);
+  if (!account) return "预计到账账户不存在";
+  if (account.currency !== currency) return "预计到账账户币种必须与退款币种一致";
+  return null;
 }

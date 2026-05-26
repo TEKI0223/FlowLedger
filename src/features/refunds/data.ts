@@ -2,6 +2,7 @@ import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, refundTrackers, transactions } from "@/db/schema";
 import type { RefundStatus } from "@/domain/refund";
+import { getCurrentUserId } from "@/lib/auth";
 
 type RefundTrackerRow = typeof refundTrackers.$inferSelect;
 type TransactionRow = typeof transactions.$inferSelect;
@@ -17,21 +18,34 @@ export type RefundReceipt = TransactionRow & {
 };
 
 export async function listRefundTrackers(): Promise<HydratedRefundTracker[]> {
-  const rows = await db.select().from(refundTrackers).orderBy(desc(refundTrackers.createdAt));
+  const ownerUserId = await getCurrentUserId();
+  const rows = await db
+    .select()
+    .from(refundTrackers)
+    .where(eq(refundTrackers.ownerUserId, ownerUserId))
+    .orderBy(desc(refundTrackers.createdAt));
   return hydrate(rows);
 }
 
 export async function getRefundTracker(id: string): Promise<HydratedRefundTracker | null> {
-  const rows = await db.select().from(refundTrackers).where(eq(refundTrackers.id, id)).limit(1);
+  const ownerUserId = await getCurrentUserId();
+  const rows = await db
+    .select()
+    .from(refundTrackers)
+    .where(and(eq(refundTrackers.id, id), eq(refundTrackers.ownerUserId, ownerUserId)))
+    .limit(1);
   const [tracker] = await hydrate(rows);
   return tracker ?? null;
 }
 
 export async function listRefundReceipts(trackerId: string): Promise<RefundReceipt[]> {
+  const ownerUserId = await getCurrentUserId();
   const receiptRows = await db
     .select()
     .from(transactions)
-    .where(eq(transactions.refundTrackerId, trackerId))
+    .where(
+      and(eq(transactions.refundTrackerId, trackerId), eq(transactions.ownerUserId, ownerUserId)),
+    )
     .orderBy(asc(transactions.occurredOn));
 
   const accountIds = new Set<string>();
@@ -44,7 +58,7 @@ export async function listRefundReceipts(trackerId: string): Promise<RefundRecei
       ? await db
           .select()
           .from(accounts)
-          .where(inArray(accounts.id, [...accountIds]))
+          .where(and(inArray(accounts.id, [...accountIds]), eq(accounts.ownerUserId, ownerUserId)))
       : [];
   const accountById = new Map(accountRows.map((account) => [account.id, account]));
 
@@ -55,6 +69,7 @@ export async function listRefundReceipts(trackerId: string): Promise<RefundRecei
 }
 
 export async function countPendingRefunds(): Promise<number> {
+  const ownerUserId = await getCurrentUserId();
   // 待退款 + 部分到账都算"未完成"
   const rows = await db
     .select({ id: refundTrackers.id })
@@ -63,12 +78,14 @@ export async function countPendingRefunds(): Promise<number> {
       and(
         ne(refundTrackers.status, "received" satisfies RefundStatus),
         ne(refundTrackers.status, "cancelled" satisfies RefundStatus),
+        eq(refundTrackers.ownerUserId, ownerUserId),
       ),
     );
   return rows.length;
 }
 
 async function hydrate(rows: RefundTrackerRow[]): Promise<HydratedRefundTracker[]> {
+  const ownerUserId = await getCurrentUserId();
   const txIds = new Set<string>();
   const accountIds = new Set<string>();
 
@@ -82,13 +99,15 @@ async function hydrate(rows: RefundTrackerRow[]): Promise<HydratedRefundTracker[
       ? db
           .select()
           .from(transactions)
-          .where(inArray(transactions.id, [...txIds]))
+          .where(
+            and(inArray(transactions.id, [...txIds]), eq(transactions.ownerUserId, ownerUserId)),
+          )
       : [],
     accountIds.size > 0
       ? db
           .select()
           .from(accounts)
-          .where(inArray(accounts.id, [...accountIds]))
+          .where(and(inArray(accounts.id, [...accountIds]), eq(accounts.ownerUserId, ownerUserId)))
       : [],
   ]);
 

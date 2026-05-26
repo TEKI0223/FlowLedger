@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, categories, paymentMethods, quickEntryTemplates } from "@/db/schema";
 import { buildCategoryPathLabelMap } from "@/features/categories/data";
@@ -6,6 +6,7 @@ import {
   buildResolvedCategoryIconKeyMap,
   type CategoryIconKey,
 } from "@/features/categories/icon-utils";
+import { getCurrentUserId } from "@/lib/auth";
 
 type QuickEntryTemplateRow = typeof quickEntryTemplates.$inferSelect;
 
@@ -25,11 +26,14 @@ export type TemporaryEntryDefaults = {
 };
 
 export async function listQuickEntryTemplates() {
+  const ownerUserId = await getCurrentUserId();
   // 使用频率高的排在前面；同频次按 sortOrder（seed 顺序）兜底；再按 name
   const templateRows = await db
     .select()
     .from(quickEntryTemplates)
-    .where(eq(quickEntryTemplates.enabled, true))
+    .where(
+      and(eq(quickEntryTemplates.enabled, true), eq(quickEntryTemplates.ownerUserId, ownerUserId)),
+    )
     .orderBy(
       desc(quickEntryTemplates.usageCount),
       asc(quickEntryTemplates.sortOrder),
@@ -41,9 +45,11 @@ export async function listQuickEntryTemplates() {
 
 /** 管理页用 —— 包括已停用的，统一按 sortOrder 排序方便维护 */
 export async function listAllQuickEntryTemplates() {
+  const ownerUserId = await getCurrentUserId();
   const templateRows = await db
     .select()
     .from(quickEntryTemplates)
+    .where(eq(quickEntryTemplates.ownerUserId, ownerUserId))
     .orderBy(
       desc(quickEntryTemplates.enabled),
       desc(quickEntryTemplates.usageCount),
@@ -55,10 +61,11 @@ export async function listAllQuickEntryTemplates() {
 }
 
 export async function getQuickEntryTemplate(id: string) {
+  const ownerUserId = await getCurrentUserId();
   const templateRows = await db
     .select()
     .from(quickEntryTemplates)
-    .where(eq(quickEntryTemplates.id, id))
+    .where(and(eq(quickEntryTemplates.id, id), eq(quickEntryTemplates.ownerUserId, ownerUserId)))
     .limit(1);
 
   const [template] = await hydrateQuickEntryTemplates(templateRows.filter((row) => row.enabled));
@@ -68,10 +75,11 @@ export async function getQuickEntryTemplate(id: string) {
 
 /** 管理用：不过滤 enabled，编辑停用的模板时也能拿到 */
 export async function getQuickEntryTemplateAnyStatus(id: string) {
+  const ownerUserId = await getCurrentUserId();
   const templateRows = await db
     .select()
     .from(quickEntryTemplates)
-    .where(eq(quickEntryTemplates.id, id))
+    .where(and(eq(quickEntryTemplates.id, id), eq(quickEntryTemplates.ownerUserId, ownerUserId)))
     .limit(1);
 
   const [template] = await hydrateQuickEntryTemplates(templateRows);
@@ -80,10 +88,18 @@ export async function getQuickEntryTemplateAnyStatus(id: string) {
 }
 
 export async function getTemporaryEntryDefaults(): Promise<TemporaryEntryDefaults | null> {
+  const ownerUserId = await getCurrentUserId();
   const [accountRows, categoryRows, paymentMethodRows] = await Promise.all([
-    db.select().from(accounts).where(eq(accounts.currency, "JPY")),
+    db
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.currency, "JPY"), eq(accounts.ownerUserId, ownerUserId))),
     db.select().from(categories).where(eq(categories.id, "other")).limit(1),
-    db.select().from(paymentMethods).where(eq(paymentMethods.id, "jpy-cash")).limit(1),
+    db
+      .select()
+      .from(paymentMethods)
+      .where(and(eq(paymentMethods.id, "jpy-cash"), eq(paymentMethods.ownerUserId, ownerUserId)))
+      .limit(1),
   ]);
 
   const sourceAccount =
@@ -103,6 +119,7 @@ export async function getTemporaryEntryDefaults(): Promise<TemporaryEntryDefault
 }
 
 async function hydrateQuickEntryTemplates(templateRows: QuickEntryTemplateRow[]) {
+  const ownerUserId = await getCurrentUserId();
   const accountIds = new Set<string>();
   const categoryIds = new Set<string>();
   const paymentMethodIds = new Set<string>();
@@ -130,14 +147,19 @@ async function hydrateQuickEntryTemplates(templateRows: QuickEntryTemplateRow[])
       ? db
           .select()
           .from(accounts)
-          .where(inArray(accounts.id, [...accountIds]))
+          .where(and(inArray(accounts.id, [...accountIds]), eq(accounts.ownerUserId, ownerUserId)))
       : [],
     categoryIds.size > 0 ? db.select().from(categories) : [],
     paymentMethodIds.size > 0
       ? db
           .select()
           .from(paymentMethods)
-          .where(inArray(paymentMethods.id, [...paymentMethodIds]))
+          .where(
+            and(
+              inArray(paymentMethods.id, [...paymentMethodIds]),
+              eq(paymentMethods.ownerUserId, ownerUserId),
+            ),
+          )
       : [],
   ]);
 

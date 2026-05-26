@@ -2,9 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { inArray } from "drizzle-orm";
+import { and, inArray, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { accounts } from "@/db/schema";
+import { accounts, paymentMethods } from "@/db/schema";
 import {
   currencies,
   formatMinorForInput,
@@ -22,6 +22,7 @@ import {
   replaceTransactionRecord,
 } from "@/features/transactions/service";
 import { todayIsoDate } from "@/lib/dates";
+import { getCurrentUserId } from "@/lib/auth";
 import { normalize, stringField } from "@/lib/form";
 import { revalidatePaths, transactionPaths } from "@/lib/revalidate";
 
@@ -247,6 +248,7 @@ async function buildTransactionFromForm(formData: FormData, id: string): Promise
   try {
     assertRequiredAccounts(parsed);
     await assertAccountCurrencies(parsed.sourceAccountId, parsed.targetAccountId, parsed.currency);
+    await assertPaymentMethod(parsed.paymentMethodId, parsed.currency);
   } catch (error) {
     return {
       ok: false,
@@ -269,6 +271,19 @@ async function buildTransactionFromForm(formData: FormData, id: string): Promise
       note: parsed.note,
     },
   };
+}
+
+async function assertPaymentMethod(paymentMethodId: string | undefined, currency: Currency) {
+  if (!paymentMethodId) return;
+  const ownerUserId = await getCurrentUserId();
+  const [paymentMethod] = await db
+    .select()
+    .from(paymentMethods)
+    .where(and(eq(paymentMethods.id, paymentMethodId), eq(paymentMethods.ownerUserId, ownerUserId)))
+    .limit(1);
+  if (!paymentMethod) throw new Error("选择的支付方式不存在");
+  if (!paymentMethod.enabled) throw new Error("选择的支付方式已停用");
+  if (paymentMethod.currency !== currency) throw new Error("支付方式币种必须和交易币种一致");
 }
 
 function setOptionalFormValue(formData: FormData, name: string, value: string | null | undefined) {
@@ -304,10 +319,14 @@ async function assertAccountCurrencies(
   targetAccountId: string | undefined,
   currency: Currency,
 ) {
+  const ownerUserId = await getCurrentUserId();
   const ids = [sourceAccountId, targetAccountId].filter((id): id is string => Boolean(id));
   if (ids.length === 0) return;
 
-  const accountRows = await db.select().from(accounts).where(inArray(accounts.id, ids));
+  const accountRows = await db
+    .select()
+    .from(accounts)
+    .where(and(inArray(accounts.id, ids), eq(accounts.ownerUserId, ownerUserId)));
   const accountById = new Map(accountRows.map((account) => [account.id, account]));
 
   for (const id of ids) {

@@ -2,6 +2,7 @@ import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const accounts = sqliteTable("accounts", {
   id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id").notNull(),
   name: text("name").notNull(),
   lastDigits: text("last_digits"),
   type: text("type", { enum: ["cash", "bank", "credit_card", "wallet"] }).notNull(),
@@ -15,6 +16,7 @@ export const accounts = sqliteTable("accounts", {
 
 export const paymentMethods = sqliteTable("payment_methods", {
   id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id").notNull(),
   name: text("name").notNull(),
   type: text("type", { enum: ["card", "wallet", "cash", "bank_transfer", "other"] })
     .notNull()
@@ -42,6 +44,7 @@ export const categories = sqliteTable("categories", {
 
 export const transactions = sqliteTable("transactions", {
   id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id").notNull(),
   occurredOn: text("occurred_on").notNull(),
   postedOn: text("posted_on"),
   type: text("type", { enum: ["income", "expense", "transfer", "adjustment"] }).notNull(),
@@ -66,6 +69,7 @@ export const transactions = sqliteTable("transactions", {
 
 export const quickEntryTemplates = sqliteTable("quick_entry_templates", {
   id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id").notNull(),
   name: text("name").notNull(),
   type: text("type", { enum: ["income", "expense", "transfer", "adjustment"] })
     .notNull()
@@ -87,6 +91,7 @@ export const quickEntryTemplates = sqliteTable("quick_entry_templates", {
 
 export const creditCards = sqliteTable("credit_cards", {
   id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id").notNull(),
   accountId: text("account_id")
     .notNull()
     .references(() => accounts.id),
@@ -103,6 +108,7 @@ export const creditCards = sqliteTable("credit_cards", {
 
 export const recurringItems = sqliteTable("recurring_items", {
   id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id").notNull(),
   name: text("name").notNull(),
   type: text("type", { enum: ["income", "expense", "transfer"] }).notNull(),
   amountMinor: integer("amount_minor"),
@@ -124,6 +130,7 @@ export const recurringItems = sqliteTable("recurring_items", {
 
 export const refundTrackers = sqliteTable("refund_trackers", {
   id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id").notNull(),
   originalTransactionId: text("original_transaction_id")
     .notNull()
     .references(() => transactions.id),
@@ -149,6 +156,7 @@ export const exchangeRates = sqliteTable("exchange_rates", {
 
 export const installmentPlans = sqliteTable("installment_plans", {
   id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id").notNull(),
   originalTransactionId: text("original_transaction_id")
     .notNull()
     .references(() => transactions.id),

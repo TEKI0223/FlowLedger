@@ -64,7 +64,9 @@ Local development uses `file:./data/flowledger.db`, which is ignored by git. Pro
 work for both.
 
 Schema is defined in `src/db/schema.ts`, migrations live in `src/db/migrations`, defaults are seeded
-by `scripts/seed.mjs`. Money is stored as integer minor units (JPY = whole yen, CNY = fen).
+by `scripts/seed.mjs`. Money is stored as integer minor units (JPY = whole yen, CNY = fen). User
+login is configured with `FLOWLEDGER_USERS_JSON`; personal ledger tables are isolated by
+`owner_user_id`, while categories and exchange rates stay shared.
 
 ## Deployment
 

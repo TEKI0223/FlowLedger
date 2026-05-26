@@ -10,6 +10,7 @@ import {
 } from "@/db/schema";
 import type { Currency } from "@/domain/finance";
 import type { CycleBoundary } from "@/domain/credit-card";
+import { getCurrentUserId } from "@/lib/auth";
 import { nowIso } from "@/lib/dates";
 
 export type CreditCardInput = {
@@ -26,6 +27,7 @@ export type CreditCardInput = {
 };
 
 export async function createCreditCardRecord(input: CreditCardInput): Promise<string> {
+  const ownerUserId = await getCurrentUserId();
   const timestamp = nowIso();
   const accountId = crypto.randomUUID();
   const cardId = crypto.randomUUID();
@@ -34,6 +36,7 @@ export async function createCreditCardRecord(input: CreditCardInput): Promise<st
     .insert(accounts)
     .values({
       id: accountId,
+      ownerUserId,
       name: input.name,
       lastDigits: input.lastDigits,
       type: "credit_card",
@@ -50,6 +53,7 @@ export async function createCreditCardRecord(input: CreditCardInput): Promise<st
     .insert(creditCards)
     .values({
       id: cardId,
+      ownerUserId,
       accountId,
       closingDay: input.closingDay,
       paymentDay: input.paymentDay,
@@ -71,6 +75,7 @@ export async function updateCreditCardRecord(
   accountId: string,
   input: CreditCardInput,
 ): Promise<void> {
+  const ownerUserId = await getCurrentUserId();
   const timestamp = nowIso();
 
   await db
@@ -84,7 +89,7 @@ export async function updateCreditCardRecord(
       note: input.note,
       updatedAt: timestamp,
     })
-    .where(eq(accounts.id, accountId))
+    .where(and(eq(accounts.id, accountId), eq(accounts.ownerUserId, ownerUserId)))
     .run();
 
   await db
@@ -97,7 +102,7 @@ export async function updateCreditCardRecord(
       enabled: input.enabled,
       updatedAt: timestamp,
     })
-    .where(eq(creditCards.id, cardId))
+    .where(and(eq(creditCards.id, cardId), eq(creditCards.ownerUserId, ownerUserId)))
     .run();
 
   await syncCreditCardPaymentMethod(accountId, input);
@@ -107,10 +112,17 @@ export async function deleteCreditCardRecord(
   cardId: string,
   accountId: string,
 ): Promise<DeleteCreditCardResult> {
+  const ownerUserId = await getCurrentUserId();
   const paymentMethodRows = await db
     .select({ id: paymentMethods.id })
     .from(paymentMethods)
-    .where(and(eq(paymentMethods.defaultAccountId, accountId), eq(paymentMethods.type, "card")));
+    .where(
+      and(
+        eq(paymentMethods.defaultAccountId, accountId),
+        eq(paymentMethods.type, "card"),
+        eq(paymentMethods.ownerUserId, ownerUserId),
+      ),
+    );
   const paymentMethodIds = paymentMethodRows.map((row) => row.id);
 
   const [counts] = await db
@@ -118,28 +130,33 @@ export async function deleteCreditCardRecord(
       transactions: sql<number>`(
         select count(*)
         from ${transactions}
-        where ${transactions.sourceAccountId} = ${accountId}
-           or ${transactions.targetAccountId} = ${accountId}
+        where (${transactions.sourceAccountId} = ${accountId}
+           or ${transactions.targetAccountId} = ${accountId})
+          and ${transactions.ownerUserId} = ${ownerUserId}
       )`,
       templatesByAccount: sql<number>`(
         select count(*)
         from ${quickEntryTemplates}
-        where ${quickEntryTemplates.sourceAccountId} = ${accountId}
-           or ${quickEntryTemplates.targetAccountId} = ${accountId}
+        where (${quickEntryTemplates.sourceAccountId} = ${accountId}
+           or ${quickEntryTemplates.targetAccountId} = ${accountId})
+          and ${quickEntryTemplates.ownerUserId} = ${ownerUserId}
       )`,
       recurringByAccount: sql<number>`(
         select count(*)
         from ${recurringItems}
-        where ${recurringItems.sourceAccountId} = ${accountId}
-           or ${recurringItems.targetAccountId} = ${accountId}
+        where (${recurringItems.sourceAccountId} = ${accountId}
+           or ${recurringItems.targetAccountId} = ${accountId})
+          and ${recurringItems.ownerUserId} = ${ownerUserId}
       )`,
       repaymentRefs: sql<number>`(
         select count(*)
         from ${creditCards}
         where ${creditCards.repaymentAccountId} = ${accountId}
+          and ${creditCards.ownerUserId} = ${ownerUserId}
       )`,
     })
     .from(creditCards)
+    .where(and(eq(creditCards.id, cardId), eq(creditCards.ownerUserId, ownerUserId)))
     .limit(1);
 
   if ((counts?.transactions ?? 0) > 0)
@@ -159,11 +176,21 @@ export async function deleteCreditCardRecord(
       db
         .select({ count: sql<number>`count(*)` })
         .from(quickEntryTemplates)
-        .where(inArray(quickEntryTemplates.paymentMethodId, paymentMethodIds)),
+        .where(
+          and(
+            inArray(quickEntryTemplates.paymentMethodId, paymentMethodIds),
+            eq(quickEntryTemplates.ownerUserId, ownerUserId),
+          ),
+        ),
       db
         .select({ count: sql<number>`count(*)` })
         .from(recurringItems)
-        .where(inArray(recurringItems.paymentMethodId, paymentMethodIds)),
+        .where(
+          and(
+            inArray(recurringItems.paymentMethodId, paymentMethodIds),
+            eq(recurringItems.ownerUserId, ownerUserId),
+          ),
+        ),
     ]);
 
     if ((templateRefs?.count ?? 0) > 0) {
@@ -173,11 +200,25 @@ export async function deleteCreditCardRecord(
       return { ok: false, error: "已有周期项目使用这张卡的支付方式，不能删除" };
     }
 
-    await db.delete(paymentMethods).where(inArray(paymentMethods.id, paymentMethodIds)).run();
+    await db
+      .delete(paymentMethods)
+      .where(
+        and(
+          inArray(paymentMethods.id, paymentMethodIds),
+          eq(paymentMethods.ownerUserId, ownerUserId),
+        ),
+      )
+      .run();
   }
 
-  await db.delete(creditCards).where(eq(creditCards.id, cardId)).run();
-  await db.delete(accounts).where(eq(accounts.id, accountId)).run();
+  await db
+    .delete(creditCards)
+    .where(and(eq(creditCards.id, cardId), eq(creditCards.ownerUserId, ownerUserId)))
+    .run();
+  await db
+    .delete(accounts)
+    .where(and(eq(accounts.id, accountId), eq(accounts.ownerUserId, ownerUserId)))
+    .run();
 
   return { ok: true };
 }
@@ -185,6 +226,7 @@ export async function deleteCreditCardRecord(
 type DeleteCreditCardResult = { ok: true } | { ok: false; error: string };
 
 export async function syncAllCreditCardPaymentMethods(): Promise<void> {
+  const ownerUserId = await getCurrentUserId();
   const rows = await db
     .select({
       cardId: creditCards.id,
@@ -201,7 +243,8 @@ export async function syncAllCreditCardPaymentMethods(): Promise<void> {
       note: accounts.note,
     })
     .from(creditCards)
-    .innerJoin(accounts, eq(creditCards.accountId, accounts.id));
+    .innerJoin(accounts, eq(creditCards.accountId, accounts.id))
+    .where(eq(creditCards.ownerUserId, ownerUserId));
 
   for (const row of rows) {
     await syncCreditCardPaymentMethod(row.accountId, {
@@ -220,11 +263,18 @@ export async function syncAllCreditCardPaymentMethods(): Promise<void> {
 }
 
 export async function syncCreditCardPaymentMethod(accountId: string, input: CreditCardInput) {
+  const ownerUserId = await getCurrentUserId();
   const timestamp = nowIso();
   const [existing] = await db
     .select()
     .from(paymentMethods)
-    .where(and(eq(paymentMethods.defaultAccountId, accountId), eq(paymentMethods.type, "card")))
+    .where(
+      and(
+        eq(paymentMethods.defaultAccountId, accountId),
+        eq(paymentMethods.type, "card"),
+        eq(paymentMethods.ownerUserId, ownerUserId),
+      ),
+    )
     .limit(1);
 
   if (existing) {
@@ -236,7 +286,7 @@ export async function syncCreditCardPaymentMethod(accountId: string, input: Cred
         enabled: input.enabled,
         updatedAt: timestamp,
       })
-      .where(eq(paymentMethods.id, existing.id))
+      .where(and(eq(paymentMethods.id, existing.id), eq(paymentMethods.ownerUserId, ownerUserId)))
       .run();
     return;
   }
@@ -245,6 +295,7 @@ export async function syncCreditCardPaymentMethod(accountId: string, input: Cred
     .insert(paymentMethods)
     .values({
       id: crypto.randomUUID(),
+      ownerUserId,
       name: input.name,
       type: "card",
       currency: input.currency,

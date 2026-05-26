@@ -8,6 +8,7 @@ import {
   transactions,
 } from "@/db/schema";
 import { syncAllCreditCardPaymentMethods } from "@/features/credit-cards/service";
+import { getCurrentUserId } from "@/lib/auth";
 
 export type PaymentMethodRow = typeof paymentMethods.$inferSelect;
 
@@ -24,11 +25,13 @@ export type PaymentMethodWithRefs = PaymentMethodRow & {
 };
 
 export async function listPaymentMethods(): Promise<PaymentMethodWithRefs[]> {
+  const ownerUserId = await getCurrentUserId();
   await syncAllCreditCardPaymentMethods();
 
   const rows = await db
     .select({
       id: paymentMethods.id,
+      ownerUserId: paymentMethods.ownerUserId,
       name: paymentMethods.name,
       type: paymentMethods.type,
       currency: paymentMethods.currency,
@@ -44,24 +47,29 @@ export async function listPaymentMethods(): Promise<PaymentMethodWithRefs[]> {
         select count(*)
         from ${transactions}
         where ${transactions.paymentMethodId} = ${paymentMethods.id}
+          and ${transactions.ownerUserId} = ${ownerUserId}
       )`,
       templateCount: sql<number>`(
         select count(*)
         from ${quickEntryTemplates}
         where ${quickEntryTemplates.paymentMethodId} = ${paymentMethods.id}
+          and ${quickEntryTemplates.ownerUserId} = ${ownerUserId}
       )`,
       recurringCount: sql<number>`(
         select count(*)
         from ${recurringItems}
         where ${recurringItems.paymentMethodId} = ${paymentMethods.id}
+          and ${recurringItems.ownerUserId} = ${ownerUserId}
       )`,
     })
     .from(paymentMethods)
     .leftJoin(accounts, eq(paymentMethods.defaultAccountId, accounts.id))
+    .where(eq(paymentMethods.ownerUserId, ownerUserId))
     .orderBy(desc(paymentMethods.enabled), asc(paymentMethods.currency), asc(paymentMethods.name));
 
   return rows.map((row) => ({
     id: row.id,
+    ownerUserId: row.ownerUserId,
     name: row.name,
     type: row.type,
     currency: row.currency,
@@ -90,6 +98,7 @@ export async function getPaymentMethod(id: string): Promise<PaymentMethodWithRef
 }
 
 export async function listPaymentMethodAccountOptions() {
+  const ownerUserId = await getCurrentUserId();
   return db
     .select({
       id: accounts.id,
@@ -99,5 +108,6 @@ export async function listPaymentMethodAccountOptions() {
       type: accounts.type,
     })
     .from(accounts)
+    .where(eq(accounts.ownerUserId, ownerUserId))
     .orderBy(asc(accounts.currency), asc(accounts.type), asc(accounts.name));
 }

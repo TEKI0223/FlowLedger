@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, recurringItems } from "@/db/schema";
 import { currencies, parseMoneyToMinor, type Currency, type Transaction } from "@/domain/finance";
@@ -15,6 +15,7 @@ import {
   updateRecurringItemRecord,
 } from "@/features/recurring/service";
 import { normalize, stringField as field } from "@/lib/form";
+import { getCurrentUserId } from "@/lib/auth";
 import { recurringConfirmPaths, recurringPaths, revalidatePaths } from "@/lib/revalidate";
 
 const recurringSchema = z
@@ -224,13 +225,18 @@ export async function confirmRecurringItem(
   _prev: ConfirmActionState,
   formData: FormData,
 ): Promise<ConfirmActionState> {
+  const ownerUserId = await getCurrentUserId();
   const values: ConfirmFormValues = {
     amount: field(formData, "amount"),
     occurredOn: field(formData, "occurredOn"),
     note: field(formData, "note"),
   };
 
-  const [row] = await db.select().from(recurringItems).where(eq(recurringItems.id, id)).limit(1);
+  const [row] = await db
+    .select()
+    .from(recurringItems)
+    .where(and(eq(recurringItems.id, id), eq(recurringItems.ownerUserId, ownerUserId)))
+    .limit(1);
   if (!row) return { error: "周期项不存在或已被删除", values };
 
   // 金额：固定 → 模板自带，可被用户覆盖；变动 → 用户必填
@@ -300,10 +306,14 @@ async function assertAccountCurrencies(
   targetAccountId: string | null,
   currency: Currency,
 ) {
+  const ownerUserId = await getCurrentUserId();
   const ids = [sourceAccountId, targetAccountId].filter((value): value is string => Boolean(value));
   if (ids.length === 0) return;
 
-  const rows = await db.select().from(accounts).where(inArray(accounts.id, ids));
+  const rows = await db
+    .select()
+    .from(accounts)
+    .where(and(inArray(accounts.id, ids), eq(accounts.ownerUserId, ownerUserId)));
   const map = new Map(rows.map((account) => [account.id, account]));
 
   for (const id of ids) {

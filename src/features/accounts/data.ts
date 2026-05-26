@@ -2,18 +2,26 @@ import { and, asc, desc, eq, gte, inArray, lt, lte, or, sql } from "drizzle-orm"
 import { db } from "@/db/client";
 import { accounts, categories, paymentMethods, recurringItems, transactions } from "@/db/schema";
 import { todayIsoDate } from "@/lib/dates";
+import { getCurrentUserId } from "@/lib/auth";
 
 type AccountRow = typeof accounts.$inferSelect;
 
 export async function listAccounts() {
+  const ownerUserId = await getCurrentUserId();
   return db
     .select()
     .from(accounts)
+    .where(eq(accounts.ownerUserId, ownerUserId))
     .orderBy(asc(accounts.currency), asc(accounts.type), asc(accounts.name));
 }
 
 export async function getAccount(id: string) {
-  const [account] = await db.select().from(accounts).where(eq(accounts.id, id)).limit(1);
+  const ownerUserId = await getCurrentUserId();
+  const [account] = await db
+    .select()
+    .from(accounts)
+    .where(and(eq(accounts.id, id), eq(accounts.ownerUserId, ownerUserId)))
+    .limit(1);
 
   return account ?? null;
 }
@@ -58,6 +66,7 @@ function monthBounds(now = new Date()) {
 }
 
 export async function getAccountDetail(id: string) {
+  const ownerUserId = await getCurrentUserId();
   const account = await getAccount(id);
   if (!account) return null;
 
@@ -79,6 +88,7 @@ export async function getAccountDetail(id: string) {
       .where(
         and(
           or(eq(transactions.sourceAccountId, id), eq(transactions.targetAccountId, id)),
+          eq(transactions.ownerUserId, ownerUserId),
           gte(transactions.occurredOn, start),
           lt(transactions.occurredOn, next),
         ),
@@ -91,7 +101,12 @@ export async function getAccountDetail(id: string) {
     db
       .select()
       .from(transactions)
-      .where(or(eq(transactions.sourceAccountId, id), eq(transactions.targetAccountId, id)))
+      .where(
+        and(
+          or(eq(transactions.sourceAccountId, id), eq(transactions.targetAccountId, id)),
+          eq(transactions.ownerUserId, ownerUserId),
+        ),
+      )
       .orderBy(desc(transactions.occurredOn), desc(transactions.createdAt))
       .limit(20),
     db
@@ -100,6 +115,7 @@ export async function getAccountDetail(id: string) {
       .where(
         and(
           eq(recurringItems.enabled, true),
+          eq(recurringItems.ownerUserId, ownerUserId),
           or(eq(recurringItems.sourceAccountId, id), eq(recurringItems.targetAccountId, id)),
           lte(recurringItems.nextDate, today),
         ),
@@ -129,7 +145,7 @@ export async function getAccountDetail(id: string) {
       ? db
           .select({ id: accounts.id, name: accounts.name })
           .from(accounts)
-          .where(inArray(accounts.id, [...accountIds]))
+          .where(and(inArray(accounts.id, [...accountIds]), eq(accounts.ownerUserId, ownerUserId)))
       : [],
     categoryIds.size > 0
       ? db
@@ -141,7 +157,12 @@ export async function getAccountDetail(id: string) {
       ? db
           .select({ id: paymentMethods.id, name: paymentMethods.name })
           .from(paymentMethods)
-          .where(inArray(paymentMethods.id, [...paymentMethodIds]))
+          .where(
+            and(
+              inArray(paymentMethods.id, [...paymentMethodIds]),
+              eq(paymentMethods.ownerUserId, ownerUserId),
+            ),
+          )
       : [],
   ]);
 

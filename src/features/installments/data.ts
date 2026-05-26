@@ -2,6 +2,7 @@ import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, categories, installmentPlans, transactions } from "@/db/schema";
 import type { InstallmentStatus } from "@/domain/installment";
+import { getCurrentUserId } from "@/lib/auth";
 
 type InstallmentPlanRow = typeof installmentPlans.$inferSelect;
 type TransactionRow = typeof transactions.$inferSelect;
@@ -13,20 +14,28 @@ export type HydratedInstallmentPlan = InstallmentPlanRow & {
 };
 
 export async function listInstallmentPlans(): Promise<HydratedInstallmentPlan[]> {
+  const ownerUserId = await getCurrentUserId();
   const rows = await db
     .select()
     .from(installmentPlans)
+    .where(eq(installmentPlans.ownerUserId, ownerUserId))
     .orderBy(desc(installmentPlans.firstPaymentOn));
   return hydrate(rows);
 }
 
 export async function getInstallmentPlan(id: string): Promise<HydratedInstallmentPlan | null> {
-  const rows = await db.select().from(installmentPlans).where(eq(installmentPlans.id, id)).limit(1);
+  const ownerUserId = await getCurrentUserId();
+  const rows = await db
+    .select()
+    .from(installmentPlans)
+    .where(and(eq(installmentPlans.id, id), eq(installmentPlans.ownerUserId, ownerUserId)))
+    .limit(1);
   const [plan] = await hydrate(rows);
   return plan ?? null;
 }
 
 export async function countActiveInstallments(): Promise<number> {
+  const ownerUserId = await getCurrentUserId();
   const rows = await db
     .select({ id: installmentPlans.id })
     .from(installmentPlans)
@@ -34,12 +43,14 @@ export async function countActiveInstallments(): Promise<number> {
       and(
         ne(installmentPlans.status, "completed" satisfies InstallmentStatus),
         ne(installmentPlans.status, "cancelled" satisfies InstallmentStatus),
+        eq(installmentPlans.ownerUserId, ownerUserId),
       ),
     );
   return rows.length;
 }
 
 async function hydrate(rows: InstallmentPlanRow[]): Promise<HydratedInstallmentPlan[]> {
+  const ownerUserId = await getCurrentUserId();
   const txIds = new Set<string>();
   for (const row of rows) {
     if (row.originalTransactionId) txIds.add(row.originalTransactionId);
@@ -50,7 +61,9 @@ async function hydrate(rows: InstallmentPlanRow[]): Promise<HydratedInstallmentP
       ? await db
           .select()
           .from(transactions)
-          .where(inArray(transactions.id, [...txIds]))
+          .where(
+            and(inArray(transactions.id, [...txIds]), eq(transactions.ownerUserId, ownerUserId)),
+          )
       : [];
 
   const categoryIds = new Set<string>();
@@ -72,7 +85,7 @@ async function hydrate(rows: InstallmentPlanRow[]): Promise<HydratedInstallmentP
       ? db
           .select({ id: accounts.id, name: accounts.name })
           .from(accounts)
-          .where(inArray(accounts.id, [...accountIds]))
+          .where(and(inArray(accounts.id, [...accountIds]), eq(accounts.ownerUserId, ownerUserId)))
       : [],
   ]);
 

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { LogoutButton } from "@/app/logout-button";
 import { Card } from "@/components/ui/card";
+import { getCurrentUser } from "@/lib/auth";
 
 const manageItems = [
   {
@@ -72,7 +73,9 @@ const manageItems = [
   },
 ];
 
-export default function ManagePage() {
+export default async function ManagePage() {
+  const user = await getCurrentUser();
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
       <header className="flex flex-col gap-3 pb-5">
@@ -111,6 +114,7 @@ export default function ManagePage() {
           </div>
           <div className="space-y-0.5">
             <h2 className="text-sm font-medium">退出登录</h2>
+            <p className="text-xs text-muted-foreground">当前用户：{user.name}</p>
           </div>
         </div>
         <LogoutButton />

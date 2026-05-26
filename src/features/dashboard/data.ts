@@ -3,6 +3,7 @@ import { db } from "@/db/client";
 import { accounts, transactions } from "@/db/schema";
 import { convertToCurrency, type Currency } from "@/domain/finance";
 import { getExchangeRate } from "@/features/exchange-rates/data";
+import { getCurrentUserId } from "@/lib/auth";
 
 function monthBounds(now = new Date()) {
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
@@ -26,6 +27,7 @@ export type DashboardSummary = {
 };
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
+  const ownerUserId = await getCurrentUserId();
   const { start, next } = monthBounds();
 
   const [incomeRows, expenseRows, assetRows, rateCnyToJpy] = await Promise.all([
@@ -38,6 +40,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       .where(
         and(
           eq(transactions.type, "income"),
+          eq(transactions.ownerUserId, ownerUserId),
           gte(transactions.occurredOn, start),
           lt(transactions.occurredOn, next),
         ),
@@ -52,6 +55,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       .where(
         and(
           eq(transactions.type, "expense"),
+          eq(transactions.ownerUserId, ownerUserId),
           eq(transactions.includeInExpenseStats, true),
           gte(transactions.occurredOn, start),
           lt(transactions.occurredOn, next),
@@ -64,7 +68,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         totalMinor: sql<number>`coalesce(sum(${accounts.balanceMinor}), 0)`,
       })
       .from(accounts)
-      .where(eq(accounts.includeInNetWorth, true))
+      .where(and(eq(accounts.includeInNetWorth, true), eq(accounts.ownerUserId, ownerUserId)))
       .groupBy(accounts.currency),
     getExchangeRate("CNY", "JPY"),
   ]);

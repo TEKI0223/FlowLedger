@@ -24,6 +24,7 @@ if (url.startsWith("file:")) {
 }
 
 const now = new Date().toISOString();
+const ownerUserId = process.env.FLOWLEDGER_DEV_SEED_USER_ID ?? "zhang";
 const dateDaysAgo = (days) => {
   const date = new Date();
   date.setDate(date.getDate() - days);
@@ -528,9 +529,10 @@ const transactions = [
 ];
 
 const SQL_ACCOUNT = `
-  insert into accounts (id, name, type, currency, balance_minor, include_in_net_worth, note, last_digits, created_at, updated_at)
-  values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  insert into accounts (id, owner_user_id, name, type, currency, balance_minor, include_in_net_worth, note, last_digits, created_at, updated_at)
+  values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   on conflict(id) do update set
+    owner_user_id = excluded.owner_user_id,
     name = excluded.name,
     type = excluded.type,
     currency = excluded.currency,
@@ -542,9 +544,10 @@ const SQL_ACCOUNT = `
 `;
 
 const SQL_PAYMENT_METHOD = `
-  insert into payment_methods (id, name, type, currency, default_account_id, created_at, updated_at)
-  values (?, ?, ?, ?, ?, ?, ?)
+  insert into payment_methods (id, owner_user_id, name, type, currency, default_account_id, created_at, updated_at)
+  values (?, ?, ?, ?, ?, ?, ?, ?)
   on conflict(id) do update set
+    owner_user_id = excluded.owner_user_id,
     name = excluded.name,
     type = excluded.type,
     currency = excluded.currency,
@@ -554,12 +557,13 @@ const SQL_PAYMENT_METHOD = `
 
 const SQL_QUICK_ENTRY = `
   insert into quick_entry_templates (
-    id, name, type, currency, amount_minor, category_id,
+    id, owner_user_id, name, type, currency, amount_minor, category_id,
     source_account_id, target_account_id, payment_method_id,
     note, sort_order, enabled, created_at, updated_at
   )
-  values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   on conflict(id) do update set
+    owner_user_id = excluded.owner_user_id,
     name = excluded.name,
     type = excluded.type,
     currency = excluded.currency,
@@ -575,9 +579,10 @@ const SQL_QUICK_ENTRY = `
 `;
 
 const SQL_CREDIT_CARD = `
-  insert into credit_cards (id, account_id, closing_day, payment_day, repayment_account_id, enabled, created_at, updated_at)
-  values (?, ?, ?, ?, ?, ?, ?, ?)
+  insert into credit_cards (id, owner_user_id, account_id, closing_day, payment_day, repayment_account_id, enabled, created_at, updated_at)
+  values (?, ?, ?, ?, ?, ?, ?, ?, ?)
   on conflict(id) do update set
+    owner_user_id = excluded.owner_user_id,
     account_id = excluded.account_id,
     closing_day = excluded.closing_day,
     payment_day = excluded.payment_day,
@@ -598,13 +603,14 @@ const SQL_EXCHANGE_RATE = `
 
 const SQL_TRANSACTION = `
   insert into transactions (
-    id, occurred_on, posted_on, type, amount_minor, currency,
+    id, owner_user_id, occurred_on, posted_on, type, amount_minor, currency,
     category_id, source_account_id, target_account_id, payment_method_id,
     recurring_item_id, refund_tracker_id, include_in_expense_stats,
     include_in_cashflow_stats, note, created_at, updated_at
   )
-  values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   on conflict(id) do update set
+    owner_user_id = excluded.owner_user_id,
     occurred_on = excluded.occurred_on,
     posted_on = excluded.posted_on,
     type = excluded.type,
@@ -623,12 +629,27 @@ const SQL_TRANSACTION = `
 `;
 
 const statements = [
-  ...accounts.map((row) => ({ sql: SQL_ACCOUNT, args: [...row, now, now] })),
-  ...paymentMethods.map((row) => ({ sql: SQL_PAYMENT_METHOD, args: [...row, now, now] })),
-  ...quickEntryTemplates.map((row) => ({ sql: SQL_QUICK_ENTRY, args: [...row, now, now] })),
-  ...creditCards.map((row) => ({ sql: SQL_CREDIT_CARD, args: [...row, now, now] })),
+  ...accounts.map((row) => ({
+    sql: SQL_ACCOUNT,
+    args: [row[0], ownerUserId, ...row.slice(1), now, now],
+  })),
+  ...paymentMethods.map((row) => ({
+    sql: SQL_PAYMENT_METHOD,
+    args: [row[0], ownerUserId, ...row.slice(1), now, now],
+  })),
+  ...quickEntryTemplates.map((row) => ({
+    sql: SQL_QUICK_ENTRY,
+    args: [row[0], ownerUserId, ...row.slice(1), now, now],
+  })),
+  ...creditCards.map((row) => ({
+    sql: SQL_CREDIT_CARD,
+    args: [row[0], ownerUserId, ...row.slice(1), now, now],
+  })),
   ...exchangeRates.map((row) => ({ sql: SQL_EXCHANGE_RATE, args: [...row, now] })),
-  ...transactions.map((row) => ({ sql: SQL_TRANSACTION, args: [...row, now, now] })),
+  ...transactions.map((row) => ({
+    sql: SQL_TRANSACTION,
+    args: [row[0], ownerUserId, ...row.slice(1), now, now],
+  })),
 ];
 
 await client.batch(statements, "deferred");

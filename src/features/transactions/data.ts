@@ -2,11 +2,14 @@ import { and, desc, eq, gte, inArray, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, categories, paymentMethods, transactions } from "@/db/schema";
 import { buildCategoryOptions } from "@/features/categories/data";
+import { getCurrentUserId } from "@/lib/auth";
 import { addDays, addMonths, todayIsoDate } from "@/lib/dates";
 import type { TransactionFilters } from "./filters";
 
 export async function listTransactions(limit = 50, filters: TransactionFilters = {}) {
+  const ownerUserId = await getCurrentUserId();
   const conditions = await buildTransactionFilterConditions(filters);
+  conditions.unshift(eq(transactions.ownerUserId, ownerUserId));
   const query = db.select().from(transactions);
   const orderedQuery =
     conditions.length > 0
@@ -21,10 +24,11 @@ export async function listTransactions(limit = 50, filters: TransactionFilters =
 }
 
 export async function getTransaction(id: string) {
+  const ownerUserId = await getCurrentUserId();
   const transactionRows = await db
     .select()
     .from(transactions)
-    .where(eq(transactions.id, id))
+    .where(and(eq(transactions.id, id), eq(transactions.ownerUserId, ownerUserId)))
     .limit(1);
 
   const [transaction] = await hydrateTransactions(transactionRows);
@@ -132,6 +136,7 @@ async function getCategoryAndDescendantIds(categoryId: string): Promise<string[]
 }
 
 async function hydrateTransactions(transactionRows: Array<typeof transactions.$inferSelect>) {
+  const ownerUserId = await getCurrentUserId();
   const accountIds = new Set<string>();
   const categoryIds = new Set<string>();
   const paymentMethodIds = new Set<string>();
@@ -159,14 +164,19 @@ async function hydrateTransactions(transactionRows: Array<typeof transactions.$i
       ? db
           .select()
           .from(accounts)
-          .where(inArray(accounts.id, [...accountIds]))
+          .where(and(inArray(accounts.id, [...accountIds]), eq(accounts.ownerUserId, ownerUserId)))
       : [],
     categoryIds.size > 0 ? db.select().from(categories) : [],
     paymentMethodIds.size > 0
       ? db
           .select()
           .from(paymentMethods)
-          .where(inArray(paymentMethods.id, [...paymentMethodIds]))
+          .where(
+            and(
+              inArray(paymentMethods.id, [...paymentMethodIds]),
+              eq(paymentMethods.ownerUserId, ownerUserId),
+            ),
+          )
       : [],
   ]);
 

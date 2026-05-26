@@ -40,7 +40,7 @@ Stage 1 Q&A:
 - useActionState + useFormStatus 全面替代 redirect-with-error
 - 通用 MoneyInput（千分位）替换所有金额输入
 - 快捷模板 CRUD + 使用次数排序
-- 内置 FLOWLEDGER_PASSWORD 密码门（Next.js 16 用 src/proxy.ts）
+- 内置 FLOWLEDGER_USERS_JSON 双人密码门（Next.js 16 用 src/proxy.ts）
 
 ## Stage 2 待办（从 development-plan-stage-2.md 摘要）
 

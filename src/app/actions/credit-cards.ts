@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { currencies, parseMoneyToMinor } from "@/domain/finance";
+import { getAccount } from "@/features/accounts/data";
 import { getCreditCard } from "@/features/credit-cards/data";
 import {
   createCreditCardRecord,
@@ -83,6 +84,9 @@ export async function createCreditCard(
   }
 
   const parsed = result.data;
+  const repaymentError = await validateRepaymentAccount(parsed.repaymentAccountId, parsed.currency);
+  if (repaymentError) return { error: repaymentError, values };
+
   const balanceResult = parseDebtToBalanceMinor(parsed.currentDebt, parsed.currency);
   if (!balanceResult.ok) {
     return { error: balanceResult.error, values };
@@ -126,6 +130,9 @@ export async function updateCreditCard(
   }
 
   const parsed = result.data;
+  const repaymentError = await validateRepaymentAccount(parsed.repaymentAccountId, parsed.currency);
+  if (repaymentError) return { error: repaymentError, values };
+
   const balanceResult = parseDebtToBalanceMinor(parsed.currentDebt, parsed.currency);
   if (!balanceResult.ok) {
     return { error: balanceResult.error, values };
@@ -176,4 +183,12 @@ function parseDebtToBalanceMinor(
       error: error instanceof Error ? error.message : "当前欠款格式不正确",
     };
   }
+}
+
+async function validateRepaymentAccount(accountId: string | undefined, currency: "JPY" | "CNY") {
+  if (!accountId) return null;
+  const account = await getAccount(accountId);
+  if (!account) return "还款账户不存在";
+  if (account.currency !== currency) return "还款账户币种必须和信用卡币种一致";
+  return null;
 }

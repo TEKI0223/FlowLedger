@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { installmentPlans, transactions } from "@/db/schema";
 import { currencies, parseMoneyToMinor } from "@/domain/finance";
@@ -15,6 +15,7 @@ import {
   updateInstallmentPlanRecord,
 } from "@/features/installments/service";
 import { stringField as field } from "@/lib/form";
+import { getCurrentUserId } from "@/lib/auth";
 import { installmentPaths, revalidatePaths } from "@/lib/revalidate";
 
 const installmentSchema = z.object({
@@ -53,6 +54,7 @@ export async function createInstallmentPlan(
   _prev: InstallmentActionState,
   formData: FormData,
 ): Promise<InstallmentActionState> {
+  const ownerUserId = await getCurrentUserId();
   const values = extract(formData);
 
   const result = installmentSchema.safeParse({
@@ -84,7 +86,9 @@ export async function createInstallmentPlan(
   const [originalTx] = await db
     .select()
     .from(transactions)
-    .where(eq(transactions.id, originalTransactionId))
+    .where(
+      and(eq(transactions.id, originalTransactionId), eq(transactions.ownerUserId, ownerUserId)),
+    )
     .limit(1);
   if (!originalTx) return { error: "原始交易不存在", values };
   if (originalTx.currency !== parsed.currency) {
@@ -112,6 +116,7 @@ export async function updateInstallmentPlan(
   _prev: InstallmentActionState,
   formData: FormData,
 ): Promise<InstallmentActionState> {
+  const ownerUserId = await getCurrentUserId();
   const values = extract(formData);
 
   const result = installmentSchema.safeParse({
@@ -141,7 +146,7 @@ export async function updateInstallmentPlan(
   const [existing] = await db
     .select()
     .from(installmentPlans)
-    .where(eq(installmentPlans.id, id))
+    .where(and(eq(installmentPlans.id, id), eq(installmentPlans.ownerUserId, ownerUserId)))
     .limit(1);
   if (!existing) return { error: "分期计划不存在", values };
 
@@ -188,10 +193,11 @@ export async function cancelInstallmentPlan(id: string) {
 }
 
 export async function reopenInstallmentPlan(id: string) {
+  const ownerUserId = await getCurrentUserId();
   const [existing] = await db
     .select()
     .from(installmentPlans)
-    .where(eq(installmentPlans.id, id))
+    .where(and(eq(installmentPlans.id, id), eq(installmentPlans.ownerUserId, ownerUserId)))
     .limit(1);
   if (!existing) return;
   const status = computeInstallmentStatus(existing.completedPeriods, existing.periods, false);

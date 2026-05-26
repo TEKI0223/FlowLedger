@@ -1,9 +1,10 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { recurringItems, transactions } from "@/db/schema";
 import { getTransactionBalanceImpacts, type Currency, type Transaction } from "@/domain/finance";
 import { getNextOccurrence, type RecurringFrequency } from "@/domain/recurring";
 import { applyBalanceImpacts, applyCategoryUsageDelta } from "@/features/transactions/service";
+import { getCurrentUserId } from "@/lib/auth";
 import { nowIso } from "@/lib/dates";
 
 export type RecurringInput = {
@@ -23,6 +24,7 @@ export type RecurringInput = {
 };
 
 export async function createRecurringItemRecord(input: RecurringInput): Promise<string> {
+  const ownerUserId = await getCurrentUserId();
   const id = crypto.randomUUID();
   const timestamp = nowIso();
 
@@ -30,6 +32,7 @@ export async function createRecurringItemRecord(input: RecurringInput): Promise<
     .insert(recurringItems)
     .values({
       id,
+      ownerUserId,
       name: input.name,
       type: input.type,
       amountMinor: input.amountMinor,
@@ -52,6 +55,7 @@ export async function createRecurringItemRecord(input: RecurringInput): Promise<
 }
 
 export async function updateRecurringItemRecord(id: string, input: RecurringInput): Promise<void> {
+  const ownerUserId = await getCurrentUserId();
   await db
     .update(recurringItems)
     .set({
@@ -70,24 +74,33 @@ export async function updateRecurringItemRecord(id: string, input: RecurringInpu
       enabled: input.enabled,
       updatedAt: nowIso(),
     })
-    .where(eq(recurringItems.id, id))
+    .where(and(eq(recurringItems.id, id), eq(recurringItems.ownerUserId, ownerUserId)))
     .run();
 }
 
 export async function deleteRecurringItemRecord(id: string): Promise<void> {
-  await db.delete(recurringItems).where(eq(recurringItems.id, id)).run();
+  const ownerUserId = await getCurrentUserId();
+  await db
+    .delete(recurringItems)
+    .where(and(eq(recurringItems.id, id), eq(recurringItems.ownerUserId, ownerUserId)))
+    .run();
 }
 
 /** 跳过：仅推进 nextDate，不写交易。 */
 export async function skipRecurringItemRecord(id: string): Promise<void> {
-  const [row] = await db.select().from(recurringItems).where(eq(recurringItems.id, id)).limit(1);
+  const ownerUserId = await getCurrentUserId();
+  const [row] = await db
+    .select()
+    .from(recurringItems)
+    .where(and(eq(recurringItems.id, id), eq(recurringItems.ownerUserId, ownerUserId)))
+    .limit(1);
   if (!row) return;
 
   const nextDate = getNextOccurrence(row.nextDate, row.frequency);
   await db
     .update(recurringItems)
     .set({ nextDate, updatedAt: nowIso() })
-    .where(eq(recurringItems.id, row.id))
+    .where(and(eq(recurringItems.id, row.id), eq(recurringItems.ownerUserId, ownerUserId)))
     .run();
 }
 
@@ -101,6 +114,7 @@ export async function confirmRecurringItemAtomic(params: {
   recurringFrequency: RecurringFrequency;
   transaction: Transaction;
 }): Promise<void> {
+  const ownerUserId = await getCurrentUserId();
   const { recurringItemId, recurringNextDate, recurringFrequency, transaction } = params;
   const timestamp = nowIso();
   const newNextDate = getNextOccurrence(recurringNextDate, recurringFrequency);
@@ -110,6 +124,7 @@ export async function confirmRecurringItemAtomic(params: {
       .insert(transactions)
       .values({
         id: transaction.id,
+        ownerUserId,
         occurredOn: transaction.occurredOn,
         type: transaction.type,
         amountMinor: transaction.money.amountMinor,
@@ -133,7 +148,9 @@ export async function confirmRecurringItemAtomic(params: {
     await tx
       .update(recurringItems)
       .set({ nextDate: newNextDate, updatedAt: timestamp })
-      .where(eq(recurringItems.id, recurringItemId))
+      .where(
+        and(eq(recurringItems.id, recurringItemId), eq(recurringItems.ownerUserId, ownerUserId)),
+      )
       .run();
   });
 }

@@ -1,9 +1,10 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, refundTrackers, transactions } from "@/db/schema";
 import type { Currency } from "@/domain/finance";
 import { computeRefundStatus, type RefundStatus } from "@/domain/refund";
 import { applyCategoryUsageDelta } from "@/features/transactions/service";
+import { getCurrentUserId } from "@/lib/auth";
 import { nowIso } from "@/lib/dates";
 
 export type CreateTrackerInput = {
@@ -16,6 +17,7 @@ export type CreateTrackerInput = {
 };
 
 export async function createRefundTrackerRecord(input: CreateTrackerInput): Promise<string> {
+  const ownerUserId = await getCurrentUserId();
   const id = crypto.randomUUID();
   const timestamp = nowIso();
 
@@ -23,6 +25,7 @@ export async function createRefundTrackerRecord(input: CreateTrackerInput): Prom
     .insert(refundTrackers)
     .values({
       id,
+      ownerUserId,
       originalTransactionId: input.originalTransactionId,
       amountMinor: input.amountMinor,
       receivedAmountMinor: 0,
@@ -53,6 +56,7 @@ export async function updateRefundTrackerRecord(
   id: string,
   input: UpdateTrackerInput,
 ): Promise<void> {
+  const ownerUserId = await getCurrentUserId();
   await db
     .update(refundTrackers)
     .set({
@@ -64,20 +68,25 @@ export async function updateRefundTrackerRecord(
       status: input.status,
       updatedAt: nowIso(),
     })
-    .where(eq(refundTrackers.id, id))
+    .where(and(eq(refundTrackers.id, id), eq(refundTrackers.ownerUserId, ownerUserId)))
     .run();
 }
 
 export async function setRefundTrackerStatus(id: string, status: RefundStatus): Promise<void> {
+  const ownerUserId = await getCurrentUserId();
   await db
     .update(refundTrackers)
     .set({ status, updatedAt: nowIso() })
-    .where(eq(refundTrackers.id, id))
+    .where(and(eq(refundTrackers.id, id), eq(refundTrackers.ownerUserId, ownerUserId)))
     .run();
 }
 
 export async function deleteRefundTrackerRecord(id: string): Promise<void> {
-  await db.delete(refundTrackers).where(eq(refundTrackers.id, id)).run();
+  const ownerUserId = await getCurrentUserId();
+  await db
+    .delete(refundTrackers)
+    .where(and(eq(refundTrackers.id, id), eq(refundTrackers.ownerUserId, ownerUserId)))
+    .run();
 }
 
 export type RecordReceiptInput = {
@@ -93,6 +102,7 @@ export type RecordReceiptInput = {
  * 更新 tracker 的 receivedAmountMinor / status / receivedOn。返回新建的交易 id。
  */
 export async function recordRefundReceiptAtomic(input: RecordReceiptInput): Promise<string> {
+  const ownerUserId = await getCurrentUserId();
   const { tracker, amountMinor, occurredOn, targetAccountId, note } = input;
   const newReceivedMinor = tracker.receivedAmountMinor + amountMinor;
   const newStatus = computeRefundStatus(tracker.amountMinor, newReceivedMinor, false);
@@ -104,6 +114,7 @@ export async function recordRefundReceiptAtomic(input: RecordReceiptInput): Prom
       .insert(transactions)
       .values({
         id: transactionId,
+        ownerUserId,
         occurredOn,
         type: "income",
         amountMinor,
@@ -128,7 +139,7 @@ export async function recordRefundReceiptAtomic(input: RecordReceiptInput): Prom
         balanceMinor: sql`${accounts.balanceMinor} + ${amountMinor}`,
         updatedAt: timestamp,
       })
-      .where(eq(accounts.id, targetAccountId))
+      .where(and(eq(accounts.id, targetAccountId), eq(accounts.ownerUserId, ownerUserId)))
       .run();
 
     await applyCategoryUsageDelta(tx, "refund", 1, timestamp);
@@ -141,7 +152,7 @@ export async function recordRefundReceiptAtomic(input: RecordReceiptInput): Prom
         receivedOn: newStatus === "received" ? occurredOn : tracker.receivedOn,
         updatedAt: timestamp,
       })
-      .where(eq(refundTrackers.id, tracker.id))
+      .where(and(eq(refundTrackers.id, tracker.id), eq(refundTrackers.ownerUserId, ownerUserId)))
       .run();
   });
 
@@ -152,17 +163,25 @@ export async function recordRefundReceiptAtomic(input: RecordReceiptInput): Prom
  * 在同一事务里：回滚账户余额 + 删除到账交易 + 回退 tracker 状态。
  */
 export async function deleteRefundReceiptAtomic(receiptTransactionId: string): Promise<void> {
+  const ownerUserId = await getCurrentUserId();
   const [receipt] = await db
     .select()
     .from(transactions)
-    .where(eq(transactions.id, receiptTransactionId))
+    .where(
+      and(eq(transactions.id, receiptTransactionId), eq(transactions.ownerUserId, ownerUserId)),
+    )
     .limit(1);
   if (!receipt || !receipt.refundTrackerId) return;
 
   const [tracker] = await db
     .select()
     .from(refundTrackers)
-    .where(eq(refundTrackers.id, receipt.refundTrackerId))
+    .where(
+      and(
+        eq(refundTrackers.id, receipt.refundTrackerId),
+        eq(refundTrackers.ownerUserId, ownerUserId),
+      ),
+    )
     .limit(1);
   if (!tracker) return;
 
@@ -182,11 +201,14 @@ export async function deleteRefundReceiptAtomic(receiptTransactionId: string): P
           balanceMinor: sql`${accounts.balanceMinor} - ${receipt.amountMinor}`,
           updatedAt: timestamp,
         })
-        .where(eq(accounts.id, receipt.targetAccountId))
+        .where(and(eq(accounts.id, receipt.targetAccountId), eq(accounts.ownerUserId, ownerUserId)))
         .run();
     }
 
-    await tx.delete(transactions).where(eq(transactions.id, receipt.id)).run();
+    await tx
+      .delete(transactions)
+      .where(and(eq(transactions.id, receipt.id), eq(transactions.ownerUserId, ownerUserId)))
+      .run();
     await applyCategoryUsageDelta(tx, receipt.categoryId ?? undefined, -1, timestamp);
 
     await tx
@@ -197,7 +219,7 @@ export async function deleteRefundReceiptAtomic(receiptTransactionId: string): P
         receivedOn: newStatus === "received" ? tracker.receivedOn : null,
         updatedAt: timestamp,
       })
-      .where(eq(refundTrackers.id, tracker.id))
+      .where(and(eq(refundTrackers.id, tracker.id), eq(refundTrackers.ownerUserId, ownerUserId)))
       .run();
   });
 }
