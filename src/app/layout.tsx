@@ -38,8 +38,8 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
           <BottomTabBar />
+          {children}
         </ThemeProvider>
       </body>
     </html>
