@@ -58,7 +58,7 @@ const tabs = [
 export function BottomTabBar() {
   const pathname = usePathname();
 
-  if (pathname === "/login") {
+  if (pathname === "/login" || pathname.startsWith("/desktop")) {
     return null;
   }
 
