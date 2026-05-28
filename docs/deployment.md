@@ -4,6 +4,19 @@
 
 本地开发不变，仍然用 `file:./data/flowledger.db`。
 
+## 0. 上线前本地检查
+
+```bash
+npm run assets:pwa
+npm run lint
+npm run test
+npm run build
+```
+
+`npm run assets:pwa` 会生成 manifest 使用的 192 / 512 /
+maskable 图标，以及 iOS 添加到主屏时使用的 startup images。图标文件在 `public/icons`，启动图在
+`public/splash`。
+
 ## 1. 准备 Turso
 
 ### 1.1 安装 CLI
