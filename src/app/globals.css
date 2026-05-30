@@ -164,3 +164,14 @@
     }
   }
 }
+
+@layer utilities {
+  /* 嵌套 dialog：非栈顶的 dialog 加上这个 class（由 MutationObserver 在 JS 侧维护，
+     见 src/components/ui/dialog.tsx 里的 ensureDialogStackObserver）。
+     用纯 :has() 兄弟选择器没法跨 portal wrapper，所以靠 JS 兜底。 */
+  [data-slot="dialog-content"].dialog-stacked {
+    filter: blur(2.5px);
+    pointer-events: none;
+    transition: filter 150ms ease;
+  }
+}

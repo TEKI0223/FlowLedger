@@ -8,6 +8,43 @@ import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
 import { useVisualViewport } from "@/hooks/use-visual-viewport";
 
+/**
+ * 嵌套 dialog 模糊维护：单例 MutationObserver 跟踪所有 dialog 的 data-open，
+ * 给非栈顶的（DOM 顺序非最后一个 open）加上 .dialog-stacked class。
+ * 见 globals.css 里的样式。
+ *
+ * 用 MutationObserver 而不是 React state 的原因：base-ui 关闭 dialog 时会先
+ * 把 data-open 切成 data-closed，再播放退出动画然后卸载。监听 attribute
+ * 变化能在 data-open 一变就同步状态，避免"动画期间底层仍模糊"的延迟。
+ */
+let dialogStackObserverInstalled = false;
+function ensureDialogStackObserver() {
+  if (dialogStackObserverInstalled || typeof document === "undefined") return;
+  dialogStackObserverInstalled = true;
+
+  const recompute = () => {
+    const dialogs = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-slot="dialog-content"]'),
+    );
+    const open = dialogs.filter((d) => d.hasAttribute("data-open"));
+    dialogs.forEach((d) => d.classList.remove("dialog-stacked"));
+    // DOM 顺序最后一个是栈顶；之前的全部标 stacked
+    for (let i = 0; i < open.length - 1; i++) {
+      open[i].classList.add("dialog-stacked");
+    }
+  };
+
+  const observer = new MutationObserver(recompute);
+  observer.observe(document.body, {
+    attributes: true,
+    attributeFilter: ["data-open", "data-closed"],
+    subtree: true,
+    childList: true,
+  });
+  // 初始扫一遍（覆盖 SSR 已挂载的场景）
+  recompute();
+}
+
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
 }
@@ -55,6 +92,11 @@ function DialogContent({
         maxHeight: `${vv.height - 24}px`,
       }
     : undefined;
+
+  // 首次挂载时确保全局 dialog 栈 observer 已启动
+  React.useEffect(() => {
+    ensureDialogStackObserver();
+  }, []);
 
   return (
     <DialogPortal>
