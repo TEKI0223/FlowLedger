@@ -9,7 +9,7 @@ import {
   transactions,
 } from "@/db/schema";
 import type { Currency } from "@/domain/finance";
-import type { CycleBoundary } from "@/domain/credit-card";
+import type { CycleBoundary, PaymentMonthOffset } from "@/domain/credit-card";
 import { getCurrentUserId } from "@/lib/auth";
 import { nowIso } from "@/lib/dates";
 
@@ -20,6 +20,7 @@ export type CreditCardInput = {
   balanceMinor: number;
   closingDay: number;
   paymentDay: number;
+  paymentMonthOffset: PaymentMonthOffset;
   cycleBoundary: CycleBoundary;
   repaymentAccountId?: string;
   enabled: boolean;
@@ -57,6 +58,7 @@ export async function createCreditCardRecord(input: CreditCardInput): Promise<st
       accountId,
       closingDay: input.closingDay,
       paymentDay: input.paymentDay,
+      paymentMonthOffset: input.paymentMonthOffset,
       cycleBoundary: input.cycleBoundary,
       repaymentAccountId: input.repaymentAccountId,
       enabled: input.enabled,
@@ -97,6 +99,7 @@ export async function updateCreditCardRecord(
     .set({
       closingDay: input.closingDay,
       paymentDay: input.paymentDay,
+      paymentMonthOffset: input.paymentMonthOffset,
       cycleBoundary: input.cycleBoundary,
       repaymentAccountId: input.repaymentAccountId,
       enabled: input.enabled,
@@ -232,6 +235,7 @@ export async function syncAllCreditCardPaymentMethods(): Promise<void> {
       cardId: creditCards.id,
       closingDay: creditCards.closingDay,
       paymentDay: creditCards.paymentDay,
+      paymentMonthOffset: creditCards.paymentMonthOffset,
       cycleBoundary: creditCards.cycleBoundary,
       repaymentAccountId: creditCards.repaymentAccountId,
       enabled: creditCards.enabled,
@@ -254,6 +258,7 @@ export async function syncAllCreditCardPaymentMethods(): Promise<void> {
       balanceMinor: row.balanceMinor,
       closingDay: row.closingDay,
       paymentDay: row.paymentDay,
+      paymentMonthOffset: row.paymentMonthOffset as PaymentMonthOffset,
       cycleBoundary: row.cycleBoundary,
       repaymentAccountId: row.repaymentAccountId ?? undefined,
       enabled: row.enabled,

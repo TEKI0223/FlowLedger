@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { paymentMonthOffsets, type PaymentMonthOffset } from "@/domain/credit-card";
 import { currencies, parseMoneyToMinor } from "@/domain/finance";
 import { getAccount } from "@/features/accounts/data";
 import { getCreditCard } from "@/features/credit-cards/data";
@@ -28,6 +29,12 @@ const creditCardSchema = z.object({
     .int()
     .min(1, "扣款日必须在 1-31 之间")
     .max(31, "扣款日必须在 1-31 之间"),
+  paymentMonthOffset: z.coerce
+    .number()
+    .int()
+    .refine((v): v is PaymentMonthOffset => (paymentMonthOffsets as readonly number[]).includes(v), {
+      message: "扣款月偏移必须为 0、1 或 2",
+    }),
   cycleBoundary: z.enum(["inclusive", "exclusive"]),
   repaymentAccountId: z.string().trim().optional(),
   enabled: z.boolean(),
@@ -41,6 +48,7 @@ export type CreditCardFormValues = {
   currentDebt?: string;
   closingDay?: string;
   paymentDay?: string;
+  paymentMonthOffset?: string;
   cycleBoundary?: string;
   repaymentAccountId?: string;
   enabled?: boolean;
@@ -60,6 +68,7 @@ function extract(formData: FormData): CreditCardFormValues {
     currentDebt: stringField(formData, "currentDebt"),
     closingDay: stringField(formData, "closingDay"),
     paymentDay: stringField(formData, "paymentDay"),
+    paymentMonthOffset: stringField(formData, "paymentMonthOffset") ?? "1",
     cycleBoundary: stringField(formData, "cycleBoundary"),
     repaymentAccountId: stringField(formData, "repaymentAccountId"),
     enabled: formData.get("enabled") === "on",
@@ -99,6 +108,7 @@ export async function createCreditCard(
     balanceMinor: balanceResult.balanceMinor,
     closingDay: parsed.closingDay,
     paymentDay: parsed.paymentDay,
+    paymentMonthOffset: parsed.paymentMonthOffset as PaymentMonthOffset,
     cycleBoundary: parsed.cycleBoundary,
     repaymentAccountId: parsed.repaymentAccountId,
     enabled: parsed.enabled,
@@ -145,6 +155,7 @@ export async function updateCreditCard(
     balanceMinor: balanceResult.balanceMinor,
     closingDay: parsed.closingDay,
     paymentDay: parsed.paymentDay,
+    paymentMonthOffset: parsed.paymentMonthOffset as PaymentMonthOffset,
     cycleBoundary: parsed.cycleBoundary,
     repaymentAccountId: parsed.repaymentAccountId,
     enabled: parsed.enabled,

@@ -15,6 +15,20 @@
       "when": 1780128053846,
       "tag": "0001_violet_mister_sinister",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1780137082869,
+      "tag": "0002_talented_blob",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1780137461614,
+      "tag": "0003_outgoing_gideon",
+      "breakpoints": true
     }
   ]
 }

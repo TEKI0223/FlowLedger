@@ -3,7 +3,11 @@ import { TransactionForm } from "@/features/transactions/transaction-form";
 import { createTransaction } from "@/app/actions/transactions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatMinorForInput, formatMoney } from "@/domain/finance";
-import { getStatementPeriod, type CycleBoundary } from "@/domain/credit-card";
+import {
+  getStatementPeriod,
+  type CycleBoundary,
+  type PaymentMonthOffset,
+} from "@/domain/credit-card";
 import { getCreditCard, listCardStatements } from "@/features/credit-cards/data";
 import { getTransactionLookups } from "@/features/lookups/data";
 import { todayIsoDate } from "@/lib/dates";
@@ -42,6 +46,7 @@ export default async function CreditCardRepayPage({ params, searchParams }: Repa
     const period = getStatementPeriod(periodEnd, {
       closingDay: card.closingDay,
       paymentDay: card.paymentDay,
+      paymentMonthOffset: card.paymentMonthOffset as PaymentMonthOffset,
       cycleBoundary: card.cycleBoundary as CycleBoundary,
     });
     targetStatement = {

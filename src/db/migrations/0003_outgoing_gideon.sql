@@ -1,0 +1,1 @@
+ALTER TABLE `transactions` ADD `credit_card_statement_override` text;

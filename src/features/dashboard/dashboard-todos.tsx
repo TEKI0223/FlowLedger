@@ -2,13 +2,21 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { BellIcon, ChevronDownIcon, ChevronUpIcon, ReceiptIcon, RepeatIcon } from "lucide-react";
+import {
+  BellIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  CreditCardIcon,
+  ReceiptIcon,
+  RepeatIcon,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 type DashboardTodosProps = {
   pendingRecurringCount: number;
   pendingRefundCount: number;
+  pendingCardRepaymentCount: number;
 };
 
 const todoStyles = {
@@ -24,16 +32,32 @@ const todoStyles = {
     href: "/refunds",
     activeClass: "border-transfer/30 bg-transfer/5 text-transfer",
   },
+  cardRepayment: {
+    icon: CreditCardIcon,
+    label: "信用卡还款",
+    href: "/credit-cards",
+    activeClass: "border-expense/30 bg-expense/5 text-expense",
+  },
 };
 
-export function DashboardTodos({ pendingRecurringCount, pendingRefundCount }: DashboardTodosProps) {
-  const hasTodos = pendingRecurringCount > 0 || pendingRefundCount > 0;
+export function DashboardTodos({
+  pendingRecurringCount,
+  pendingRefundCount,
+  pendingCardRepaymentCount,
+}: DashboardTodosProps) {
+  const totalCount = pendingRecurringCount + pendingRefundCount + pendingCardRepaymentCount;
+  const hasTodos = totalCount > 0;
   const [open, setOpen] = useState(false);
   const allItems = [
     {
       key: "recurring",
       count: pendingRecurringCount,
       ...todoStyles.recurring,
+    },
+    {
+      key: "cardRepayment",
+      count: pendingCardRepaymentCount,
+      ...todoStyles.cardRepayment,
     },
     {
       key: "refund",
@@ -58,7 +82,7 @@ export function DashboardTodos({ pendingRecurringCount, pendingRefundCount }: Da
               待办
             </span>
             <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              {hasTodos ? `${pendingRecurringCount + pendingRefundCount} 项` : "无待办"}
+              {hasTodos ? `${totalCount} 项` : "无待办"}
               <ToggleIcon className="size-3.5" />
             </span>
           </button>

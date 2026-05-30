@@ -1,0 +1,1 @@
+ALTER TABLE `credit_cards` ADD `payment_month_offset` integer DEFAULT 1 NOT NULL;

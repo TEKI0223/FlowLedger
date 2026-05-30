@@ -1,11 +1,17 @@
-import { and, asc, desc, eq, gte, inArray, lte, ne, notInArray } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, ne, notInArray, or } from "drizzle-orm";
 import { db } from "@/db/client";
-import { accounts, creditCards, installmentPlans, transactions } from "@/db/schema";
+import { accounts, categories, creditCards, installmentPlans, transactions } from "@/db/schema";
+import {
+  buildResolvedCategoryIconKeyMap,
+  type CategoryIconKey,
+} from "@/features/categories/icon-utils";
 import {
   getPreviousStatementPeriodEnd,
   getStatementPeriod,
+  listAdjacentStatementPeriods,
   type CreditCardConfig,
   type CycleBoundary,
+  type PaymentMonthOffset,
   type StatementPeriod,
 } from "@/domain/credit-card";
 import type { Currency, TransactionType } from "@/domain/finance";
@@ -43,6 +49,78 @@ export async function getCreditCard(id: string): Promise<HydratedCreditCard | nu
   return card ?? null;
 }
 
+/**
+ * 统计有多少张启用的信用卡有"已关期但仍未还清"的账单（用于待办计数）。
+ * 当期（accruing）不计入 — 那是正在累积，不是要立刻还。
+ * 每张卡最多回看 6 期，足够覆盖一般场景。
+ */
+export async function countPendingCardRepayments(): Promise<number> {
+  const cards = await listCreditCards();
+  let count = 0;
+  for (const card of cards) {
+    if (!card.enabled) continue;
+    const statements = await listCardStatements(card, 6);
+    for (const s of statements) {
+      if (s.isCurrent) continue;
+      if (s.isPaid) continue;
+      if (s.totalAmountMinor <= 0) continue;
+      count += 1;
+    }
+  }
+  return count;
+}
+
+export type CreditCardStatementOption = {
+  /** 用作 form value：账单的 periodEnd（YYYY-MM-DD） */
+  periodEnd: string;
+  periodStart: string;
+  dueDate: string;
+  /** 是否就是 anchor 所在的当期 */
+  isCurrent: boolean;
+};
+
+/**
+ * 给"按账户 id 查询附近账单期"的下拉用。
+ * 返回 Map<信用卡 accountId, 该卡前后几期的账单>。
+ */
+export async function getCreditCardStatementOptions(
+  anchor: string = todayIsoDate(),
+  past: number = 1,
+  future: number = 2,
+): Promise<Record<string, CreditCardStatementOption[]>> {
+  const ownerUserId = await getCurrentUserId();
+  const rows = await db
+    .select({
+      accountId: creditCards.accountId,
+      closingDay: creditCards.closingDay,
+      paymentDay: creditCards.paymentDay,
+      paymentMonthOffset: creditCards.paymentMonthOffset,
+      cycleBoundary: creditCards.cycleBoundary,
+    })
+    .from(creditCards)
+    .where(eq(creditCards.ownerUserId, ownerUserId));
+
+  const result: Record<string, CreditCardStatementOption[]> = {};
+  for (const row of rows) {
+    const config: CreditCardConfig = {
+      closingDay: row.closingDay,
+      paymentDay: row.paymentDay,
+      paymentMonthOffset: row.paymentMonthOffset as PaymentMonthOffset,
+      cycleBoundary: row.cycleBoundary as CycleBoundary,
+    };
+    const current = getStatementPeriod(anchor, config);
+    const periods = listAdjacentStatementPeriods(anchor, config, { past, future });
+    result[row.accountId] = periods.map((p) => ({
+      periodEnd: p.periodEnd,
+      periodStart: p.periodStart,
+      dueDate: p.dueDate,
+      isCurrent: p.periodEnd === current.periodEnd,
+    }));
+  }
+
+  return result;
+}
+
 export async function listCreditCardAccountOptions() {
   const ownerUserId = await getCurrentUserId();
   return db
@@ -66,6 +144,8 @@ export type StatementTransaction = {
   type: TransactionType;
   note: string | null;
   categoryId: string | null;
+  categoryName: string | null;
+  categoryIconKey: CategoryIconKey | null;
 };
 
 /** 分期产生的本期扣款（不是真实交易，而是从 installment_plans 派生出来的「本期应扣」） */
@@ -98,12 +178,17 @@ export type StatementSummary = StatementPeriod & {
 
 export async function listCardStatements(
   card: HydratedCreditCard,
-  count: number = 4,
+  count: number = 2,
+  options: { filterEmpty?: boolean } = {},
 ): Promise<StatementSummary[]> {
-  const ownerUserId = await getCurrentUserId();
+  // 默认过滤掉「关期但金额为 0」的幻影账单：用户刚初始化时往前的几期都是空的，
+  // 显示出来会让人误以为这些都是未付的账单。当期（isCurrent）永远显示，
+  // 哪怕金额为 0 — 它代表"正在累积中"。
+  const filterEmpty = options.filterEmpty ?? true;
   const config: CreditCardConfig = {
     closingDay: card.closingDay,
     paymentDay: card.paymentDay,
+    paymentMonthOffset: card.paymentMonthOffset as PaymentMonthOffset,
     cycleBoundary: card.cycleBoundary as CycleBoundary,
   };
 
@@ -117,17 +202,67 @@ export async function listCardStatements(
     periodEnds.push(previous);
   }
 
-  // 查询整个时间段的相关交易，一次 IO
-  const earliestStart = getStatementPeriod(periodEnds[periodEnds.length - 1], config).periodStart;
-  const latestEnd = (() => {
-    // 还款可能发生在 dueDate 当天或之后，所以查询区间右端要取 dueDate 而非 periodEnd
-    const dueDates = periodEnds.map((pe) => getStatementPeriod(pe, config).dueDate);
-    return dueDates.reduce((max, d) => (d > max ? d : max), today);
-  })();
+  const summaries = await listCardStatementsByPeriodEnds(
+    card,
+    config,
+    periodEnds,
+    today,
+    currentPeriod.periodEnd,
+  );
+
+  if (!filterEmpty) return summaries;
+  return summaries.filter(
+    (s) => s.isCurrent || s.totalAmountMinor > 0 || s.repaidAmountMinor > 0,
+  );
+}
+
+/**
+ * 抓单期账单（按 periodEnd 索引）。给账单详情页用。
+ * 返回 null 时表示 periodEnd 不是合法的账单边界。
+ */
+export async function getCardStatement(
+  card: HydratedCreditCard,
+  periodEnd: string,
+): Promise<StatementSummary | null> {
+  const config: CreditCardConfig = {
+    closingDay: card.closingDay,
+    paymentDay: card.paymentDay,
+    paymentMonthOffset: card.paymentMonthOffset as PaymentMonthOffset,
+    cycleBoundary: card.cycleBoundary as CycleBoundary,
+  };
+  const period = getStatementPeriod(periodEnd, config);
+  // periodEnd 必须正好等于一期的 periodEnd（不能落在期中）
+  if (period.periodEnd !== periodEnd) return null;
+
+  const today = todayIsoDate();
+  const currentPeriodEnd = getStatementPeriod(today, config).periodEnd;
+  const [results] = await Promise.all([
+    listCardStatementsByPeriodEnds(card, config, [periodEnd], today, currentPeriodEnd),
+  ]);
+  return results[0] ?? null;
+}
+
+/**
+ * 内部辅助：给一组 periodEnds，构造对应的 StatementSummary 列表。
+ * 跟 listCardStatements 共享核心逻辑（同一份 SQL 查询 + 同一份归期判定）。
+ */
+async function listCardStatementsByPeriodEnds(
+  card: HydratedCreditCard,
+  config: CreditCardConfig,
+  periodEnds: string[],
+  today: string,
+  currentPeriodEnd: string,
+): Promise<StatementSummary[]> {
+  const ownerUserId = await getCurrentUserId();
+  const earliestStart = periodEnds
+    .map((pe) => getStatementPeriod(pe, config).periodStart)
+    .reduce((min, s) => (s < min ? s : min));
+  const latestEnd = periodEnds
+    .map((pe) => getStatementPeriod(pe, config).dueDate)
+    .reduce((max, d) => (d > max ? d : max), today);
 
   const cardAccountId = card.accountId;
 
-  // 1. 查询挂在本卡上的所有分期计划（active / completed，跳过 cancelled）
   const cardInstallments = await db
     .select({
       planId: installmentPlans.id,
@@ -152,16 +287,20 @@ export async function listCardStatements(
 
   const installmentTxIds = cardInstallments.map((p) => p.originalTransactionId);
 
-  // 2. 普通消费查询，排除已挂分期的原始交易
   const cardExpensesConds = [
     eq(transactions.sourceAccountId, cardAccountId),
     eq(transactions.ownerUserId, ownerUserId),
     eq(transactions.type, "expense"),
-    gte(transactions.occurredOn, earliestStart),
-    lte(transactions.occurredOn, latestEnd),
+    or(
+      and(gte(transactions.occurredOn, earliestStart), lte(transactions.occurredOn, latestEnd)),
+      and(
+        gte(transactions.creditCardStatementOverride, earliestStart),
+        lte(transactions.creditCardStatementOverride, latestEnd),
+      ),
+    ),
   ];
 
-  const [cardExpenses, repaymentTxs] = await Promise.all([
+  const [cardExpenses, repaymentTxs, categoryRows] = await Promise.all([
     db
       .select()
       .from(transactions)
@@ -184,15 +323,36 @@ export async function listCardStatements(
         ),
       )
       .orderBy(asc(transactions.occurredOn)),
+    db.select().from(categories),
   ]);
+
+  const categoryById = new Map(categoryRows.map((c) => [c.id, c]));
+  const resolvedIconKeyById = buildResolvedCategoryIconKeyMap(categoryRows);
+
+  function hydrateTx(row: typeof transactions.$inferSelect): StatementTransaction {
+    const category = row.categoryId ? categoryById.get(row.categoryId) : null;
+    return {
+      id: row.id,
+      occurredOn: row.occurredOn,
+      amountMinor: row.amountMinor,
+      currency: row.currency,
+      type: row.type,
+      note: row.note,
+      categoryId: row.categoryId,
+      categoryName: category?.name ?? null,
+      categoryIconKey: row.categoryId ? (resolvedIconKeyById.get(row.categoryId) ?? null) : null,
+    };
+  }
 
   return periodEnds.map((periodEnd) => {
     const period = getStatementPeriod(periodEnd, config);
-    const txs = cardExpenses.filter(
-      (tx) => tx.occurredOn >= period.periodStart && tx.occurredOn <= period.periodEnd,
-    );
+    const txs = cardExpenses.filter((tx) => {
+      if (tx.creditCardStatementOverride) {
+        return tx.creditCardStatementOverride === period.periodEnd;
+      }
+      return tx.occurredOn >= period.periodStart && tx.occurredOn <= period.periodEnd;
+    });
 
-    // 3. 本期分期扣款：扫描每个 plan，找 dueDate 落在 [periodStart, periodEnd] 之内的期数
     const installmentEntries: StatementInstallmentEntry[] = [];
     for (const plan of cardInstallments) {
       const dueDates = computeInstallmentDueDates(plan.firstPaymentOn, plan.periods);
@@ -213,7 +373,6 @@ export async function listCardStatements(
       }
     }
 
-    // 启发式：还款关联到「dueDate 当天或之前最近一期」
     const previousDueDate = (() => {
       try {
         const prevEnd = getPreviousStatementPeriodEnd(periodEnd, config);
@@ -239,27 +398,15 @@ export async function listCardStatements(
       periodEnd: period.periodEnd,
       dueDate: period.dueDate,
       totalAmountMinor,
-      transactions: txs.map(toStatementTransaction),
+      transactions: txs.map(hydrateTx),
       installmentEntries,
-      repaymentTransactions: repays.map(toStatementTransaction),
+      repaymentTransactions: repays.map(hydrateTx),
       repaidAmountMinor,
-      isCurrent: periodEnd === currentPeriod.periodEnd,
+      isCurrent: periodEnd === currentPeriodEnd,
       isOverdue,
       isPaid,
     };
   });
-}
-
-function toStatementTransaction(row: typeof transactions.$inferSelect): StatementTransaction {
-  return {
-    id: row.id,
-    occurredOn: row.occurredOn,
-    amountMinor: row.amountMinor,
-    currency: row.currency,
-    type: row.type,
-    note: row.note,
-    categoryId: row.categoryId,
-  };
 }
 
 async function hydrate(cardRows: CreditCardRow[]): Promise<HydratedCreditCard[]> {

@@ -1,5 +1,6 @@
 export const categoryIconKeys = [
   "housing",
+  "communication",
   "grocery",
   "dining",
   "coffee",

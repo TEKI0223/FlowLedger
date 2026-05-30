@@ -89,6 +89,7 @@ export async function createTransactionRecords(
           paymentMethodId: transaction.paymentMethodId,
           recurringItemId: extras.recurringItemId ?? null,
           refundTrackerId: extras.refundTrackerId ?? null,
+          creditCardStatementOverride: transaction.creditCardStatementOverride ?? null,
           includeInExpenseStats,
           includeInCashflowStats,
           note: transaction.note,
@@ -127,6 +128,7 @@ export async function replaceTransactionRecord(
         sourceAccountId: next.sourceAccountId,
         targetAccountId: next.targetAccountId,
         paymentMethodId: next.paymentMethodId,
+        creditCardStatementOverride: next.creditCardStatementOverride ?? null,
         includeInExpenseStats: next.type === "expense",
         includeInCashflowStats: next.type !== "adjustment",
         note: next.note,
@@ -178,6 +180,7 @@ export function rowToTransaction(row: {
   targetAccountId: string | null;
   paymentMethodId: string | null;
   note: string | null;
+  creditCardStatementOverride?: string | null;
 }): Transaction {
   return {
     id: row.id,
@@ -190,6 +193,7 @@ export function rowToTransaction(row: {
     targetAccountId: row.targetAccountId ?? undefined,
     paymentMethodId: row.paymentMethodId ?? undefined,
     note: row.note ?? undefined,
+    creditCardStatementOverride: row.creditCardStatementOverride ?? undefined,
   };
 }
 

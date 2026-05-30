@@ -30,12 +30,18 @@ type Lookups = {
   accounts: Array<{
     id: string;
     name: string;
+    type?: "cash" | "bank" | "credit_card" | "wallet";
     lastDigits: string | null;
     currency: Currency;
     balanceMinor: number;
   }>;
   categories: CategoryPickerOption[];
   paymentMethods: Array<{ id: string; name: string; defaultAccountId: string | null }>;
+  /** 按信用卡 accountId 索引的可选账单期；非信用卡账户没有 entry */
+  creditCardStatementsByAccountId?: Record<
+    string,
+    Array<{ periodEnd: string; dueDate: string; isCurrent: boolean }>
+  >;
 };
 
 type Defaults = {
@@ -47,6 +53,7 @@ type Defaults = {
   sourceAccountId?: string;
   targetAccountId?: string;
   paymentMethodId?: string;
+  creditCardStatementOverride?: string | null;
   note?: string;
 };
 
@@ -443,6 +450,38 @@ export function TransactionForm({
           </div>
         </div>
 
+        {(() => {
+          const sourceAccount = lookups.accounts.find((a) => a.id === sourceAccountId);
+          const statements =
+            sourceAccount?.type === "credit_card" && fieldConfig.showSource
+              ? lookups.creditCardStatementsByAccountId?.[sourceAccountId]
+              : undefined;
+          if (!statements || statements.length === 0) return null;
+          const defaultOverride =
+            values?.creditCardStatementOverride ?? defaults.creditCardStatementOverride ?? "";
+          return (
+            <div className="grid gap-2">
+              <Label htmlFor="creditCardStatementOverride">归入账单</Label>
+              <NativeSelect
+                id="creditCardStatementOverride"
+                name="creditCardStatementOverride"
+                defaultValue={defaultOverride}
+                key={sourceAccountId}
+              >
+                <option value="">自动（按日期）</option>
+                {statements.map((s) => (
+                  <option value={s.periodEnd} key={s.periodEnd}>
+                    {formatStatementOption(s)}
+                  </option>
+                ))}
+              </NativeSelect>
+              <p className="text-xs text-muted-foreground">
+                默认按交易日期落入对应账单。如卡公司有延迟可手动指派。
+              </p>
+            </div>
+          );
+        })()}
+
         <div className="grid gap-2">
           <Label htmlFor="note">备注</Label>
           <Textarea
@@ -459,6 +498,22 @@ export function TransactionForm({
       </form>
     </>
   );
+}
+
+function formatStatementOption(s: {
+  periodEnd: string;
+  dueDate: string;
+  isCurrent: boolean;
+}): string {
+  const closing = shortDate(s.periodEnd);
+  const due = shortDate(s.dueDate);
+  return `${closing} 账单（${due} 还）${s.isCurrent ? " · 当期" : ""}`;
+}
+
+function shortDate(iso: string): string {
+  // "2026-05-25" → "5/25"
+  const [, m, d] = iso.split("-");
+  return `${Number(m)}/${Number(d)}`;
 }
 
 type TargetBalanceResult = { ok: true; delta: number } | { ok: false; error: string } | null;

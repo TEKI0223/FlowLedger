@@ -38,6 +38,7 @@ const transactionSchema = z.object({
   sourceAccountId: z.string().trim().optional(),
   targetAccountId: z.string().trim().optional(),
   paymentMethodId: z.string().trim().optional(),
+  creditCardStatementOverride: z.string().trim().optional(),
   note: z.string().trim().optional(),
 });
 
@@ -50,6 +51,7 @@ export type TransactionFormValues = {
   sourceAccountId?: string;
   targetAccountId?: string;
   paymentMethodId?: string;
+  creditCardStatementOverride?: string;
   note?: string;
 };
 
@@ -69,6 +71,7 @@ function extractValues(formData: FormData): TransactionFormValues {
     sourceAccountId: stringField(formData, "sourceAccountId"),
     targetAccountId: stringField(formData, "targetAccountId"),
     paymentMethodId: stringField(formData, "paymentMethodId"),
+    creditCardStatementOverride: stringField(formData, "creditCardStatementOverride"),
     note: stringField(formData, "note"),
   };
 }
@@ -350,6 +353,7 @@ async function buildTransactionFromForm(formData: FormData, id: string): Promise
     sourceAccountId: normalize(values.sourceAccountId),
     targetAccountId: normalize(values.targetAccountId),
     paymentMethodId: normalize(values.paymentMethodId),
+    creditCardStatementOverride: normalize(values.creditCardStatementOverride),
     note: normalize(values.note),
   });
 
@@ -402,6 +406,7 @@ async function buildTransactionFromForm(formData: FormData, id: string): Promise
       sourceAccountId: parsed.sourceAccountId,
       targetAccountId: parsed.targetAccountId,
       paymentMethodId: parsed.paymentMethodId,
+      creditCardStatementOverride: parsed.creditCardStatementOverride,
       note: parsed.note,
     },
   };

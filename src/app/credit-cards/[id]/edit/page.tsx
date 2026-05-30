@@ -40,6 +40,7 @@ export default async function EditCreditCardPage({ params }: EditCreditCardPageP
               balanceMinor: card.account.balanceMinor,
               closingDay: card.closingDay,
               paymentDay: card.paymentDay,
+              paymentMonthOffset: card.paymentMonthOffset as 0 | 1 | 2,
               cycleBoundary: card.cycleBoundary,
               repaymentAccountId: card.repaymentAccountId,
               enabled: card.enabled,

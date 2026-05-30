@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarIcon, CreditCardIcon, LayersIcon, PencilIcon, ReceiptIcon } from "lucide-react";
+import { CalendarIcon, CreditCardIcon, PencilIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Separator } from "@/components/ui/separator";
-import { formatMoney, transactionTypeLabels } from "@/domain/finance";
+import { formatMoney } from "@/domain/finance";
 import { formatAccountName } from "@/features/accounts/labels";
 import {
   getCreditCard,
@@ -14,6 +14,7 @@ import {
   type StatementSummary,
 } from "@/features/credit-cards/data";
 import { DeleteCreditCardButton } from "@/features/credit-cards/delete-credit-card-button";
+import { StatementTransactionList } from "@/features/credit-cards/statement-transaction-list";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -22,21 +23,27 @@ type CreditCardDetailProps = {
   params: Promise<{
     id: string;
   }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; history?: string }>;
 };
+
+const HISTORY_EXPANDED_COUNT = 12;
 
 export default async function CreditCardDetailPage({
   params,
   searchParams,
 }: CreditCardDetailProps) {
-  const [{ id }, { error }] = await Promise.all([params, searchParams]);
+  const [{ id }, { error, history }] = await Promise.all([params, searchParams]);
   const card = await getCreditCard(id);
 
   if (!card) {
     notFound();
   }
 
-  const statements = await listCardStatements(card, 6);
+  // 默认只显示「当期 + 上一期」。?history=1 时展开到 12 期（足够大多数对账场景）。
+  // 仍会过滤掉金额为 0 的幻影期。
+  const expanded = history === "1";
+  const count = expanded ? HISTORY_EXPANDED_COUNT : 2;
+  const statements = await listCardStatements(card, count);
   const current = statements.find((s) => s.isCurrent);
   const historical = statements.filter((s) => !s.isCurrent);
 
@@ -97,6 +104,24 @@ export default async function CreditCardDetailPage({
           </div>
         </section>
       ) : null}
+
+      <div className="mt-6 flex justify-center">
+        {expanded ? (
+          <Link
+            href={`/credit-cards/${card.id}`}
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-xs")}
+          >
+            收起历史账单
+          </Link>
+        ) : (
+          <Link
+            href={`/credit-cards/${card.id}?history=1`}
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-xs")}
+          >
+            查看更早账单
+          </Link>
+        )}
+      </div>
     </main>
   );
 }
@@ -269,98 +294,24 @@ function HistoricalStatementCard({
           </div>
         </div>
 
-        {remaining > 0 ? (
+        <div className="flex items-center gap-2">
+          {remaining > 0 ? (
+            <Link
+              href={`/credit-cards/${card.id}/repay?periodEnd=${statement.periodEnd}`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-9 text-xs")}
+            >
+              记一笔还款
+            </Link>
+          ) : null}
           <Link
-            href={`/credit-cards/${card.id}/repay?periodEnd=${statement.periodEnd}`}
-            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-9 text-xs")}
+            href={`/credit-cards/${card.id}/statements/${statement.periodEnd}`}
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-9 text-xs")}
           >
-            记一笔还款
+            查看明细 →
           </Link>
-        ) : null}
+        </div>
       </CardContent>
     </Card>
   );
 }
 
-function StatementTransactionList({
-  statement,
-  currency,
-  label,
-}: {
-  statement: StatementSummary;
-  currency: "JPY" | "CNY";
-  label: string;
-}) {
-  // 合并普通交易和分期扣款，按日期排序
-  type Row =
-    | { kind: "tx"; key: string; date: string; node: React.ReactNode }
-    | { kind: "installment"; key: string; date: string; node: React.ReactNode };
-
-  const rows: Row[] = [];
-
-  for (const tx of statement.transactions) {
-    rows.push({
-      kind: "tx",
-      key: `tx-${tx.id}`,
-      date: tx.occurredOn,
-      node: (
-        <li
-          key={`tx-${tx.id}`}
-          className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
-        >
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs text-muted-foreground">
-              {tx.occurredOn} · {transactionTypeLabels[tx.type]}
-              {tx.note ? ` · ${tx.note}` : ""}
-            </p>
-          </div>
-          <span className="shrink-0 font-semibold tabular-nums text-expense">
-            {formatMoney({ amountMinor: tx.amountMinor, currency })}
-          </span>
-        </li>
-      ),
-    });
-  }
-
-  for (const entry of statement.installmentEntries) {
-    rows.push({
-      kind: "installment",
-      key: `inst-${entry.planId}-${entry.periodIndex}`,
-      date: entry.dueDate,
-      node: (
-        <li
-          key={`inst-${entry.planId}-${entry.periodIndex}`}
-          className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
-        >
-          <div className="min-w-0 flex-1">
-            <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
-              <LayersIcon className="size-3 shrink-0" />
-              {entry.dueDate} · 分期 {entry.periodIndex}/{entry.totalPeriods}
-              {entry.note ? ` · ${entry.note}` : ""}
-            </p>
-          </div>
-          <Link
-            href={`/installments/${entry.planId}`}
-            className="shrink-0 font-semibold tabular-nums text-expense hover:underline"
-          >
-            {formatMoney({ amountMinor: entry.amountMinor, currency })}
-          </Link>
-        </li>
-      ),
-    });
-  }
-
-  rows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-        <ReceiptIcon className="size-3.5" />
-        {label}
-      </div>
-      <ul className="divide-y divide-border rounded-md border border-border">
-        {rows.map((row) => row.node)}
-      </ul>
-    </div>
-  );
-}

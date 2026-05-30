@@ -10,6 +10,7 @@ import {
   PackageIcon,
   PartyPopperIcon,
   PlaneIcon,
+  RadioTowerIcon,
   ReceiptTextIcon,
   RepeatIcon,
   ShirtIcon,
@@ -37,6 +38,7 @@ type CategoryIconLabelProps = CategoryIconProps & {
 
 const iconByKey: Record<CategoryIconKey, LucideIcon> = {
   housing: HomeIcon,
+  communication: RadioTowerIcon,
   grocery: ShoppingBasketIcon,
   dining: UtensilsIcon,
   coffee: CoffeeIcon,
@@ -59,6 +61,7 @@ const iconByKey: Record<CategoryIconKey, LucideIcon> = {
 
 const badgeByKey: Record<CategoryIconKey, string> = {
   housing: "bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-200",
+  communication: "bg-yellow-100 text-yellow-800 dark:bg-yellow-950/60 dark:text-yellow-200",
   grocery: "bg-lime-100 text-lime-800 dark:bg-lime-950/60 dark:text-lime-200",
   dining: "bg-orange-100 text-orange-800 dark:bg-orange-950/60 dark:text-orange-200",
   coffee: "bg-stone-100 text-stone-700 dark:bg-stone-800/70 dark:text-stone-200",

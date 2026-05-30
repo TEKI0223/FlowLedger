@@ -3,9 +3,20 @@ import { ISO_DATE } from "@/lib/dates";
 
 export type CycleBoundary = "inclusive" | "exclusive";
 
+export const paymentMonthOffsets = [0, 1, 2] as const;
+export type PaymentMonthOffset = (typeof paymentMonthOffsets)[number];
+
+export const paymentMonthOffsetLabels: Record<PaymentMonthOffset, string> = {
+  0: "当月",
+  1: "次月",
+  2: "次次月",
+};
+
 export type CreditCardConfig = {
   closingDay: number;
   paymentDay: number;
+  /** 扣款月相对 closingDate 的偏移 */
+  paymentMonthOffset: PaymentMonthOffset;
   cycleBoundary: CycleBoundary;
 };
 
@@ -34,7 +45,7 @@ export function getStatementPeriod(date: string, config: CreditCardConfig): Stat
   const periodEnd = closingDateToPeriodEnd(closingDate, config.cycleBoundary);
   const previousPeriodEnd = closingDateToPeriodEnd(previousClosingDate, config.cycleBoundary);
   const periodStart = previousPeriodEnd.add(1, "day");
-  const dueDate = computeDueDate(closingDate, config.paymentDay);
+  const dueDate = computeDueDate(closingDate, config.paymentDay, config.paymentMonthOffset);
 
   return {
     periodStart: periodStart.format(ISO_DATE),
@@ -53,25 +64,62 @@ export function getNextStatementPeriodEnd(periodEnd: string, config: CreditCardC
 
 /**
  * 给定一个账单周期的 periodEnd，返回上一期的 periodEnd。
+ *
+ * 实现：拿当前期的 periodStart，向前退 1 天，必定落在上一期内。
+ * （早期实现用 "periodEnd - 1 天" 在 inclusive 边界下会落回同一期，导致循环不前进。）
  */
 export function getPreviousStatementPeriodEnd(periodEnd: string, config: CreditCardConfig): string {
-  const previousDayInsidePreviousPeriod = dayjs(periodEnd).subtract(1, "day").format(ISO_DATE);
-  return getStatementPeriod(previousDayInsidePreviousPeriod, config).periodEnd;
+  const currentStart = getStatementPeriod(periodEnd, config).periodStart;
+  const dayInPrev = dayjs(currentStart).subtract(1, "day").format(ISO_DATE);
+  return getStatementPeriod(dayInPrev, config).periodEnd;
+}
+
+/**
+ * 返回锚定日附近的连续账单周期：过去 `past` 期 + 当期 + 未来 `future` 期。
+ * 用于「让用户从下拉选哪期账单」之类的场景。
+ */
+export function listAdjacentStatementPeriods(
+  anchor: string,
+  config: CreditCardConfig,
+  options: { past: number; future: number },
+): StatementPeriod[] {
+  const current = getStatementPeriod(anchor, config);
+  const periods: StatementPeriod[] = [current];
+
+  // 向前回溯
+  let cursor = current.periodEnd;
+  for (let i = 0; i < options.past; i += 1) {
+    cursor = getPreviousStatementPeriodEnd(cursor, config);
+    periods.unshift(getStatementPeriod(cursor, config));
+  }
+
+  // 向后推进
+  cursor = current.periodEnd;
+  for (let i = 0; i < options.future; i += 1) {
+    cursor = getNextStatementPeriodEnd(cursor, config);
+    periods.push(getStatementPeriod(cursor, config));
+  }
+
+  return periods;
 }
 
 /**
  * 给定 closingDate，返回对应的扣款日（dueDate）。
  *
- * 规则：dueDate 是 closingDate 之后第一个 paymentDay。
- *  - 通常 paymentDay < closingDay → 下个月扣款
- *  - 如果 paymentDay > closingDay → 同月扣款
+ * 规则：dueDate = closingDate 加 paymentMonthOffset 个月，取 paymentDay 那一天。
+ *  - paymentMonthOffset = 0：当月扣款（少见）
+ *  - paymentMonthOffset = 1：次月扣款（日本卡通行）
+ *  - paymentMonthOffset = 2：次次月扣款
+ *
+ * 注：不再根据 paymentDay 与 closingDay 的数字大小推断扣款月，因为
+ * 现实卡的扣款月由发卡方规则决定，跟 paymentDay 数字大小无关。
  */
-export function computeDueDate(periodEnd: Dayjs, paymentDay: number): Dayjs {
-  const sameMonthDue = clampDayOfMonth(periodEnd, paymentDay);
-  if (sameMonthDue.isAfter(periodEnd)) {
-    return sameMonthDue;
-  }
-  return clampDayOfMonth(periodEnd.add(1, "month"), paymentDay);
+export function computeDueDate(
+  closingDate: Dayjs,
+  paymentDay: number,
+  paymentMonthOffset: PaymentMonthOffset,
+): Dayjs {
+  return clampDayOfMonth(closingDate.add(paymentMonthOffset, "month"), paymentDay);
 }
 
 // ── 内部辅助 ─────────────────────────────────────────────────────────────

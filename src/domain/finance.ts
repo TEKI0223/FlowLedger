@@ -65,6 +65,8 @@ export type Transaction = {
   targetAccountId?: string;
   paymentMethodId?: string;
   note?: string;
+  /** 信用卡账单归属手动覆盖：目标账单的 periodEnd (YYYY-MM-DD)，为空时按 occurredOn 自动归期 */
+  creditCardStatementOverride?: string;
 };
 
 export type AccountBalanceImpact = {

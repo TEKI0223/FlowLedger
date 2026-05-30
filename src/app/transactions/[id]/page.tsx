@@ -81,6 +81,7 @@ export default async function TransactionEditPage({ params }: TransactionEditPag
               sourceAccountId: transaction.sourceAccountId ?? undefined,
               targetAccountId: transaction.targetAccountId ?? undefined,
               paymentMethodId: transaction.paymentMethodId ?? undefined,
+              creditCardStatementOverride: transaction.creditCardStatementOverride ?? null,
               note: transaction.note ?? undefined,
             }}
             submitLabel="保存修改"

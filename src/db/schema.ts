@@ -56,6 +56,12 @@ export const transactions = sqliteTable("transactions", {
   paymentMethodId: text("payment_method_id").references(() => paymentMethods.id),
   recurringItemId: text("recurring_item_id"),
   refundTrackerId: text("refund_tracker_id"),
+  /**
+   * 当 sourceAccount 是信用卡且用户想把这笔交易归到特定账单时使用：
+   * 存目标账单的 periodEnd (YYYY-MM-DD)。
+   * 为 null 时按 occurredOn 自动归期（默认）。
+   */
+  creditCardStatementOverride: text("credit_card_statement_override"),
   includeInExpenseStats: integer("include_in_expense_stats", { mode: "boolean" })
     .notNull()
     .default(true),
@@ -97,6 +103,8 @@ export const creditCards = sqliteTable("credit_cards", {
     .references(() => accounts.id),
   closingDay: integer("closing_day").notNull(),
   paymentDay: integer("payment_day").notNull(),
+  /** 扣款发生在 closingDate 之后第几个月：0=当月、1=次月（默认，日本卡通行做法）、2=次次月 */
+  paymentMonthOffset: integer("payment_month_offset").notNull().default(1),
   cycleBoundary: text("cycle_boundary", { enum: ["inclusive", "exclusive"] })
     .notNull()
     .default("inclusive"),

@@ -10,7 +10,12 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
 import { currencies, currencyLabels, formatMinorForInput, type Currency } from "@/domain/finance";
-import type { CycleBoundary } from "@/domain/credit-card";
+import {
+  paymentMonthOffsetLabels,
+  paymentMonthOffsets,
+  type CycleBoundary,
+  type PaymentMonthOffset,
+} from "@/domain/credit-card";
 import { formatAccountName } from "@/features/accounts/labels";
 
 const initialState: CreditCardActionState = {};
@@ -32,6 +37,7 @@ type CreditCardFormProps = {
     balanceMinor?: number;
     closingDay?: number;
     paymentDay?: number;
+    paymentMonthOffset?: PaymentMonthOffset;
     cycleBoundary?: CycleBoundary;
     repaymentAccountId?: string | null;
     enabled?: boolean;
@@ -142,17 +148,39 @@ export function CreditCardForm({
           </div>
         </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="cycleBoundary">账单日归属</Label>
-          <NativeSelect
-            id="cycleBoundary"
-            name="cycleBoundary"
-            required
-            defaultValue={values?.cycleBoundary ?? defaults?.cycleBoundary ?? "inclusive"}
-          >
-            <option value="inclusive">账单日当天计入本期</option>
-            <option value="exclusive">账单日当天计入下期</option>
-          </NativeSelect>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid gap-2">
+            <Label htmlFor="paymentMonthOffset">扣款月</Label>
+            <NativeSelect
+              id="paymentMonthOffset"
+              name="paymentMonthOffset"
+              required
+              defaultValue={String(
+                values?.paymentMonthOffset ?? defaults?.paymentMonthOffset ?? 1,
+              )}
+            >
+              {paymentMonthOffsets.map((offset) => (
+                <option value={String(offset)} key={offset}>
+                  {paymentMonthOffsetLabels[offset]}
+                </option>
+              ))}
+            </NativeSelect>
+            <p className="text-xs text-muted-foreground">
+              账单关闭后多久扣款。日本卡通常是「次月」。
+            </p>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="cycleBoundary">账单日归属</Label>
+            <NativeSelect
+              id="cycleBoundary"
+              name="cycleBoundary"
+              required
+              defaultValue={values?.cycleBoundary ?? defaults?.cycleBoundary ?? "inclusive"}
+            >
+              <option value="inclusive">账单日当天计入本期</option>
+              <option value="exclusive">账单日当天计入下期</option>
+            </NativeSelect>
+          </div>
         </div>
 
         <div className="grid gap-2">
