@@ -99,3 +99,57 @@ function totalsByCurrency(
     CNY: rows.find((row) => row.currency === "CNY")?.totalMinor ?? 0,
   };
 }
+
+export type PriorMonthTotals = {
+  income: Record<Currency, number>;
+  expense: Record<Currency, number>;
+};
+
+export async function getPriorMonthTotals(now = new Date()): Promise<PriorMonthTotals> {
+  const ownerUserId = await getCurrentUserId();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1))
+    .toISOString()
+    .slice(0, 10);
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+    .toISOString()
+    .slice(0, 10);
+
+  const [incomeRows, expenseRows] = await Promise.all([
+    db
+      .select({
+        currency: transactions.currency,
+        totalMinor: sql<number>`coalesce(sum(${transactions.amountMinor}), 0)`,
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.type, "income"),
+          eq(transactions.ownerUserId, ownerUserId),
+          gte(transactions.occurredOn, start),
+          lt(transactions.occurredOn, next),
+        ),
+      )
+      .groupBy(transactions.currency),
+    db
+      .select({
+        currency: transactions.currency,
+        totalMinor: sql<number>`coalesce(sum(${transactions.amountMinor}), 0)`,
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.type, "expense"),
+          eq(transactions.ownerUserId, ownerUserId),
+          eq(transactions.includeInExpenseStats, true),
+          gte(transactions.occurredOn, start),
+          lt(transactions.occurredOn, next),
+        ),
+      )
+      .groupBy(transactions.currency),
+  ]);
+
+  return {
+    income: totalsByCurrency(incomeRows),
+    expense: totalsByCurrency(expenseRows),
+  };
+}

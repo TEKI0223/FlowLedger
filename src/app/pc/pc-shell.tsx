@@ -128,7 +128,7 @@ export function PCShell({ children }: { children: React.ReactNode }) {
               </Link>
               <ThemeToggle />
               <Link
-                href="/#work-queue"
+                href="/"
                 aria-label="待办"
                 className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
               >
@@ -161,7 +161,7 @@ function PCSearch() {
       params.delete("q");
     }
     const suffix = params.toString();
-    return suffix ? `/?${suffix}` : "/";
+    return suffix ? `/transactions?${suffix}` : "/transactions";
   }, [query, searchParams]);
 
   return (

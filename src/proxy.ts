@@ -49,25 +49,31 @@ export async function proxy(req: NextRequest) {
   }
 
   // Device routing.
-  // PC tree lives at app/pc/*. The PC home is canonical at "/" — proxy rewrites
-  // "/" to "/pc" for PC users so the URL bar stays clean. Future PC-only pages
-  // can either keep their /pc/ prefix in the URL or get a per-route rewrite here.
+  // PC tree lives at app/pc/*. Routes listed in PC_REWRITES are served by the
+  // PC version for PC users while keeping the public URL clean (no /pc/ prefix).
+  // Direct visits to /pc/* are redirected to the canonical URL.
   const isPC = detectIsPC(req);
 
-  if (pathname === "/pc") {
-    const url = req.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
-  }
-
-  if (isPC && pathname === "/") {
-    const url = req.nextUrl.clone();
-    url.pathname = "/pc";
-    return NextResponse.rewrite(url);
+  for (const [publicPath, pcPath] of PC_REWRITES) {
+    if (pathname === pcPath) {
+      const url = req.nextUrl.clone();
+      url.pathname = publicPath;
+      return NextResponse.redirect(url);
+    }
+    if (isPC && pathname === publicPath) {
+      const url = req.nextUrl.clone();
+      url.pathname = pcPath;
+      return NextResponse.rewrite(url);
+    }
   }
 
   return NextResponse.next();
 }
+
+const PC_REWRITES: ReadonlyArray<readonly [publicPath: string, pcPath: string]> = [
+  ["/", "/pc"],
+  ["/transactions", "/pc/transactions"],
+];
 
 export const config = {
   // Exclude: API, Next internals, PWA assets, favicon, manifest.
