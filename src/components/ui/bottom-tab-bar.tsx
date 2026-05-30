@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -8,7 +9,6 @@ import {
   HomeIcon,
   ListIcon,
   SettingsIcon,
-  WalletCardsIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -87,8 +87,15 @@ export function BottomTabBar() {
           href="/"
           className="hidden shrink-0 items-center gap-2 rounded-md text-sm font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 min-[820px]:flex"
         >
-          <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <WalletCardsIcon className="size-4" />
+          <span className="flex size-8 items-center justify-center rounded-lg border border-border bg-white p-1">
+            <Image
+              src="/icons/app-icon.png"
+              alt=""
+              width={24}
+              height={24}
+              className="size-6"
+              unoptimized
+            />
           </span>
           <span>FlowLedger</span>
         </Link>

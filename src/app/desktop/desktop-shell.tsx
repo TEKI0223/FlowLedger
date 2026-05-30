@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -20,7 +21,6 @@ import {
   SearchIcon,
   SettingsIcon,
   SunIcon,
-  WalletCardsIcon,
   WalletIcon,
   ZapIcon,
 } from "lucide-react";
@@ -53,8 +53,15 @@ export function DesktopShell({ children }: { children: React.ReactNode }) {
           href="/desktop"
           className="mb-5 flex h-11 items-center gap-3 rounded-lg px-2 text-sm font-semibold tracking-tight hover:bg-muted"
         >
-          <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <WalletCardsIcon className="size-4" />
+          <span className="flex size-9 items-center justify-center rounded-lg border border-border bg-white p-1.5">
+            <Image
+              src="/icons/app-icon.png"
+              alt=""
+              width={24}
+              height={24}
+              className="size-6"
+              unoptimized
+            />
           </span>
           <span>FlowLedger Desktop</span>
         </Link>
@@ -90,8 +97,15 @@ export function DesktopShell({ children }: { children: React.ReactNode }) {
               href="/desktop"
               className="flex shrink-0 items-center gap-2 text-sm font-semibold xl:hidden"
             >
-              <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <WalletCardsIcon className="size-4" />
+              <span className="flex size-8 items-center justify-center rounded-lg border border-border bg-white p-1">
+                <Image
+                  src="/icons/app-icon.png"
+                  alt=""
+                  width={24}
+                  height={24}
+                  className="size-6"
+                  unoptimized
+                />
               </span>
               <span>Desktop</span>
             </Link>
