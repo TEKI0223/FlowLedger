@@ -73,11 +73,11 @@ const quickEntryTemplates = [
   ],
   [
     "ready-meal",
-    "简餐",
+    "便利店",
     "expense",
     "JPY",
     null,
-    "ready-meal",
+    "dining",
     "paypay",
     null,
     "paypay",
@@ -261,7 +261,7 @@ const transactions = [
     "expense",
     1280,
     "JPY",
-    "fruits",
+    "grocery",
     "paypay",
     null,
     "paypay",
@@ -346,7 +346,7 @@ const transactions = [
     "expense",
     2140,
     "JPY",
-    "tissues",
+    "daily-goods",
     "jpy-credit-card-b",
     null,
     "credit-card-b",
@@ -526,6 +526,63 @@ const transactions = [
     1,
     "测试：信用卡还款",
   ],
+
+  // ── 咖啡（多次少额，符合实际习惯）────────────────────────────────────
+  ["dev-tx-022", dateDaysAgo(2), null, "expense", 520, "JPY", "coffee", "paypay", null, "paypay", null, null, 1, 1, "测试：早咖啡"],
+  ["dev-tx-023", dateDaysAgo(5), null, "expense", 480, "JPY", "coffee", "paypay", null, "paypay", null, null, 1, 1, "测试：咖啡"],
+  ["dev-tx-024", dateDaysAgo(12), null, "expense", 620, "JPY", "coffee", "jpy-credit-card-a", null, "credit-card-a", null, null, 1, 1, "测试：星巴克"],
+  ["dev-tx-025", dateDaysAgo(19), null, "expense", 580, "JPY", "coffee", "paypay", null, "paypay", null, null, 1, 1, "测试：手冲"],
+
+  // ── 酒 / 零食 ──────────────────────────────────────────────────────
+  ["dev-tx-026", dateDaysAgo(8), null, "expense", 2400, "JPY", "alcohol", "paypay", null, "paypay", null, null, 1, 1, "测试：啤酒 6 罐"],
+  ["dev-tx-027", dateDaysAgo(22), null, "expense", 3800, "JPY", "alcohol", "jpy-credit-card-a", null, "credit-card-a", null, null, 1, 1, "测试：日本酒"],
+  ["dev-tx-028", dateDaysAgo(4), null, "expense", 680, "JPY", "snacks", "paypay", null, "paypay", null, null, 1, 1, "测试：便利店零食"],
+  ["dev-tx-029", dateDaysAgo(16), null, "expense", 1240, "JPY", "snacks", "jpy-cash", null, "jpy-cash", null, null, 1, 1, "测试：饼干 巧克力"],
+
+  // ── 日用品 / 美妆 ──────────────────────────────────────────────────
+  ["dev-tx-030", dateDaysAgo(10), null, "expense", 3680, "JPY", "daily-goods", "jpy-credit-card-a", null, "credit-card-a", null, null, 1, 1, "测试：ドラッグストア 杂货"],
+  ["dev-tx-031", dateDaysAgo(25), null, "expense", 1580, "JPY", "daily-goods", "jpy-cash", null, "jpy-cash", null, null, 1, 1, "测试：厨房纸 卷纸"],
+  ["dev-tx-032", dateDaysAgo(20), null, "expense", 5400, "JPY", "beauty", "jpy-credit-card-a", null, "credit-card-a", null, null, 1, 1, "测试：护肤套装"],
+
+  // ── 外食（多次，正餐 + 居酒屋）─────────────────────────────────────
+  ["dev-tx-033", dateDaysAgo(1), null, "expense", 8600, "JPY", "dining", "jpy-credit-card-a", null, "credit-card-a", null, null, 1, 1, "测试：居酒屋 同事聚餐"],
+  ["dev-tx-034", dateDaysAgo(7), null, "expense", 1080, "JPY", "dining", "paypay", null, "paypay", null, null, 1, 1, "测试：拉面"],
+  ["dev-tx-035", dateDaysAgo(14), null, "expense", 2200, "JPY", "dining", "jpy-credit-card-a", null, "credit-card-a", null, null, 1, 1, "测试：寿司午餐"],
+  ["dev-tx-036", dateDaysAgo(21), null, "expense", 3400, "JPY", "dining", "jpy-credit-card-a", null, "credit-card-a", null, null, 1, 1, "测试：定食"],
+
+  // ── 上月固定支出（房租 / 水 / 燃气 / 电 / 网络）─────────────────────
+  ["dev-tx-037", dateDaysAgo(33), null, "expense", 128000, "JPY", "rent", "jp-bank-main", null, "jp-bank-transfer", null, null, 1, 1, "测试：上月房租"],
+  ["dev-tx-038", dateDaysAgo(34), null, "expense", 7800, "JPY", "electricity", "jp-bank-main", null, "jp-bank-transfer", null, null, 1, 1, "测试：上月电费"],
+  ["dev-tx-039", dateDaysAgo(34), null, "expense", 2680, "JPY", "water", "jp-bank-main", null, "jp-bank-transfer", null, null, 1, 1, "测试：上月水费"],
+  ["dev-tx-040", dateDaysAgo(34), null, "expense", 4200, "JPY", "gas", "jp-bank-main", null, "jp-bank-transfer", null, null, 1, 1, "测试：上月燃气"],
+  ["dev-tx-041", dateDaysAgo(35), null, "expense", 5200, "JPY", "internet", "jp-bank-main", null, "jp-bank-transfer", null, null, 1, 1, "测试：上月网络"],
+
+  // ── 上月工资 ──────────────────────────────────────────────────────
+  ["dev-tx-042", dateDaysAgo(32), null, "income", 360000, "JPY", "income-salary", null, "jp-bank-main", "jp-bank-transfer", null, null, 1, 1, "测试：上月工资"],
+
+  // ── 游戏 / 订阅 / 电子产品 ─────────────────────────────────────────
+  ["dev-tx-043", dateDaysAgo(15), null, "expense", 2980, "JPY", "zenless-zone-zero", "jpy-credit-card-a", null, "credit-card-a", null, null, 1, 1, "测试：绝区零月卡"],
+  ["dev-tx-044", dateDaysAgo(40), null, "expense", 6480, "JPY", "ps5-software", "jpy-credit-card-a", null, "credit-card-a", null, null, 1, 1, "测试：PS5 实体游戏"],
+  ["dev-tx-045", dateDaysAgo(15), null, "expense", 1480, "JPY", "subscription", "jpy-credit-card-a", null, "credit-card-a", null, null, 1, 1, "测试：Netflix 月费"],
+  ["dev-tx-046", dateDaysAgo(28), null, "expense", 38000, "JPY", "electronics", "jpy-credit-card-a", null, "credit-card-a", null, null, 1, 1, "测试：Amazon 键盘"],
+
+  // ── 医疗 / 娱乐 / 礼物 / 手续费 ────────────────────────────────────
+  ["dev-tx-047", dateDaysAgo(45), null, "expense", 4200, "JPY", "doctor", "jpy-cash", null, "jpy-cash", null, null, 1, 1, "测试：诊所"],
+  ["dev-tx-048", dateDaysAgo(11), null, "expense", 1800, "JPY", "entertainment", "paypay", null, "paypay", null, null, 1, 1, "测试：电影"],
+  ["dev-tx-049", dateDaysAgo(30), null, "expense", 6800, "JPY", "gift", "jpy-credit-card-a", null, "credit-card-a", null, null, 1, 1, "测试：朋友生日礼物"],
+  ["dev-tx-050", dateDaysAgo(60), null, "expense", 220, "JPY", "fees-tax", "jp-bank-main", null, "jp-bank-transfer", null, null, 1, 1, "测试：ATM 手续费"],
+
+  // ── 旅行（一次小旅行：上月去关西）──────────────────────────────────
+  ["dev-tx-051", dateDaysAgo(48), null, "expense", 24800, "JPY", "travel-accommodation", "jpy-credit-card-a", null, "credit-card-a", null, null, 1, 1, "测试：关西旅行 民宿"],
+  ["dev-tx-052", dateDaysAgo(47), null, "expense", 3680, "JPY", "travel-food", "paypay", null, "paypay", null, null, 1, 1, "测试：关西旅行 餐食"],
+  ["dev-tx-053", dateDaysAgo(46), null, "expense", 4200, "JPY", "travel-food", "paypay", null, "paypay", null, null, 1, 1, "测试：关西旅行 餐食"],
+
+  // ── CNY 测试数据 ───────────────────────────────────────────────────
+  ["dev-tx-054", dateDaysAgo(9), null, "expense", 8800, "CNY", "dining", "alipay-balance", null, "alipay", null, null, 1, 1, "测试：聚餐 AA"],
+  ["dev-tx-055", dateDaysAgo(13), null, "expense", 1560, "CNY", "snacks", "wechat-balance", null, "wechat-pay", null, null, 1, 1, "测试：奶茶 + 点心"],
+  ["dev-tx-056", dateDaysAgo(6), null, "expense", 3400, "CNY", "transport", "wechat-balance", null, "wechat-pay", null, null, 1, 1, "测试：打车"],
+  ["dev-tx-057", dateDaysAgo(20), null, "expense", 28000, "CNY", "gift", "alipay-balance", null, "alipay", null, null, 1, 1, "测试：亲戚红包"],
+  ["dev-tx-058", dateDaysAgo(36), null, "income", 1800000, "CNY", "income-salary", null, "cny-bank-main", "cny-bank-transfer", null, null, 1, 1, "测试：上月人民币工资"],
 ];
 
 const SQL_ACCOUNT = `
@@ -653,6 +710,24 @@ const statements = [
 ];
 
 await client.batch(statements, "deferred");
+
+// seed 用 raw SQL 直插 transactions，绕过了 service 层的 applyCategoryUsageDelta，
+// 导致 categories.usage_count 和 last_used_at 始终是 0/NULL。
+// 这里按真实交易数据重算一次，让分类排序（CategoryPicker / lookups）开箱即用。
+await client.execute({
+  sql: `
+    update categories
+    set usage_count = (
+      select count(*) from transactions where transactions.category_id = categories.id
+    ),
+    last_used_at = (
+      select max(occurred_on) from transactions where transactions.category_id = categories.id
+    ),
+    updated_at = ?
+  `,
+  args: [now],
+});
+
 client.close();
 
 const target = url.startsWith("file:") ? url.slice("file:".length).split("?")[0] : url;

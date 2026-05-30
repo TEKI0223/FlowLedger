@@ -92,6 +92,13 @@
       "when": 1779965902415,
       "tag": "0012_numerous_wasp",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1779966000000,
+      "tag": "0013_drop_obsolete_subcategories",
+      "breakpoints": true
     }
   ]
 }
