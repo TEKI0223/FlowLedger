@@ -3,7 +3,6 @@ import { db } from "@/db/client";
 import { accounts, refundTrackers, transactions } from "@/db/schema";
 import type { Currency } from "@/domain/finance";
 import { computeRefundStatus, type RefundStatus } from "@/domain/refund";
-import { applyCategoryUsageDelta } from "@/features/transactions/service";
 import { getCurrentUserId } from "@/lib/auth";
 import { nowIso } from "@/lib/dates";
 
@@ -142,8 +141,6 @@ export async function recordRefundReceiptAtomic(input: RecordReceiptInput): Prom
       .where(and(eq(accounts.id, targetAccountId), eq(accounts.ownerUserId, ownerUserId)))
       .run();
 
-    await applyCategoryUsageDelta(tx, "refund", 1, timestamp);
-
     await tx
       .update(refundTrackers)
       .set({
@@ -209,7 +206,6 @@ export async function deleteRefundReceiptAtomic(receiptTransactionId: string): P
       .delete(transactions)
       .where(and(eq(transactions.id, receipt.id), eq(transactions.ownerUserId, ownerUserId)))
       .run();
-    await applyCategoryUsageDelta(tx, receipt.categoryId ?? undefined, -1, timestamp);
 
     await tx
       .update(refundTrackers)

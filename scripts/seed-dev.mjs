@@ -711,23 +711,6 @@ const statements = [
 
 await client.batch(statements, "deferred");
 
-// seed 用 raw SQL 直插 transactions，绕过了 service 层的 applyCategoryUsageDelta，
-// 导致 categories.usage_count 和 last_used_at 始终是 0/NULL。
-// 这里按真实交易数据重算一次，让分类排序（CategoryPicker / lookups）开箱即用。
-await client.execute({
-  sql: `
-    update categories
-    set usage_count = (
-      select count(*) from transactions where transactions.category_id = categories.id
-    ),
-    last_used_at = (
-      select max(occurred_on) from transactions where transactions.category_id = categories.id
-    ),
-    updated_at = ?
-  `,
-  args: [now],
-});
-
 client.close();
 
 const target = url.startsWith("file:") ? url.slice("file:".length).split("?")[0] : url;

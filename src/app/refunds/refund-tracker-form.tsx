@@ -2,8 +2,8 @@
 
 import { useActionState, useState } from "react";
 import type { RefundTrackerActionState } from "@/app/actions/refunds";
+import { DatePicker } from "@/components/ui/date-picker";
 import { InlineAlert } from "@/components/ui/inline-alert";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MoneyInput } from "@/components/ui/money-input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -113,12 +113,10 @@ export function RefundTrackerForm({
 
         <div className="grid gap-2">
           <Label htmlFor="expectedOn">预计到账日期</Label>
-          <Input
+          <DatePicker
             id="expectedOn"
             name="expectedOn"
-            type="date"
             defaultValue={values?.expectedOn ?? defaults.expectedOn ?? ""}
-            className="h-11 text-base"
           />
         </div>
 

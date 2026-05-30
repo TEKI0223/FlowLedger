@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSessionToken, findConfiguredUser, SESSION_COOKIE } from "@/lib/auth";
 
@@ -35,13 +35,32 @@ export async function loginAction(
   const jar = await cookies();
   jar.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    // 根据实际请求协议决定，而不是 NODE_ENV。
+    // 局域网用 HTTP 访问生产构建时，Secure 标志会让浏览器直接拒收 cookie，
+    // 表现为每次请求都要重新登录。
+    secure: await isHttpsRequest(),
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
   });
 
   redirect(from || "/");
+}
+
+/**
+ * 判断当前请求是否走的 HTTPS：
+ * - x-forwarded-proto（Vercel / 反向代理）优先
+ * - 没有反代头时，认为是直接 HTTP 连接（局域网开发场景）
+ */
+async function isHttpsRequest(): Promise<boolean> {
+  try {
+    const h = await headers();
+    const proto = h.get("x-forwarded-proto");
+    if (proto) return proto.split(",")[0].trim() === "https";
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 export async function logoutAction() {

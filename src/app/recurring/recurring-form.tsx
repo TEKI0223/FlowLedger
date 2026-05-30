@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import type { RecurringActionState } from "@/app/actions/recurring";
+import { DatePicker } from "@/components/ui/date-picker";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -194,13 +195,11 @@ export function RecurringForm({ action, lookups, defaults = {}, submitLabel }: R
 
         <div className="grid gap-2">
           <Label htmlFor="nextDate">下次发生日期</Label>
-          <Input
+          <DatePicker
             id="nextDate"
             name="nextDate"
-            type="date"
             required
             defaultValue={values?.nextDate ?? defaults.nextDate ?? todayIsoDate()}
-            className="h-11 text-base"
           />
         </div>
 

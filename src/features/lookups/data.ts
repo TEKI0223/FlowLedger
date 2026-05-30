@@ -1,7 +1,7 @@
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { accounts, categories, paymentMethods } from "@/db/schema";
-import { buildCategoryOptions } from "@/features/categories/data";
+import { accounts, paymentMethods } from "@/db/schema";
+import { listCategoryOptions } from "@/features/categories/data";
 import { syncAllCreditCardPaymentMethods } from "@/features/credit-cards/service";
 import { getCurrentUserId } from "@/lib/auth";
 
@@ -9,7 +9,7 @@ export async function getTransactionLookups() {
   const ownerUserId = await getCurrentUserId();
   await syncAllCreditCardPaymentMethods();
 
-  const [accountRows, categoryRows, paymentMethodRows] = await Promise.all([
+  const [accountRows, categoryOptions, paymentMethodRows] = await Promise.all([
     db
       .select({
         id: accounts.id,
@@ -21,7 +21,7 @@ export async function getTransactionLookups() {
       .from(accounts)
       .where(eq(accounts.ownerUserId, ownerUserId))
       .orderBy(asc(accounts.currency), asc(accounts.name)),
-    db.select().from(categories),
+    listCategoryOptions(ownerUserId),
     db
       .select()
       .from(paymentMethods)
@@ -31,7 +31,7 @@ export async function getTransactionLookups() {
 
   return {
     accounts: accountRows,
-    categories: buildCategoryOptions(categoryRows),
+    categories: categoryOptions,
     paymentMethods: paymentMethodRows,
   };
 }

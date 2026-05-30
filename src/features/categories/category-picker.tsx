@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDownIcon, SearchIcon, XIcon } from "lucide-react";
+import { ArrowLeftIcon, ChevronDownIcon, ChevronRightIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { CategoryIcon, CategoryIconLabel } from "./category-icon-label";
 import type { CategoryIconKey } from "./icon-utils";
@@ -24,7 +23,7 @@ export type CategoryPickerOption = {
 
 type CategoryPickerProps = {
   id?: string;
-  /** 表单 name；省略则不渲染 hidden input（用于 SplitsField 这类自己序列化的场景）。 */
+  /** 表单 name；省略则不渲染 hidden input。 */
   name?: string;
   categories: CategoryPickerOption[];
   defaultValue?: string;
@@ -33,6 +32,8 @@ type CategoryPickerProps = {
   /** 受控变更回调。 */
   onChange?: (categoryId: string) => void;
   emptyLabel?: string;
+  /** 挂载时立即打开对话框。 */
+  defaultOpen?: boolean;
 };
 
 type RootGroup = {
@@ -48,6 +49,7 @@ export function CategoryPicker({
   value,
   onChange,
   emptyLabel = "无分类",
+  defaultOpen = false,
 }: CategoryPickerProps) {
   const isControlled = value !== undefined;
   const [internalSelectedId, setInternalSelectedId] = useState(defaultValue);
@@ -56,28 +58,49 @@ export function CategoryPicker({
     if (!isControlled) setInternalSelectedId(next);
     onChange?.(next);
   };
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const [activeRootLabel, setActiveRootLabel] = useState<string | undefined>();
+
+  const [open, setOpen] = useState(defaultOpen);
+  const rootGroups = useMemo(() => groupByRoot(categories), [categories]);
 
   const selectedCategory = useMemo(
     () => categories.find((category) => category.id === selectedId),
     [categories, selectedId],
   );
-  const rootGroups = useMemo(() => groupByRoot(categories), [categories]);
-  const activeRootName =
-    activeRootLabel ?? selectedCategory?.label.split("/")[0] ?? rootGroups[0]?.root.label;
-  const activeGroup =
-    rootGroups.find((group) => group.root.label === activeRootName) ?? rootGroups[0];
-  const normalizedQuery = query.trim().toLocaleLowerCase();
-  const searchResults = normalizedQuery
-    ? categories.filter((category) => category.label.toLocaleLowerCase().includes(normalizedQuery))
-    : [];
 
-  function selectCategory(categoryId: string) {
+  // drilldown：当前展开的根分类（null = 显示根 grid）
+  const [drilledRootId, setDrilledRootId] = useState<string | null>(null);
+  const drilledGroup = drilledRootId
+    ? (rootGroups.find((group) => group.root.id === drilledRootId) ?? null)
+    : null;
+
+  // 打开时：选中了某子类则自动 drill 到其父类。渲染阶段比较（避免 useEffect cascading）。
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      let next: string | null = null;
+      if (selectedCategory) {
+        const rootName = selectedCategory.label.split("/")[0];
+        const group = rootGroups.find((g) => g.root.label === rootName);
+        if (group && group.children.length > 0 && group.root.id !== selectedCategory.id) {
+          next = group.root.id;
+        }
+      }
+      setDrilledRootId(next);
+    }
+  }
+
+  function selectAndClose(categoryId: string) {
     setSelectedId(categoryId);
-    setQuery("");
     setOpen(false);
+  }
+
+  function handleRootTileClick(group: RootGroup) {
+    if (group.children.length === 0) {
+      selectAndClose(group.root.id);
+    } else {
+      setDrilledRootId(group.root.id);
+    }
   }
 
   return (
@@ -119,85 +142,65 @@ export function CategoryPicker({
         ) : null}
       </div>
 
-      <Dialog
-        open={open}
-        onOpenChange={(nextOpen) => {
-          if (nextOpen) {
-            setActiveRootLabel(selectedCategory?.label.split("/")[0] ?? rootGroups[0]?.root.label);
-          }
-          setOpen(nextOpen);
-          if (!nextOpen) setQuery("");
-        }}
-      >
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-auto sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>选择分类</DialogTitle>
-            <DialogDescription>先选一级分类，也可以直接搜索。</DialogDescription>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] gap-0 overflow-hidden p-0 sm:max-w-lg">
+          <DialogHeader className="border-b border-border px-3 py-3">
+            {drilledGroup ? (
+              <button
+                type="button"
+                onClick={() => setDrilledRootId(null)}
+                className="-mx-1 flex items-center gap-2 rounded px-1 py-0.5 text-left transition-colors hover:bg-muted/60"
+              >
+                <ArrowLeftIcon className="size-4 text-muted-foreground" />
+                <DialogTitle className="text-base">{drilledGroup.root.label}</DialogTitle>
+              </button>
+            ) : (
+              <DialogTitle className="text-base">选择分类</DialogTitle>
+            )}
+            <DialogDescription className="sr-only">
+              {drilledGroup ? `查看 ${drilledGroup.root.label} 的子分类` : "选择一个分类"}
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-3">
-            <div className="relative">
-              <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="搜索分类"
-                className="h-10 pl-9 text-sm"
-                autoFocus
-              />
-            </div>
-
-            {normalizedQuery ? (
-              <div className="grid max-h-[55dvh] gap-1 overflow-auto rounded-lg border border-border p-1">
-                {searchResults.length > 0 ? (
-                  searchResults.map((category) => (
-                    <CategoryOptionButton
-                      key={category.id}
-                      category={category}
-                      selected={category.id === selectedId}
-                      onSelect={() => selectCategory(category.id)}
+          <div className="overflow-auto p-3">
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {drilledGroup ? (
+                <>
+                  <CategoryTile
+                    label={drilledGroup.root.label}
+                    iconKey={drilledGroup.root.iconKey}
+                    selected={selectedId === drilledGroup.root.id}
+                    onClick={() => selectAndClose(drilledGroup.root.id)}
+                  />
+                  {drilledGroup.children.map((child) => (
+                    <CategoryTile
+                      key={child.id}
+                      label={stripParentPrefix(child.label, drilledGroup.root.label)}
+                      iconKey={child.iconKey}
+                      selected={selectedId === child.id}
+                      onClick={() => selectAndClose(child.id)}
                     />
-                  ))
-                ) : (
-                  <p className="px-3 py-2 text-sm text-muted-foreground">没有匹配的分类</p>
-                )}
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                  {rootGroups.map((group) => (
-                    <button
-                      type="button"
-                      key={group.root.id}
-                      onClick={() => setActiveRootLabel(group.root.label)}
-                      className={cn(
-                        "flex min-h-20 flex-col items-center justify-center gap-2 rounded-lg border px-2 py-2 text-center text-xs font-medium transition-colors",
-                        group.root.label === activeGroup?.root.label
-                          ? "border-foreground/30 bg-muted text-foreground"
-                          : "border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                      )}
-                    >
-                      <CategoryIcon iconKey={group.root.iconKey} className="size-8" />
-                      <span className="line-clamp-2">{group.root.label}</span>
-                    </button>
                   ))}
-                </div>
-
-                {activeGroup ? (
-                  <div className="grid max-h-[38dvh] gap-1 overflow-auto rounded-lg border border-border p-1">
-                    {[activeGroup.root, ...activeGroup.children].map((category) => (
-                      <CategoryOptionButton
-                        key={category.id}
-                        category={category}
-                        selected={category.id === selectedId}
-                        onSelect={() => selectCategory(category.id)}
-                        rootLabel={activeGroup.root.label}
-                      />
-                    ))}
-                  </div>
-                ) : null}
-              </>
-            )}
+                </>
+              ) : (
+                rootGroups.map((group) => {
+                  const hasChildren = group.children.length > 0;
+                  const isSelected =
+                    selectedId === group.root.id ||
+                    (hasChildren && group.children.some((c) => c.id === selectedId));
+                  return (
+                    <CategoryTile
+                      key={group.root.id}
+                      label={group.root.label}
+                      iconKey={group.root.iconKey}
+                      selected={isSelected}
+                      hasChildren={hasChildren}
+                      onClick={() => handleRootTileClick(group)}
+                    />
+                  );
+                })
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -205,39 +208,41 @@ export function CategoryPicker({
   );
 }
 
-function CategoryOptionButton({
-  category,
+function CategoryTile({
+  label,
+  iconKey,
   selected,
-  onSelect,
-  rootLabel,
+  hasChildren,
+  onClick,
 }: {
-  category: CategoryPickerOption;
+  label: string;
+  iconKey: CategoryIconKey;
   selected: boolean;
-  onSelect: () => void;
-  rootLabel?: string;
+  hasChildren?: boolean;
+  onClick: () => void;
 }) {
-  const displayName =
-    rootLabel && category.label.startsWith(`${rootLabel}/`)
-      ? category.label.slice(rootLabel.length + 1)
-      : category.label;
-
   return (
     <button
       type="button"
-      onClick={onSelect}
+      onClick={onClick}
       className={cn(
-        "flex min-h-10 items-center justify-between gap-3 rounded-md px-2 py-2 text-left transition-colors",
-        selected ? "bg-foreground text-background" : "hover:bg-muted",
+        "relative flex min-h-20 flex-col items-center justify-center gap-1.5 rounded-lg border px-1.5 py-2 text-center text-xs font-medium transition-colors",
+        selected
+          ? "border-foreground/30 bg-muted text-foreground"
+          : "border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground",
       )}
     >
-      <CategoryIconLabel
-        iconKey={category.iconKey}
-        name={displayName}
-        labelClassName="text-sm font-medium"
-      />
-      {selected ? <span className="text-xs font-medium">已选</span> : null}
+      {hasChildren ? (
+        <ChevronRightIcon className="absolute right-1.5 top-1.5 size-3 text-muted-foreground/60" />
+      ) : null}
+      <CategoryIcon iconKey={iconKey} className="size-7" />
+      <span className="line-clamp-2 leading-tight">{label}</span>
     </button>
   );
+}
+
+function stripParentPrefix(label: string, rootLabel: string): string {
+  return label.startsWith(`${rootLabel}/`) ? label.slice(rootLabel.length + 1) : label;
 }
 
 function groupByRoot(categories: CategoryPickerOption[]): RootGroup[] {

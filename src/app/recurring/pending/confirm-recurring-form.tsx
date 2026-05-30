@@ -9,7 +9,7 @@ import {
 } from "@/app/actions/recurring";
 import { Button } from "@/components/ui/button";
 import { InlineAlert } from "@/components/ui/inline-alert";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { MoneyInput } from "@/components/ui/money-input";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -54,13 +54,11 @@ export function ConfirmRecurringForm({
           </div>
           <div className="grid gap-2 sm:w-44">
             <Label htmlFor={`occurredOn-${itemId}`}>发生日期</Label>
-            <Input
+            <DatePicker
               id={`occurredOn-${itemId}`}
               name="occurredOn"
-              type="date"
               required
               defaultValue={values?.occurredOn ?? occurredOnDefault}
-              className="h-11 text-base"
             />
           </div>
         </div>

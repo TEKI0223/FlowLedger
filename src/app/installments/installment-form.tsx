@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import type { InstallmentActionState } from "@/app/actions/installments";
+import { DatePicker } from "@/components/ui/date-picker";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -151,13 +152,11 @@ export function InstallmentForm({ action, defaults = {}, submitLabel }: Installm
 
         <div className="grid gap-2">
           <Label htmlFor="firstPaymentOn">首期扣款日期</Label>
-          <Input
+          <DatePicker
             id="firstPaymentOn"
             name="firstPaymentOn"
-            type="date"
             required
             defaultValue={values?.firstPaymentOn ?? defaults.firstPaymentOn ?? ""}
-            className="h-11 text-base"
           />
         </div>
 

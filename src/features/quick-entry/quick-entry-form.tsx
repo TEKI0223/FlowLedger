@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
+import { ScissorsIcon, StickyNoteIcon } from "lucide-react";
 import {
   createQuickEntryTransaction,
   createTemporaryTransaction,
   type TransactionActionState,
 } from "@/app/actions/transactions";
-import { buttonVariants } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MoneyInput } from "@/components/ui/money-input";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -32,7 +32,6 @@ type QuickEntryFormProps =
       autoFocusAmount?: boolean;
       submitLabel?: string;
       showTemplateEditLink?: boolean;
-      /** 模板主分类 id；非空且类型为 expense/income 时启用拆分。 */
       templateCategoryId?: string | null;
       templateCategoryLabel?: string | null;
       templateType?: "income" | "expense" | "transfer" | "adjustment" | "temporary";
@@ -81,7 +80,6 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
     props.mode === "template" ? (props.showTemplateEditLink ?? true) : false;
   const submitLabel = props.submitLabel ?? (props.mode === "temporary" ? "保存临时记录" : "保存");
 
-  // 仅模板模式 + expense/income + 有主分类 + 有分类列表时启用拆分
   const splitsEnabled =
     props.mode === "template" &&
     !!props.templateCategoryId &&
@@ -89,13 +87,19 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
     !!props.categories &&
     props.categories.length > 0;
 
-  // 旁路同步 amount → tracked，给 SplitsField 算剩余。
-  // 用「prev state 比较 + 渲染阶段 setState」的官方模式同步成功重置，避免 useEffect 的 cascading-render 告警。
+  // 跟踪金额给 SplitsField 算剩余。
   const [trackedAmount, setTrackedAmount] = useState<string>(amountDefault);
+  const [noteOpen, setNoteOpen] = useState(!!noteDefault);
+  const [splitsOpen, setSplitsOpen] = useState(false);
+  const [trackedDate, setTrackedDate] = useState(occurredOnDefault);
+
   const [prevSuccess, setPrevSuccess] = useState(state.success);
   if (state.success !== prevSuccess) {
     setPrevSuccess(state.success);
-    if (state.success) setTrackedAmount("");
+    if (state.success) {
+      setTrackedAmount("");
+      setSplitsOpen(false);
+    }
   }
 
   return (
@@ -103,59 +107,76 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
       {state.success ? <InlineAlert>{state.success}</InlineAlert> : null}
       {state.error ? <InlineAlert tone="danger">{state.error}</InlineAlert> : null}
       <form ref={formRef} action={formAction} className="grid gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="quick-amount">金额</Label>
-          <MoneyInput
-            id="quick-amount"
-            ref={amountInputRef}
-            name="amount"
-            required
-            placeholder={currency === "JPY" ? "1,200" : "38.50"}
-            defaultValue={amountDefault}
-            onChange={splitsEnabled ? (event) => setTrackedAmount(event.target.value) : undefined}
-            className="h-16 text-3xl font-semibold tabular-nums"
+        {/* Hero: 金额（移动优先，最长宽度 100%） */}
+        <div className="grid gap-1 pt-1">
+          <Label htmlFor="quick-amount" className="sr-only">
+            金额
+          </Label>
+          <div className="flex items-baseline justify-center gap-1.5 px-1">
+            <span className="shrink-0 text-base font-medium text-muted-foreground">
+              {currency}
+            </span>
+            <MoneyInput
+              id="quick-amount"
+              ref={amountInputRef}
+              name="amount"
+              required
+              placeholder="0"
+              defaultValue={amountDefault}
+              onChange={(event) => setTrackedAmount(event.target.value)}
+              className={cn(
+                "h-16 min-w-0 max-w-full flex-1 border-none bg-transparent p-0",
+                "text-center text-[2.75rem] font-bold tabular-nums leading-none shadow-none",
+                "focus-visible:ring-0 focus-visible:ring-offset-0",
+              )}
+            />
+          </div>
+        </div>
+
+        {/* 元信息芯片：拆分 > 备注 > 日期（按使用频率从左到右） */}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {splitsEnabled ? (
+            <Chip
+              active={splitsOpen}
+              onClick={() => setSplitsOpen((v) => !v)}
+              icon={<ScissorsIcon className="size-3.5" />}
+            >
+              拆分
+            </Chip>
+          ) : null}
+          <Chip
+            active={noteOpen || !!noteDefault}
+            onClick={() => setNoteOpen((v) => !v)}
+            icon={<StickyNoteIcon className="size-3.5" />}
+          >
+            备注
+          </Chip>
+          <DatePicker
+            name="occurredOn"
+            variant="chip"
+            value={trackedDate}
+            onChange={setTrackedDate}
+            max={todayIsoDate()}
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="grid gap-2">
-            <Label htmlFor="quick-occurredOn">日期</Label>
-            <Input
-              id="quick-occurredOn"
-              name="occurredOn"
-              type="date"
-              required
-              defaultValue={occurredOnDefault}
-              className="h-11 text-base"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="quick-currency">币种</Label>
-            <Input
-              id="quick-currency"
-              value={currency}
-              readOnly
-              aria-label="币种"
-              className="h-11 text-base"
-            />
-          </div>
-        </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="quick-note">备注</Label>
+        {/* 备注（折叠） */}
+        {noteOpen ? (
           <Textarea
             id="quick-note"
             name="note"
-            rows={3}
+            rows={2}
             placeholder={
               props.mode === "template" ? (props.noteHint ?? "可选") : "可选，例如店名或用途"
             }
             defaultValue={noteDefault}
+            autoFocus={!noteDefault}
             className="text-base"
           />
-        </div>
+        ) : null}
 
-        {splitsEnabled && props.mode === "template" ? (
+        {/* 拆分（折叠） */}
+        {splitsEnabled && splitsOpen && props.mode === "template" ? (
           <SplitsField
             totalAmountStr={trackedAmount}
             currency={currency}
@@ -166,23 +187,51 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
         ) : null}
 
         {props.mode === "temporary" ? (
-          <p className="rounded-md border border-dashed border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          <p className="rounded-md border border-dashed border-border bg-muted/40 px-3 py-2 text-center text-xs text-muted-foreground">
             保存为 JPY 支出 · 待补全
           </p>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
-          <SubmitButton>{submitLabel}</SubmitButton>
-          {props.mode === "template" && showTemplateEditLink ? (
-            <Link
-              href={`/templates/${props.templateId}`}
-              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 text-base")}
-            >
-              编辑模板
-            </Link>
-          ) : null}
-        </div>
+        <SubmitButton className="h-12 text-base">{submitLabel}</SubmitButton>
+
+        {props.mode === "template" && showTemplateEditLink ? (
+          <Link
+            href={`/templates/${props.templateId}`}
+            className="text-center text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            编辑模板
+          </Link>
+        ) : null}
       </form>
     </>
   );
 }
+
+function Chip({
+  active,
+  onClick,
+  icon,
+  children,
+}: {
+  active?: boolean;
+  onClick?: () => void;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex h-10 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors",
+        active
+          ? "border-foreground/30 bg-foreground text-background"
+          : "border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+      )}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+}
+
