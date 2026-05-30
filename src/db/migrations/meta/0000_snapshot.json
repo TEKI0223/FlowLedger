@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "578d42bf-1b3a-4222-acb9-dd877f3a8a8e",
+  "id": "24686c3c-459a-49cb-bc08-64842689f57f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "accounts": {
@@ -14,11 +14,25 @@
           "notNull": true,
           "autoincrement": false
         },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "name": {
           "name": "name",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "last_digits": {
+          "name": "last_digits",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "type": {
@@ -103,6 +117,28 @@
           "notNull": false,
           "autoincrement": false
         },
+        "icon_key": {
+          "name": "icon_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "usage_count": {
+          "name": "usage_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "last_used_at": {
+          "name": "last_used_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "text",
@@ -134,6 +170,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "account_id": {
           "name": "account_id",
           "type": "text",
@@ -154,6 +197,14 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "cycle_boundary": {
+          "name": "cycle_boundary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'inclusive'"
         },
         "repayment_account_id": {
           "name": "repayment_account_id",
@@ -191,8 +242,12 @@
           "name": "credit_cards_account_id_accounts_id_fk",
           "tableFrom": "credit_cards",
           "tableTo": "accounts",
-          "columnsFrom": ["account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -200,12 +255,61 @@
           "name": "credit_cards_repayment_account_id_accounts_id_fk",
           "tableFrom": "credit_cards",
           "tableTo": "accounts",
-          "columnsFrom": ["repayment_account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "repayment_account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "exchange_rates": {
+      "name": "exchange_rates",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "from_currency": {
+          "name": "from_currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "to_currency": {
+          "name": "to_currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rate": {
+          "name": "rate",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -217,6 +321,13 @@
           "name": "id",
           "type": "text",
           "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "text",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
@@ -305,8 +416,12 @@
           "name": "installment_plans_original_transaction_id_transactions_id_fk",
           "tableFrom": "installment_plans",
           "tableTo": "transactions",
-          "columnsFrom": ["original_transaction_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "original_transaction_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -325,6 +440,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "name": {
           "name": "name",
           "type": "text",
@@ -332,8 +454,39 @@
           "notNull": true,
           "autoincrement": false
         },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'other'"
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'JPY'"
+        },
         "default_account_id": {
           "name": "default_account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "note": {
+          "name": "note",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -360,8 +513,12 @@
           "name": "payment_methods_default_account_id_accounts_id_fk",
           "tableFrom": "payment_methods",
           "tableTo": "accounts",
-          "columnsFrom": ["default_account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "default_account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -377,6 +534,13 @@
           "name": "id",
           "type": "text",
           "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "text",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
@@ -460,6 +624,21 @@
           "autoincrement": false,
           "default": true
         },
+        "usage_count": {
+          "name": "usage_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "last_used_at": {
+          "name": "last_used_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "text",
@@ -481,8 +660,12 @@
           "name": "quick_entry_templates_category_id_categories_id_fk",
           "tableFrom": "quick_entry_templates",
           "tableTo": "categories",
-          "columnsFrom": ["category_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -490,8 +673,12 @@
           "name": "quick_entry_templates_source_account_id_accounts_id_fk",
           "tableFrom": "quick_entry_templates",
           "tableTo": "accounts",
-          "columnsFrom": ["source_account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "source_account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -499,8 +686,12 @@
           "name": "quick_entry_templates_target_account_id_accounts_id_fk",
           "tableFrom": "quick_entry_templates",
           "tableTo": "accounts",
-          "columnsFrom": ["target_account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "target_account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -508,8 +699,12 @@
           "name": "quick_entry_templates_payment_method_id_payment_methods_id_fk",
           "tableFrom": "quick_entry_templates",
           "tableTo": "payment_methods",
-          "columnsFrom": ["payment_method_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "payment_method_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -525,6 +720,13 @@
           "name": "id",
           "type": "text",
           "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "text",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
@@ -564,6 +766,14 @@
           "notNull": true,
           "autoincrement": false
         },
+        "frequency": {
+          "name": "frequency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'monthly'"
+        },
         "next_date": {
           "name": "next_date",
           "type": "text",
@@ -599,6 +809,21 @@
           "notNull": false,
           "autoincrement": false
         },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
         "created_at": {
           "name": "created_at",
           "type": "text",
@@ -620,8 +845,12 @@
           "name": "recurring_items_category_id_categories_id_fk",
           "tableFrom": "recurring_items",
           "tableTo": "categories",
-          "columnsFrom": ["category_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -629,8 +858,12 @@
           "name": "recurring_items_source_account_id_accounts_id_fk",
           "tableFrom": "recurring_items",
           "tableTo": "accounts",
-          "columnsFrom": ["source_account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "source_account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -638,8 +871,12 @@
           "name": "recurring_items_target_account_id_accounts_id_fk",
           "tableFrom": "recurring_items",
           "tableTo": "accounts",
-          "columnsFrom": ["target_account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "target_account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -647,8 +884,12 @@
           "name": "recurring_items_payment_method_id_payment_methods_id_fk",
           "tableFrom": "recurring_items",
           "tableTo": "payment_methods",
-          "columnsFrom": ["payment_method_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "payment_method_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -667,6 +908,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "original_transaction_id": {
           "name": "original_transaction_id",
           "type": "text",
@@ -680,6 +928,14 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "received_amount_minor": {
+          "name": "received_amount_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         },
         "currency": {
           "name": "currency",
@@ -744,8 +1000,12 @@
           "name": "refund_trackers_original_transaction_id_transactions_id_fk",
           "tableFrom": "refund_trackers",
           "tableTo": "transactions",
-          "columnsFrom": ["original_transaction_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "original_transaction_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -753,8 +1013,12 @@
           "name": "refund_trackers_expected_account_id_accounts_id_fk",
           "tableFrom": "refund_trackers",
           "tableTo": "accounts",
-          "columnsFrom": ["expected_account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "expected_account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -770,6 +1034,13 @@
           "name": "id",
           "type": "text",
           "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "text",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
@@ -836,6 +1107,20 @@
           "notNull": false,
           "autoincrement": false
         },
+        "recurring_item_id": {
+          "name": "recurring_item_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "refund_tracker_id": {
+          "name": "refund_tracker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "include_in_expense_stats": {
           "name": "include_in_expense_stats",
           "type": "integer",
@@ -880,8 +1165,12 @@
           "name": "transactions_category_id_categories_id_fk",
           "tableFrom": "transactions",
           "tableTo": "categories",
-          "columnsFrom": ["category_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -889,8 +1178,12 @@
           "name": "transactions_source_account_id_accounts_id_fk",
           "tableFrom": "transactions",
           "tableTo": "accounts",
-          "columnsFrom": ["source_account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "source_account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -898,8 +1191,12 @@
           "name": "transactions_target_account_id_accounts_id_fk",
           "tableFrom": "transactions",
           "tableTo": "accounts",
-          "columnsFrom": ["target_account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "target_account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -907,13 +1204,63 @@
           "name": "transactions_payment_method_id_payment_methods_id_fk",
           "tableFrom": "transactions",
           "tableTo": "payment_methods",
-          "columnsFrom": ["payment_method_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "payment_method_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "user_preferences": {
+      "name": "user_preferences",
+      "columns": {
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "user_preferences_owner_user_id_key_pk": {
+          "columns": [
+            "owner_user_id",
+            "key"
+          ],
+          "name": "user_preferences_owner_user_id_key_pk"
+        }
+      },
       "uniqueConstraints": {},
       "checkConstraints": {}
     }
