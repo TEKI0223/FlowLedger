@@ -24,9 +24,14 @@ export type CategoryPickerOption = {
 
 type CategoryPickerProps = {
   id?: string;
-  name: string;
+  /** 表单 name；省略则不渲染 hidden input（用于 SplitsField 这类自己序列化的场景）。 */
+  name?: string;
   categories: CategoryPickerOption[];
   defaultValue?: string;
+  /** 受控值。提供则忽略内部状态。 */
+  value?: string;
+  /** 受控变更回调。 */
+  onChange?: (categoryId: string) => void;
   emptyLabel?: string;
 };
 
@@ -40,9 +45,17 @@ export function CategoryPicker({
   name,
   categories,
   defaultValue = "",
+  value,
+  onChange,
   emptyLabel = "无分类",
 }: CategoryPickerProps) {
-  const [selectedId, setSelectedId] = useState(defaultValue);
+  const isControlled = value !== undefined;
+  const [internalSelectedId, setInternalSelectedId] = useState(defaultValue);
+  const selectedId = isControlled ? value : internalSelectedId;
+  const setSelectedId = (next: string) => {
+    if (!isControlled) setInternalSelectedId(next);
+    onChange?.(next);
+  };
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [activeRootLabel, setActiveRootLabel] = useState<string | undefined>();
@@ -69,7 +82,7 @@ export function CategoryPicker({
 
   return (
     <div className="grid gap-2">
-      <input id={id} name={name} type="hidden" value={selectedId} />
+      {name ? <input id={id} name={name} type="hidden" value={selectedId} /> : null}
 
       <div className="flex items-center gap-2">
         <button

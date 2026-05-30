@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import {
   createQuickEntryTransaction,
   createTemporaryTransaction,
@@ -16,6 +16,8 @@ import { MoneyInput } from "@/components/ui/money-input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
 import type { Currency } from "@/domain/finance";
+import type { CategoryPickerOption } from "@/features/categories/category-picker";
+import { SplitsField } from "@/features/transactions/splits-field";
 import { todayIsoDate } from "@/lib/dates";
 
 const initialState: TransactionActionState = {};
@@ -30,6 +32,11 @@ type QuickEntryFormProps =
       autoFocusAmount?: boolean;
       submitLabel?: string;
       showTemplateEditLink?: boolean;
+      /** 模板主分类 id；非空且类型为 expense/income 时启用拆分。 */
+      templateCategoryId?: string | null;
+      templateCategoryLabel?: string | null;
+      templateType?: "income" | "expense" | "transfer" | "adjustment" | "temporary";
+      categories?: CategoryPickerOption[];
     }
   | {
       mode: "temporary";
@@ -74,6 +81,23 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
     props.mode === "template" ? (props.showTemplateEditLink ?? true) : false;
   const submitLabel = props.submitLabel ?? (props.mode === "temporary" ? "保存临时记录" : "保存");
 
+  // 仅模板模式 + expense/income + 有主分类 + 有分类列表时启用拆分
+  const splitsEnabled =
+    props.mode === "template" &&
+    !!props.templateCategoryId &&
+    (props.templateType === "expense" || props.templateType === "income") &&
+    !!props.categories &&
+    props.categories.length > 0;
+
+  // 旁路同步 amount → tracked，给 SplitsField 算剩余。
+  // 用「prev state 比较 + 渲染阶段 setState」的官方模式同步成功重置，避免 useEffect 的 cascading-render 告警。
+  const [trackedAmount, setTrackedAmount] = useState<string>(amountDefault);
+  const [prevSuccess, setPrevSuccess] = useState(state.success);
+  if (state.success !== prevSuccess) {
+    setPrevSuccess(state.success);
+    if (state.success) setTrackedAmount("");
+  }
+
   return (
     <>
       {state.success ? <InlineAlert>{state.success}</InlineAlert> : null}
@@ -88,6 +112,7 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
             required
             placeholder={currency === "JPY" ? "1,200" : "38.50"}
             defaultValue={amountDefault}
+            onChange={splitsEnabled ? (event) => setTrackedAmount(event.target.value) : undefined}
             className="h-16 text-3xl font-semibold tabular-nums"
           />
         </div>
@@ -129,6 +154,16 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
             className="text-base"
           />
         </div>
+
+        {splitsEnabled && props.mode === "template" ? (
+          <SplitsField
+            totalAmountStr={trackedAmount}
+            currency={currency}
+            mainCategoryId={props.templateCategoryId ?? ""}
+            mainCategoryLabel={props.templateCategoryLabel ?? null}
+            categories={props.categories ?? []}
+          />
+        ) : null}
 
         {props.mode === "temporary" ? (
           <p className="rounded-md border border-dashed border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">

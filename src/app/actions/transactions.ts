@@ -17,10 +17,13 @@ import { getQuickEntryTemplate, getTemporaryEntryDefaults } from "@/features/qui
 import { bumpQuickEntryTemplateUsage } from "@/features/quick-entry/service";
 import {
   createTransactionRecord,
+  createTransactionRecords,
   deleteTransactionRecord,
   loadTransaction,
   replaceTransactionRecord,
 } from "@/features/transactions/service";
+import { categories } from "@/db/schema";
+import { parseSplitsJson, validateSplits } from "@/lib/transaction-splits";
 import { todayIsoDate } from "@/lib/dates";
 import { getCurrentUserId } from "@/lib/auth";
 import { normalize, stringField } from "@/lib/form";
@@ -89,8 +92,74 @@ export async function createEntryTransaction(
   const result = await buildTransactionFromForm(formData, crypto.randomUUID());
   if (!result.ok) return { error: result.error, values: result.values };
 
-  await createTransactionRecord(result.transaction);
-  revalidatePaths(transactionPaths(result.transaction.id));
+  const splitsRaw = stringField(formData, "splits");
+  const splits = parseSplitsJson(splitsRaw);
+
+  if (splits.length === 0) {
+    await createTransactionRecord(result.transaction);
+    revalidatePaths(transactionPaths(result.transaction.id));
+    redirect("/entry?saved=1");
+  }
+
+  // 拆分流程：把一笔总额拆成多笔。仅 expense / income 支持。
+  const base = result.transaction;
+  if (base.type !== "expense" && base.type !== "income") {
+    return { error: "拆分仅支持收入或支出", values: extractValues(formData) };
+  }
+
+  const totalMinor = base.money.amountMinor;
+  const currency = base.money.currency;
+  const validation = validateSplits(splits, totalMinor, currency, base.categoryId);
+  if (!validation.ok) {
+    return { error: validation.error, values: extractValues(formData) };
+  }
+
+  // 校验所有用到的 categoryId 真的存在
+  const requiredCategoryIds = new Set<string>(validation.splits.map((s) => s.categoryId));
+  if (base.categoryId && validation.mainAmountMinor > 0) requiredCategoryIds.add(base.categoryId);
+  if (requiredCategoryIds.size > 0) {
+    const found = await db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(inArray(categories.id, Array.from(requiredCategoryIds)));
+    const foundIds = new Set(found.map((row) => row.id));
+    const missing = Array.from(requiredCategoryIds).filter((id) => !foundIds.has(id));
+    if (missing.length > 0) {
+      return {
+        error: `拆分中存在不存在的分类：${missing.join(", ")}`,
+        values: extractValues(formData),
+      };
+    }
+  }
+
+  // 组装 N 笔交易：剩余 > 0 时主分类那笔保留，否则跳过。
+  type Item = Parameters<typeof createTransactionRecords>[0][number];
+  const items: Item[] = [];
+  if (validation.mainAmountMinor > 0) {
+    items.push({
+      transaction: {
+        ...base,
+        money: { amountMinor: validation.mainAmountMinor, currency },
+      },
+    });
+  }
+  for (const split of validation.splits) {
+    items.push({
+      transaction: {
+        ...base,
+        id: crypto.randomUUID(),
+        money: { amountMinor: split.amountMinor, currency },
+        categoryId: split.categoryId,
+      },
+    });
+  }
+
+  await createTransactionRecords(items);
+  const paths = new Set<string>();
+  for (const item of items) {
+    for (const p of transactionPaths(item.transaction.id)) paths.add(p);
+  }
+  revalidatePaths(Array.from(paths));
   redirect("/entry?saved=1");
 }
 
@@ -161,9 +230,74 @@ export async function createQuickEntryTransaction(
   const result = await buildTransactionFromForm(synthetic, crypto.randomUUID());
   if (!result.ok) return { error: result.error, values: extractValues(formData) };
 
-  await createTransactionRecord(result.transaction);
+  const splits = parseSplitsJson(stringField(formData, "splits"));
+
+  if (splits.length === 0) {
+    await createTransactionRecord(result.transaction);
+    await bumpQuickEntryTemplateUsage(template.id);
+    revalidatePaths(transactionPaths(result.transaction.id));
+    redirect("/entry?saved=1");
+  }
+
+  // 拆分流程：仅当模板类型为 expense/income 且模板设了主分类时支持
+  const base = result.transaction;
+  if (base.type !== "expense" && base.type !== "income") {
+    return { error: "拆分仅支持收入或支出", values: extractValues(formData) };
+  }
+  if (!base.categoryId) {
+    return { error: "模板未设置主分类，无法使用拆分", values: extractValues(formData) };
+  }
+
+  const totalMinor = base.money.amountMinor;
+  const currency = base.money.currency;
+  const validation = validateSplits(splits, totalMinor, currency, base.categoryId);
+  if (!validation.ok) {
+    return { error: validation.error, values: extractValues(formData) };
+  }
+
+  // 校验拆分用到的所有 categoryId 存在
+  const requiredCategoryIds = new Set<string>(validation.splits.map((s) => s.categoryId));
+  if (validation.mainAmountMinor > 0) requiredCategoryIds.add(base.categoryId);
+  if (requiredCategoryIds.size > 0) {
+    const found = await db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(inArray(categories.id, Array.from(requiredCategoryIds)));
+    const foundIds = new Set(found.map((row) => row.id));
+    const missing = Array.from(requiredCategoryIds).filter((id) => !foundIds.has(id));
+    if (missing.length > 0) {
+      return {
+        error: `拆分中存在不存在的分类：${missing.join(", ")}`,
+        values: extractValues(formData),
+      };
+    }
+  }
+
+  type Item = Parameters<typeof createTransactionRecords>[0][number];
+  const items: Item[] = [];
+  if (validation.mainAmountMinor > 0) {
+    items.push({
+      transaction: { ...base, money: { amountMinor: validation.mainAmountMinor, currency } },
+    });
+  }
+  for (const split of validation.splits) {
+    items.push({
+      transaction: {
+        ...base,
+        id: crypto.randomUUID(),
+        money: { amountMinor: split.amountMinor, currency },
+        categoryId: split.categoryId,
+      },
+    });
+  }
+
+  await createTransactionRecords(items);
   await bumpQuickEntryTemplateUsage(template.id);
-  revalidatePaths(transactionPaths(result.transaction.id));
+  const paths = new Set<string>();
+  for (const item of items) {
+    for (const p of transactionPaths(item.transaction.id)) paths.add(p);
+  }
+  revalidatePaths(Array.from(paths));
   redirect("/entry?saved=1");
 }
 

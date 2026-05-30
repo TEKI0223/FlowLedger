@@ -19,6 +19,8 @@ export function toQuickEntryModalTemplate(
     typeLabel: transactionTypeLabels[template.type],
     type: template.type,
     currency: template.currency,
+    categoryId: template.categoryId ?? null,
+    categoryLabel: template.category?.label ?? null,
   };
 }
 

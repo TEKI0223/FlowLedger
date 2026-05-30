@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ActionTile, type ActionTileTheme } from "@/components/ui/action-tile";
+import type { CategoryPickerOption } from "@/features/categories/category-picker";
 import { QuickEntryForm } from "./quick-entry-form";
 
 export type QuickEntryModalTemplate = {
@@ -24,13 +25,19 @@ export type QuickEntryModalTemplate = {
   typeLabel: string;
   type: "income" | "expense" | "transfer" | "adjustment" | "temporary";
   currency: "JPY" | "CNY";
+  /** 模板主分类 id（用于拆分校验、剩余金额归属）。null 表示模板未设分类。 */
+  categoryId?: string | null;
+  /** 主分类 label（"食材"/"外食/咖啡"），用于剩余金额提示。 */
+  categoryLabel?: string | null;
 };
 
 type QuickEntryModalProps = {
   templates: QuickEntryModalTemplate[];
+  /** 所有可用分类，用于拆分时的 CategoryPicker。 */
+  categories?: CategoryPickerOption[];
 };
 
-export function QuickEntryModal({ templates }: QuickEntryModalProps) {
+export function QuickEntryModal({ templates, categories = [] }: QuickEntryModalProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<QuickEntryModalTemplate | null>(null);
 
   return (
@@ -78,6 +85,10 @@ export function QuickEntryModal({ templates }: QuickEntryModalProps) {
                   currency={selectedTemplate.currency}
                   amountDefault={selectedTemplate.amountDefault}
                   autoFocusAmount
+                  templateType={selectedTemplate.type}
+                  templateCategoryId={selectedTemplate.categoryId ?? null}
+                  templateCategoryLabel={selectedTemplate.categoryLabel ?? null}
+                  categories={categories}
                 />
               )}
             </>

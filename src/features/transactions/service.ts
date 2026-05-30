@@ -54,37 +54,52 @@ export async function createTransactionRecord(
   transaction: Transaction,
   extras: CreateTransactionExtras = {},
 ): Promise<void> {
+  return createTransactionRecords([{ transaction, extras }]);
+}
+
+/**
+ * 批量写多笔交易：所有写操作放在同一个 DB 事务里，全部成功或全部回滚。
+ * 用于拆分场景（一张小票一次性写 N 笔）。
+ */
+export async function createTransactionRecords(
+  items: Array<{ transaction: Transaction; extras?: CreateTransactionExtras }>,
+): Promise<void> {
+  if (items.length === 0) return;
   const ownerUserId = await getCurrentUserId();
   const timestamp = nowIso();
-  const includeInExpenseStats = extras.includeInExpenseStats ?? transaction.type === "expense";
-  const includeInCashflowStats = extras.includeInCashflowStats ?? transaction.type !== "adjustment";
 
   await db.transaction(async (tx) => {
-    await tx
-      .insert(transactions)
-      .values({
-        id: transaction.id,
-        ownerUserId,
-        occurredOn: transaction.occurredOn,
-        type: transaction.type,
-        amountMinor: transaction.money.amountMinor,
-        currency: transaction.money.currency,
-        categoryId: transaction.categoryId,
-        sourceAccountId: transaction.sourceAccountId,
-        targetAccountId: transaction.targetAccountId,
-        paymentMethodId: transaction.paymentMethodId,
-        recurringItemId: extras.recurringItemId ?? null,
-        refundTrackerId: extras.refundTrackerId ?? null,
-        includeInExpenseStats,
-        includeInCashflowStats,
-        note: transaction.note,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      })
-      .run();
+    for (const { transaction, extras = {} } of items) {
+      const includeInExpenseStats = extras.includeInExpenseStats ?? transaction.type === "expense";
+      const includeInCashflowStats =
+        extras.includeInCashflowStats ?? transaction.type !== "adjustment";
 
-    await applyBalanceImpacts(tx, getTransactionBalanceImpacts(transaction), timestamp);
-    await applyCategoryUsageDelta(tx, transaction.categoryId, 1, timestamp);
+      await tx
+        .insert(transactions)
+        .values({
+          id: transaction.id,
+          ownerUserId,
+          occurredOn: transaction.occurredOn,
+          type: transaction.type,
+          amountMinor: transaction.money.amountMinor,
+          currency: transaction.money.currency,
+          categoryId: transaction.categoryId,
+          sourceAccountId: transaction.sourceAccountId,
+          targetAccountId: transaction.targetAccountId,
+          paymentMethodId: transaction.paymentMethodId,
+          recurringItemId: extras.recurringItemId ?? null,
+          refundTrackerId: extras.refundTrackerId ?? null,
+          includeInExpenseStats,
+          includeInCashflowStats,
+          note: transaction.note,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        })
+        .run();
+
+      await applyBalanceImpacts(tx, getTransactionBalanceImpacts(transaction), timestamp);
+      await applyCategoryUsageDelta(tx, transaction.categoryId, 1, timestamp);
+    }
   });
 }
 

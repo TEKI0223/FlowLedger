@@ -21,6 +21,7 @@ import {
 } from "@/domain/finance";
 import { formatAccountName } from "@/features/accounts/labels";
 import { CategoryPicker, type CategoryPickerOption } from "@/features/categories/category-picker";
+import { SplitsField } from "@/features/transactions/splits-field";
 import { todayIsoDate } from "@/lib/dates";
 
 const initialState: TransactionActionState = {};
@@ -61,6 +62,11 @@ type TransactionFormProps = {
    * "edit"：编辑已有交易（adjustment 保留传统的差额输入）
    */
   mode?: "create" | "edit";
+  /**
+   * 是否允许把总额拆分到其他分类（保存为多笔交易）。
+   * 只在 create + expense/income 时实际渲染；edit/transfer/adjustment 永远 false。
+   */
+  allowSplits?: boolean;
 };
 
 const accountFieldsByType: Record<
@@ -101,6 +107,7 @@ export function TransactionForm({
   id,
   hideSubmit = false,
   mode = "create",
+  allowSplits = false,
 }: TransactionFormProps) {
   const [state, formAction] = useActionState<TransactionActionState, FormData>(
     action,
@@ -125,6 +132,15 @@ export function TransactionForm({
 
   const [targetBalance, setTargetBalance] = useState<string>("");
 
+  // 仅 allowSplits 时观察金额 / 分类的实时值，喂给 SplitsField 计算剩余。
+  // 输入框本身仍是非受控（defaultValue），通过 onChange 旁路同步到这里。
+  const [trackedAmount, setTrackedAmount] = useState<string>(
+    values?.amount ?? defaults.amount ?? "",
+  );
+  const [trackedCategoryId, setTrackedCategoryId] = useState<string>(
+    values?.categoryId ?? defaults.categoryId ?? "",
+  );
+
   // 「按 props/state 变化反向同步本地状态」的 React 官方模式（render 阶段调用 setState）：
   // 每次 action 返回新的 state.values（错误回填），把已返回的值复制到本地受控状态。
   // 用 prevState 标记避免无限循环。
@@ -138,12 +154,16 @@ export function TransactionForm({
       if (v.currency) setCurrency(v.currency as Currency);
       if (v.sourceAccountId !== undefined) setSourceAccountId(v.sourceAccountId);
       if (v.targetAccountId !== undefined) setTargetAccountId(v.targetAccountId);
+      if (v.amount !== undefined) setTrackedAmount(v.amount);
+      if (v.categoryId !== undefined) setTrackedCategoryId(v.categoryId);
     } else if (state.success) {
       setType(defaults.type);
       setCurrency(defaults.currency);
       setSourceAccountId(defaults.sourceAccountId ?? "");
       setTargetAccountId(defaults.targetAccountId ?? "");
       setTargetBalance("");
+      setTrackedAmount(defaults.amount ?? "");
+      setTrackedCategoryId(defaults.categoryId ?? "");
     }
   }
 
@@ -280,6 +300,7 @@ export function TransactionForm({
                 required
                 placeholder="例如：1,200"
                 defaultValue={values?.amount ?? defaults.amount ?? ""}
+                onChange={(event) => setTrackedAmount(event.target.value)}
                 className="h-12 text-xl font-semibold tabular-nums"
               />
               {type === "adjustment" ? (
@@ -320,8 +341,21 @@ export function TransactionForm({
               name="categoryId"
               categories={lookups.categories}
               defaultValue={values?.categoryId ?? defaults.categoryId ?? ""}
+              onChange={setTrackedCategoryId}
             />
           </div>
+        ) : null}
+
+        {allowSplits && mode === "create" && (type === "expense" || type === "income") ? (
+          <SplitsField
+            totalAmountStr={trackedAmount}
+            currency={currency}
+            mainCategoryId={trackedCategoryId}
+            mainCategoryLabel={
+              lookups.categories.find((c) => c.id === trackedCategoryId)?.label ?? null
+            }
+            categories={lookups.categories}
+          />
         ) : null}
 
         {fieldConfig.showSource ? (

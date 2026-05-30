@@ -76,7 +76,10 @@ export default async function EntryPage({ searchParams }: EntryPageProps) {
           </Link>
           {/* AI 拍照入口暂时隐藏（功能保留，可通过 /entry/photo 直接访问）。
               理由：单一分类小票用快捷模板更快；混合小票要等"拆分"UX 上线后再决定怎么接 AI。 */}
-          <QuickEntryModal templates={quickEntryModalTemplates} />
+          <QuickEntryModal
+            templates={quickEntryModalTemplates}
+            categories={lookups.categories}
+          />
         </section>
       ) : null}
 
@@ -96,6 +99,7 @@ export default async function EntryPage({ searchParams }: EntryPageProps) {
                   currency: "JPY",
                 }}
                 submitLabel="保存交易"
+                allowSplits
               />
             </CardContent>
           </Card>
