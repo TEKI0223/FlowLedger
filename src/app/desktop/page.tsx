@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getEffectiveRecurringDate } from "@/domain/date-shift";
 import {
   accountTypeLabels,
   formatMoney,
@@ -451,7 +452,7 @@ function WorkQueue({
       href: `/recurring/${item.id}`,
       icon: RepeatIcon,
       title: item.name,
-      meta: `周期项目 · ${item.nextDate}`,
+      meta: `周期项目 · ${getEffectiveRecurringDate(item)}`,
       amount:
         item.amountMinor === null
           ? "金额待确认"

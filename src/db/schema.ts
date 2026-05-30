@@ -114,10 +114,15 @@ export const recurringItems = sqliteTable("recurring_items", {
   amountMinor: integer("amount_minor"),
   amountFixed: integer("amount_fixed", { mode: "boolean" }).notNull().default(false),
   currency: text("currency", { enum: ["JPY", "CNY"] }).notNull(),
-  frequency: text("frequency", { enum: ["monthly", "weekly", "yearly"] })
+  frequency: text("frequency", { enum: ["weekly", "monthly", "bimonthly", "yearly"] })
     .notNull()
     .default("monthly"),
   nextDate: text("next_date").notNull(),
+  dateShiftPolicy: text("date_shift_policy", {
+    enum: ["auto", "none", "previous", "next"],
+  })
+    .notNull()
+    .default("auto"),
   categoryId: text("category_id").references(() => categories.id),
   sourceAccountId: text("source_account_id").references(() => accounts.id),
   targetAccountId: text("target_account_id").references(() => accounts.id),

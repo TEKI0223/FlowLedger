@@ -10,10 +10,21 @@ import { MoneyInput } from "@/components/ui/money-input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  adjustToBusinessDay,
+  dateShiftPolicies,
+  dateShiftPolicyLabels,
+  resolveShiftDirection,
+  type DateShiftPolicy,
+} from "@/domain/date-shift";
 import { currencies, currencyLabels, type Currency } from "@/domain/finance";
 import { formatAccountName } from "@/features/accounts/labels";
 import { CategoryPicker, type CategoryPickerOption } from "@/features/categories/category-picker";
-import { recurringFrequencies, recurringFrequencyLabels } from "@/domain/recurring";
+import {
+  recurringFrequencies,
+  recurringFrequencyLabels,
+  type RecurringFrequency,
+} from "@/domain/recurring";
 import { todayIsoDate } from "@/lib/dates";
 
 const initialState: RecurringActionState = {};
@@ -38,8 +49,9 @@ type Defaults = {
   amount?: string;
   amountFixed?: boolean;
   currency?: Currency;
-  frequency?: "monthly" | "weekly" | "yearly";
+  frequency?: RecurringFrequency;
   nextDate?: string;
+  dateShiftPolicy?: DateShiftPolicy;
   categoryId?: string;
   sourceAccountId?: string;
   targetAccountId?: string;
@@ -94,7 +106,22 @@ export function RecurringForm({ action, lookups, defaults = {}, submitLabel }: R
     values?.targetAccountId ?? defaults.targetAccountId ?? "",
   );
 
+  const initialNextDate = values?.nextDate ?? defaults.nextDate ?? todayIsoDate();
+  const initialShiftPolicy =
+    (values?.dateShiftPolicy as DateShiftPolicy | undefined) ?? defaults.dateShiftPolicy ?? "auto";
+  const [nextDate, setNextDate] = useState<string>(initialNextDate);
+  const [shiftPolicy, setShiftPolicy] = useState<DateShiftPolicy>(initialShiftPolicy);
+
   const fieldConfig = accountFieldsByType[type];
+
+  const shiftDirection = resolveShiftDirection(type, shiftPolicy);
+  const adjustedDate = nextDate ? adjustToBusinessDay(nextDate, shiftDirection) : nextDate;
+  const shiftHint =
+    nextDate && adjustedDate !== nextDate
+      ? `遇到周末/祝日时实际记账日为 ${adjustedDate}`
+      : shiftDirection === "none"
+        ? "周末/祝日不会被调整"
+        : null;
 
   function handlePaymentMethodChange(event: React.ChangeEvent<HTMLSelectElement>) {
     const newPmId = event.target.value;
@@ -193,15 +220,34 @@ export function RecurringForm({ action, lookups, defaults = {}, submitLabel }: R
           <span>固定金额（变动金额请留空 → 确认时再填）</span>
         </label>
 
-        <div className="grid gap-2">
-          <Label htmlFor="nextDate">下次发生日期</Label>
-          <DatePicker
-            id="nextDate"
-            name="nextDate"
-            required
-            defaultValue={values?.nextDate ?? defaults.nextDate ?? todayIsoDate()}
-          />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid gap-2">
+            <Label htmlFor="nextDate">下次发生日期</Label>
+            <DatePicker
+              id="nextDate"
+              name="nextDate"
+              required
+              value={nextDate}
+              onChange={(next) => setNextDate(next)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="dateShiftPolicy">遇周末/祝日</Label>
+            <NativeSelect
+              id="dateShiftPolicy"
+              name="dateShiftPolicy"
+              value={shiftPolicy}
+              onChange={(event) => setShiftPolicy(event.target.value as DateShiftPolicy)}
+            >
+              {dateShiftPolicies.map((policy) => (
+                <option value={policy} key={policy}>
+                  {dateShiftPolicyLabels[policy]}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
         </div>
+        {shiftHint ? <p className="-mt-2 text-xs text-muted-foreground">{shiftHint}</p> : null}
 
         <div className="grid gap-2">
           <Label htmlFor="categoryId">分类</Label>

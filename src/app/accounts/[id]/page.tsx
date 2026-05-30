@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MetricCell } from "@/components/ui/metric-cell";
+import { getEffectiveRecurringDate } from "@/domain/date-shift";
 import {
   accountTypeLabels,
   currencyLabels,
@@ -144,7 +145,8 @@ export default async function AccountDetailPage({ params }: AccountDetailPagePro
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    应于 {item.nextDate} · {item.direction === "in" ? "流入" : "流出"}
+                    应于 {getEffectiveRecurringDate(item)} ·{" "}
+                    {item.direction === "in" ? "流入" : "流出"}
                   </p>
                 </div>
                 <Link

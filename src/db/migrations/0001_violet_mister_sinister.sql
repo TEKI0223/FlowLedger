@@ -1,0 +1,1 @@
+ALTER TABLE `recurring_items` ADD `date_shift_policy` text DEFAULT 'auto' NOT NULL;

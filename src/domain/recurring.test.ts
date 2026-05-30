@@ -12,6 +12,16 @@ describe("getNextOccurrence", () => {
     expect(getNextOccurrence("2024-01-31", "monthly")).toBe("2024-02-29");
   });
 
+  it("advances bimonthly by 2 months", () => {
+    expect(getNextOccurrence("2026-01-15", "bimonthly")).toBe("2026-03-15");
+    expect(getNextOccurrence("2026-11-30", "bimonthly")).toBe("2027-01-30");
+  });
+
+  it("clamps month-end correctly for bimonthly", () => {
+    // 2026-12-31 + 2 months => 2027-02-28
+    expect(getNextOccurrence("2026-12-31", "bimonthly")).toBe("2027-02-28");
+  });
+
   it("advances weekly by 7 days", () => {
     expect(getNextOccurrence("2026-05-01", "weekly")).toBe("2026-05-08");
     expect(getNextOccurrence("2026-12-28", "weekly")).toBe("2027-01-04");

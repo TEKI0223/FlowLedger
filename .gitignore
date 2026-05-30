@@ -10,3 +10,5 @@ coverage
 *.db-shm
 *.db-wal
 data/
+tsconfig.tsbuildinfo
+todo.md

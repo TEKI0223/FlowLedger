@@ -1,20 +1,27 @@
 import dayjs, { type ManipulateType } from "dayjs";
+import {
+  getEffectiveRecurringDate,
+  type DateShiftPolicy,
+  type ShiftableRecurringType,
+} from "@/domain/date-shift";
 import { ISO_DATE, todayIsoDate } from "@/lib/dates";
 
-export const recurringFrequencies = ["monthly", "weekly", "yearly"] as const;
+export const recurringFrequencies = ["weekly", "monthly", "bimonthly", "yearly"] as const;
 
 export type RecurringFrequency = (typeof recurringFrequencies)[number];
 
 export const recurringFrequencyLabels: Record<RecurringFrequency, string> = {
   monthly: "每月",
   weekly: "每周",
+  bimonthly: "每两月",
   yearly: "每年",
 };
 
-const frequencyUnit: Record<RecurringFrequency, ManipulateType> = {
-  monthly: "month",
-  weekly: "week",
-  yearly: "year",
+const frequencyStep: Record<RecurringFrequency, { amount: number; unit: ManipulateType }> = {
+  weekly: { amount: 1, unit: "week" },
+  monthly: { amount: 1, unit: "month" },
+  bimonthly: { amount: 2, unit: "month" },
+  yearly: { amount: 1, unit: "year" },
 };
 
 /**
@@ -25,7 +32,8 @@ const frequencyUnit: Record<RecurringFrequency, ManipulateType> = {
  *  - 2024-02-29 + yearly  => 2025-02-28
  */
 export function getNextOccurrence(currentDate: string, frequency: RecurringFrequency): string {
-  return dayjs(currentDate).add(1, frequencyUnit[frequency]).format(ISO_DATE);
+  const step = frequencyStep[frequency];
+  return dayjs(currentDate).add(step.amount, step.unit).format(ISO_DATE);
 }
 
 /**
@@ -33,4 +41,19 @@ export function getNextOccurrence(currentDate: string, frequency: RecurringFrequ
  */
 export function isRecurringPending(nextDate: string, today: string = todayIsoDate()): boolean {
   return !dayjs(nextDate).isAfter(dayjs(today));
+}
+
+/**
+ * 按调整后的实际营业日判断周期项是否待确认。
+ * UI / 服务层应优先使用这个函数而不是原始 `isRecurringPending`。
+ */
+export function isRecurringItemPending(
+  item: {
+    type: ShiftableRecurringType;
+    nextDate: string;
+    dateShiftPolicy: DateShiftPolicy;
+  },
+  today: string = todayIsoDate(),
+): boolean {
+  return isRecurringPending(getEffectiveRecurringDate(item), today);
 }

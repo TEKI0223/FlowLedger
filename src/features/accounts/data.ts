@@ -1,7 +1,8 @@
 import { and, asc, desc, eq, gte, inArray, lt, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, categories, paymentMethods, recurringItems, transactions } from "@/db/schema";
-import { todayIsoDate } from "@/lib/dates";
+import { getEffectiveRecurringDate } from "@/domain/date-shift";
+import { addDays, todayIsoDate } from "@/lib/dates";
 import { getCurrentUserId } from "@/lib/auth";
 
 type AccountRow = typeof accounts.$inferSelect;
@@ -49,6 +50,7 @@ export type AccountPendingRecurring = {
   name: string;
   type: typeof recurringItems.$inferSelect.type;
   nextDate: string;
+  dateShiftPolicy: typeof recurringItems.$inferSelect.dateShiftPolicy;
   amountMinor: number | null;
   currency: typeof recurringItems.$inferSelect.currency;
   /** "in" 表示对该账户是流入，"out" 是流出 */
@@ -117,7 +119,7 @@ export async function getAccountDetail(id: string) {
           eq(recurringItems.enabled, true),
           eq(recurringItems.ownerUserId, ownerUserId),
           or(eq(recurringItems.sourceAccountId, id), eq(recurringItems.targetAccountId, id)),
-          lte(recurringItems.nextDate, today),
+          lte(recurringItems.nextDate, addDays(today, 14)),
         ),
       )
       .orderBy(asc(recurringItems.nextDate)),
@@ -189,15 +191,18 @@ export async function getAccountDetail(id: string) {
     };
   });
 
-  const pending: AccountPendingRecurring[] = pendingRows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    type: row.type,
-    nextDate: row.nextDate,
-    amountMinor: row.amountMinor,
-    currency: row.currency,
-    direction: row.targetAccountId === id ? "in" : "out",
-  }));
+  const pending: AccountPendingRecurring[] = pendingRows
+    .filter((row) => getEffectiveRecurringDate(row) <= today)
+    .map((row) => ({
+      id: row.id,
+      name: row.name,
+      type: row.type,
+      nextDate: row.nextDate,
+      dateShiftPolicy: row.dateShiftPolicy,
+      amountMinor: row.amountMinor,
+      currency: row.currency,
+      direction: row.targetAccountId === id ? "in" : "out",
+    }));
 
   return {
     account,

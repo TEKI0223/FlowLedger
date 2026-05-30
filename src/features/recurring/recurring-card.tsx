@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ArrowRightIcon, RepeatIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { getEffectiveRecurringDate } from "@/domain/date-shift";
 import { formatMoney, transactionTypeLabels } from "@/domain/finance";
-import { isRecurringPending, recurringFrequencyLabels } from "@/domain/recurring";
+import { isRecurringItemPending, recurringFrequencyLabels } from "@/domain/recurring";
 import { CategoryIconLabel } from "@/features/categories/category-icon-label";
 import type { HydratedRecurringItem } from "./data";
 
@@ -11,7 +12,9 @@ type RecurringCardProps = {
 };
 
 export function RecurringCard({ item }: RecurringCardProps) {
-  const pending = item.enabled && isRecurringPending(item.nextDate);
+  const effectiveDate = getEffectiveRecurringDate(item);
+  const shifted = effectiveDate !== item.nextDate;
+  const pending = item.enabled && isRecurringItemPending(item);
   const accountLabel =
     item.sourceAccount && item.targetAccount
       ? `${item.sourceAccount.name} - ${item.targetAccount.name}`
@@ -42,10 +45,15 @@ export function RecurringCard({ item }: RecurringCardProps) {
           ) : null}
         </div>
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-          <span className="shrink-0 tabular-nums">下次 {item.nextDate}</span>
+          <span className="shrink-0 tabular-nums">
+            下次 {effectiveDate}
+            {shifted ? (
+              <span className="text-muted-foreground/70"> · 原 {item.nextDate}</span>
+            ) : null}
+          </span>
           {item.category ? (
             <CategoryIconLabel
-              iconKey={item.category.iconKey}
+              iconKey={item.category.resolvedIconKey}
               name={item.category.name}
               className="max-w-full"
               iconContainerClassName="size-5 rounded-sm"

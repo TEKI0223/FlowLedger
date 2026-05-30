@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { recurringItems, transactions } from "@/db/schema";
+import { type DateShiftPolicy } from "@/domain/date-shift";
 import { getTransactionBalanceImpacts, type Currency, type Transaction } from "@/domain/finance";
 import { getNextOccurrence, type RecurringFrequency } from "@/domain/recurring";
 import { applyBalanceImpacts } from "@/features/transactions/service";
@@ -15,6 +16,7 @@ export type RecurringInput = {
   currency: Currency;
   frequency: RecurringFrequency;
   nextDate: string;
+  dateShiftPolicy: DateShiftPolicy;
   categoryId?: string;
   sourceAccountId?: string;
   targetAccountId?: string;
@@ -40,6 +42,7 @@ export async function createRecurringItemRecord(input: RecurringInput): Promise<
       currency: input.currency,
       frequency: input.frequency,
       nextDate: input.nextDate,
+      dateShiftPolicy: input.dateShiftPolicy,
       categoryId: input.categoryId,
       sourceAccountId: input.sourceAccountId,
       targetAccountId: input.targetAccountId,
@@ -66,6 +69,7 @@ export async function updateRecurringItemRecord(id: string, input: RecurringInpu
       currency: input.currency,
       frequency: input.frequency,
       nextDate: input.nextDate,
+      dateShiftPolicy: input.dateShiftPolicy,
       categoryId: input.categoryId,
       sourceAccountId: input.sourceAccountId,
       targetAccountId: input.targetAccountId,

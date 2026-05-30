@@ -3,6 +3,7 @@ import { DeleteRecurringButton } from "../delete-recurring-button";
 import { RecurringForm } from "../recurring-form";
 import { updateRecurringItem } from "@/app/actions/recurring";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getEffectiveRecurringDate } from "@/domain/date-shift";
 import { formatMinorForInput } from "@/domain/finance";
 import { getTransactionLookups } from "@/features/lookups/data";
 import { getRecurringItem } from "@/features/recurring/data";
@@ -28,6 +29,7 @@ export default async function RecurringEditPage({ params }: RecurringEditPagePro
     item.amountMinor === null
       ? ""
       : formatMinorForInput({ amountMinor: item.amountMinor, currency: item.currency });
+  const effectiveDate = getEffectiveRecurringDate(item);
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
@@ -37,7 +39,10 @@ export default async function RecurringEditPage({ params }: RecurringEditPagePro
 
           <DeleteRecurringButton id={item.id} name={item.name} />
         </div>
-        <p className="text-sm text-muted-foreground">下次发生日期：{item.nextDate}</p>
+        <p className="text-sm text-muted-foreground">
+          下次发生日期：{effectiveDate}
+          {effectiveDate !== item.nextDate ? `（原 ${item.nextDate}，已按非营业日调整）` : null}
+        </p>
       </header>
 
       <Card>
@@ -62,6 +67,7 @@ export default async function RecurringEditPage({ params }: RecurringEditPagePro
               paymentMethodId: item.paymentMethodId ?? undefined,
               note: item.note ?? undefined,
               enabled: item.enabled,
+              dateShiftPolicy: item.dateShiftPolicy,
             }}
             submitLabel="保存修改"
           />

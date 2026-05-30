@@ -141,6 +141,9 @@ export function TransactionForm({
     values?.categoryId ?? defaults.categoryId ?? "",
   );
 
+  // 拆分默认折叠：避免页面一打开就跳出 CategoryPicker 对话框
+  const [splitsOpen, setSplitsOpen] = useState(false);
+
   // 「按 props/state 变化反向同步本地状态」的 React 官方模式（render 阶段调用 setState）：
   // 每次 action 返回新的 state.values（错误回填），把已返回的值复制到本地受控状态。
   // 用 prevState 标记避免无限循环。
@@ -345,15 +348,27 @@ export function TransactionForm({
         ) : null}
 
         {allowSplits && mode === "create" && (type === "expense" || type === "income") ? (
-          <SplitsField
-            totalAmountStr={trackedAmount}
-            currency={currency}
-            mainCategoryId={trackedCategoryId}
-            mainCategoryLabel={
-              lookups.categories.find((c) => c.id === trackedCategoryId)?.label ?? null
-            }
-            categories={lookups.categories}
-          />
+          <div className="grid gap-2">
+            {splitsOpen ? (
+              <SplitsField
+                totalAmountStr={trackedAmount}
+                currency={currency}
+                mainCategoryId={trackedCategoryId}
+                mainCategoryLabel={
+                  lookups.categories.find((c) => c.id === trackedCategoryId)?.label ?? null
+                }
+                categories={lookups.categories}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSplitsOpen(true)}
+                className="inline-flex h-9 w-fit items-center gap-1 self-start rounded-full px-3 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                + 拆分一部分到其他分类
+              </button>
+            )}
+          </div>
         ) : null}
 
         {fieldConfig.showSource ? (

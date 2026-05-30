@@ -4,6 +4,7 @@ import { ConfirmRecurringForm } from "./confirm-recurring-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
+import { getEffectiveRecurringDate } from "@/domain/date-shift";
 import { formatMinorForInput, transactionTypeLabels } from "@/domain/finance";
 import { recurringFrequencyLabels } from "@/domain/recurring";
 import { listPendingRecurringItems } from "@/features/recurring/data";
@@ -51,6 +52,8 @@ export default async function RecurringPendingPage({ searchParams }: PendingPage
                     amountMinor: item.amountMinor,
                     currency: item.currency,
                   });
+            const effectiveDate = getEffectiveRecurringDate(item);
+            const shifted = effectiveDate !== item.nextDate;
 
             return (
               <Card key={item.id}>
@@ -67,7 +70,8 @@ export default async function RecurringPendingPage({ searchParams }: PendingPage
                   </CardTitle>
                   <p className="flex items-center gap-1 text-xs text-muted-foreground">
                     <CalendarIcon className="size-3" />
-                    应于 {item.nextDate}
+                    应于 {effectiveDate}
+                    {shifted ? `（原 ${item.nextDate}）` : ""}
                     {item.category ? ` · ${item.category.name}` : ""}
                     {item.sourceAccount ? ` · ${item.sourceAccount.name}` : ""}
                     {item.targetAccount ? ` → ${item.targetAccount.name}` : ""}
@@ -77,7 +81,7 @@ export default async function RecurringPendingPage({ searchParams }: PendingPage
                 <CardContent>
                   <ConfirmRecurringForm
                     itemId={item.id}
-                    occurredOnDefault={item.nextDate}
+                    occurredOnDefault={effectiveDate}
                     amountDefault={amountDefault}
                     amountFixed={item.amountFixed}
                     noteDefault={item.note ?? ""}

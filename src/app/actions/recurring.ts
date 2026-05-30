@@ -5,6 +5,7 @@ import { z } from "zod";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, recurringItems } from "@/db/schema";
+import { dateShiftPolicies, getEffectiveRecurringDate } from "@/domain/date-shift";
 import { currencies, parseMoneyToMinor, type Currency, type Transaction } from "@/domain/finance";
 import { recurringFrequencies } from "@/domain/recurring";
 import {
@@ -27,6 +28,7 @@ const recurringSchema = z
     currency: z.enum(currencies),
     frequency: z.enum(recurringFrequencies),
     nextDate: z.string().trim().min(1, "请选择下次发生日期"),
+    dateShiftPolicy: z.enum(dateShiftPolicies),
     categoryId: z.string().trim().optional(),
     sourceAccountId: z.string().trim().optional(),
     targetAccountId: z.string().trim().optional(),
@@ -52,6 +54,7 @@ export type RecurringFormValues = {
   currency?: string;
   frequency?: string;
   nextDate?: string;
+  dateShiftPolicy?: string;
   categoryId?: string;
   sourceAccountId?: string;
   targetAccountId?: string;
@@ -74,6 +77,7 @@ function extract(formData: FormData): RecurringFormValues {
     currency: field(formData, "currency"),
     frequency: field(formData, "frequency"),
     nextDate: field(formData, "nextDate"),
+    dateShiftPolicy: field(formData, "dateShiftPolicy") ?? "auto",
     categoryId: field(formData, "categoryId"),
     sourceAccountId: field(formData, "sourceAccountId"),
     targetAccountId: field(formData, "targetAccountId"),
@@ -114,6 +118,7 @@ export async function createRecurringItem(
     currency: values.currency,
     frequency: values.frequency,
     nextDate: values.nextDate,
+    dateShiftPolicy: values.dateShiftPolicy,
     categoryId: normalize(values.categoryId),
     sourceAccountId: normalize(values.sourceAccountId),
     targetAccountId: normalize(values.targetAccountId),
@@ -138,6 +143,7 @@ export async function createRecurringItem(
     currency: parsed.currency,
     frequency: parsed.frequency,
     nextDate: parsed.nextDate,
+    dateShiftPolicy: parsed.dateShiftPolicy,
     categoryId: parsed.categoryId,
     sourceAccountId: parsed.sourceAccountId,
     targetAccountId: parsed.targetAccountId,
@@ -165,6 +171,7 @@ export async function updateRecurringItem(
     currency: values.currency,
     frequency: values.frequency,
     nextDate: values.nextDate,
+    dateShiftPolicy: values.dateShiftPolicy,
     categoryId: normalize(values.categoryId),
     sourceAccountId: normalize(values.sourceAccountId),
     targetAccountId: normalize(values.targetAccountId),
@@ -189,6 +196,7 @@ export async function updateRecurringItem(
     currency: parsed.currency,
     frequency: parsed.frequency,
     nextDate: parsed.nextDate,
+    dateShiftPolicy: parsed.dateShiftPolicy,
     categoryId: parsed.categoryId,
     sourceAccountId: parsed.sourceAccountId,
     targetAccountId: parsed.targetAccountId,
@@ -267,7 +275,7 @@ export async function confirmRecurringItem(
     return { error: error instanceof Error ? error.message : "账户配置不完整", values };
   }
 
-  const occurredOn = normalize(values.occurredOn) ?? row.nextDate;
+  const occurredOn = normalize(values.occurredOn) ?? getEffectiveRecurringDate(row);
   const note = normalize(values.note) ?? row.note ?? undefined;
 
   const transaction: Transaction = {
