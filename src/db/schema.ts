@@ -1,4 +1,4 @@
-import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, primaryKey, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const accounts = sqliteTable("accounts", {
   id: text("id").primaryKey(),
@@ -153,6 +153,17 @@ export const exchangeRates = sqliteTable("exchange_rates", {
   rate: real("rate").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
+
+export const userPreferences = sqliteTable(
+  "user_preferences",
+  {
+    ownerUserId: text("owner_user_id").notNull(),
+    key: text("key").notNull(),
+    value: text("value").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.ownerUserId, table.key] })],
+);
 
 export const installmentPlans = sqliteTable("installment_plans", {
   id: text("id").primaryKey(),

@@ -71,6 +71,13 @@ const manageItems = [
     href: "/manage/rates",
     icon: SettingsIcon,
   },
+  // 图像识别入口暂时隐藏（/manage/ocr 仍可直接访问，代码保留）。
+  // {
+  //   label: "图像识别",
+  //   description: "选择拍照记账使用的 OCR provider",
+  //   href: "/manage/ocr",
+  //   icon: CameraIcon,
+  // },
 ];
 
 export default async function ManagePage() {
