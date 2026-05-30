@@ -2,10 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { userPreferences } from "@/db/schema";
 
-export async function getUserPreference(
-  ownerUserId: string,
-  key: string,
-): Promise<string | null> {
+export async function getUserPreference(ownerUserId: string, key: string): Promise<string | null> {
   const [row] = await db
     .select({ value: userPreferences.value })
     .from(userPreferences)

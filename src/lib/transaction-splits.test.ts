@@ -121,7 +121,12 @@ describe("validateSplits", () => {
   });
 
   it("rejects negative or zero amounts", () => {
-    const zero = validateSplits([{ categoryId: "daily-goods", amount: "0" }], 1000, "JPY", "grocery");
+    const zero = validateSplits(
+      [{ categoryId: "daily-goods", amount: "0" }],
+      1000,
+      "JPY",
+      "grocery",
+    );
     expect(zero.ok).toBe(false);
     const neg = validateSplits(
       [{ categoryId: "daily-goods", amount: "-100" }],

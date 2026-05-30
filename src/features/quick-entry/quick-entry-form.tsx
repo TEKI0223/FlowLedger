@@ -113,9 +113,7 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
             金额
           </Label>
           <div className="flex items-baseline justify-center gap-1.5 px-1">
-            <span className="shrink-0 text-base font-medium text-muted-foreground">
-              {currency}
-            </span>
+            <span className="shrink-0 text-base font-medium text-muted-foreground">{currency}</span>
             <MoneyInput
               id="quick-amount"
               ref={amountInputRef}
@@ -234,4 +232,3 @@ function Chip({
     </button>
   );
 }
-

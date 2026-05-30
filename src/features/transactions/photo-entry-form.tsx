@@ -110,9 +110,7 @@ export function PhotoEntryForm({ lookups }: { lookups: Lookups }) {
         <div className="flex items-center justify-between gap-3">
           <div className="space-y-0.5">
             <p className="text-sm font-medium">拍照识别</p>
-            <p className="text-xs text-muted-foreground">
-              拍一张小票，自动预填金额、日期和分类
-            </p>
+            <p className="text-xs text-muted-foreground">拍一张小票，自动预填金额、日期和分类</p>
           </div>
           <Button
             type="button"

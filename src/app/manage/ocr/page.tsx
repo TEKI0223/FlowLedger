@@ -1,10 +1,6 @@
 import { getCurrentOcrProviderId } from "@/app/actions/ocr";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  isProviderKeyConfigured,
-  ocrProviderIds,
-  ocrProviderRegistry,
-} from "@/lib/ocr";
+import { isProviderKeyConfigured, ocrProviderIds, ocrProviderRegistry } from "@/lib/ocr";
 import { OcrSettingsForm } from "./ocr-settings-form";
 
 export const dynamic = "force-dynamic";

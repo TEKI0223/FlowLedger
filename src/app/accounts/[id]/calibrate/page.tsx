@@ -27,7 +27,9 @@ export default async function AccountCalibratePage({ params }: CalibratePageProp
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
       <header className="space-y-1 pb-5">
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">余额校准：{formatAccountName(account)}</h1>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+          余额校准：{formatAccountName(account)}
+        </h1>
         <p className="text-sm text-muted-foreground tabular-nums">
           当前系统余额：
           {formatMoney({ amountMinor: account.balanceMinor, currency: account.currency })}

@@ -59,8 +59,8 @@ export function DashboardHero({ summary }: DashboardHeroProps) {
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            已过 {progress.elapsed}/{progress.total} 天，已花{" "}
-            JPY {formatMoney(
+            已过 {progress.elapsed}/{progress.total} 天，已花 JPY{" "}
+            {formatMoney(
               { amountMinor: summary.expense.JPY, currency: "JPY" },
               { showCurrencyCode: false },
             )}{" "}

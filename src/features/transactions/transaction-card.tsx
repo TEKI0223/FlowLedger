@@ -20,7 +20,9 @@ type TransactionCardProps = {
 export function TransactionCard({ transaction }: TransactionCardProps) {
   const dateParts = formatDateParts(transaction.occurredOn);
   const categoryLabel =
-    transaction.category?.label ?? transaction.category?.name ?? transactionTypeLabels[transaction.type];
+    transaction.category?.label ??
+    transaction.category?.name ??
+    transactionTypeLabels[transaction.type];
   const accountLine = formatAccountLine(transaction);
 
   return (
@@ -73,7 +75,7 @@ function formatAccountLine(transaction: TransactionListItem) {
   const paymentMethod = transaction.paymentMethod?.name;
 
   if (transaction.type === "transfer") {
-    return source && target ? `${source} -> ${target}` : source ?? target ?? "未选择账户";
+    return source && target ? `${source} -> ${target}` : (source ?? target ?? "未选择账户");
   }
 
   if (transaction.type === "income") {

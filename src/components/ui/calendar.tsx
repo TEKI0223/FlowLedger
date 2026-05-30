@@ -46,9 +46,7 @@ export function Calendar({ value, max, min, onSelect }: CalendarProps) {
         >
           <ChevronLeftIcon className="size-4" />
         </button>
-        <span className="text-sm font-medium tabular-nums">
-          {viewMonth.format("YYYY 年 M 月")}
-        </span>
+        <span className="text-sm font-medium tabular-nums">{viewMonth.format("YYYY 年 M 月")}</span>
         <button
           type="button"
           onClick={() => setViewMonth((m) => m.add(1, "month"))}

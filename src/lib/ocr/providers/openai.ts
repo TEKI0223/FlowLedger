@@ -16,7 +16,8 @@ const RESPONSE_SCHEMA = {
     currency: {
       type: ["string", "null"],
       enum: ["JPY", "CNY", null],
-      description: "通貨。日本のレシート（¥・円）は JPY、中国の文脈の元（￥/RMB）は CNY。判断できなければ null。",
+      description:
+        "通貨。日本のレシート（¥・円）は JPY、中国の文脈の元（￥/RMB）は CNY。判断できなければ null。",
     },
     occurredOn: {
       type: ["string", "null"],

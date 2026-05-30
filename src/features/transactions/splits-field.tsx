@@ -188,9 +188,7 @@ function SplitsSummary({
   if (totalMinor === null || !validation) return null;
 
   if (!validation.ok) {
-    return (
-      <p className="text-center text-xs font-medium text-destructive">{validation.error}</p>
-    );
+    return <p className="text-center text-xs font-medium text-destructive">{validation.error}</p>;
   }
 
   if (validation.splits.length === 0) return null;
@@ -199,9 +197,7 @@ function SplitsSummary({
 
   if (validation.mainAmountMinor === 0) {
     return (
-      <p className="text-center text-xs text-muted-foreground">
-        总额拆完，不创建「{mainName}」
-      </p>
+      <p className="text-center text-xs text-muted-foreground">总额拆完，不创建「{mainName}」</p>
     );
   }
 

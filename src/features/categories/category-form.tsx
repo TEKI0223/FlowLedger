@@ -26,16 +26,8 @@ type CategoryFormProps = {
   submitLabel: string;
 };
 
-export function CategoryForm({
-  action,
-  parentOptions,
-  defaults,
-  submitLabel,
-}: CategoryFormProps) {
-  const [state, formAction] = useActionState<CategoryActionState, FormData>(
-    action,
-    initialState,
-  );
+export function CategoryForm({ action, parentOptions, defaults, submitLabel }: CategoryFormProps) {
+  const [state, formAction] = useActionState<CategoryActionState, FormData>(action, initialState);
   const values = state.values;
 
   return (

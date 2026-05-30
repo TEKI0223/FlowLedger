@@ -25,11 +25,7 @@ function PopoverContent({
     <PopoverPrimitive.Portal>
       {/* z-index 必须放在 Positioner 上，且高于 Dialog 的 z-50。
           否则在 Dialog 内部触发 Popover 时会被压到 Dialog 下面。 */}
-      <PopoverPrimitive.Positioner
-        sideOffset={sideOffset}
-        align={align}
-        className="z-[60]"
-      >
+      <PopoverPrimitive.Positioner sideOffset={sideOffset} align={align} className="z-[60]">
         <PopoverPrimitive.Popup
           className={cn(
             "rounded-lg border border-border bg-popover p-2 text-popover-foreground shadow-lg outline-none",

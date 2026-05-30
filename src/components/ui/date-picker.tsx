@@ -60,16 +60,12 @@ export function DatePicker({
     setOpen(false);
   }
 
-  const label = value
-    ? (formatLabel ?? defaultFormat(variant))(value)
-    : placeholder;
+  const label = value ? (formatLabel ?? defaultFormat(variant))(value) : placeholder;
   const isPlaceholder = !value;
 
   return (
     <>
-      {name ? (
-        <input id={id} name={name} type="hidden" value={value} required={required} />
-      ) : null}
+      {name ? <input id={id} name={name} type="hidden" value={value} required={required} /> : null}
 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger

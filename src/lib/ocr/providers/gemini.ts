@@ -10,7 +10,8 @@ const RESPONSE_SCHEMA = {
     amount: {
       type: Type.STRING,
       nullable: true,
-      description: "合計金額の数字のみ。例：'1,280' や '680'。通貨記号やカンマ以外の文字は含めない。読み取れない場合は null。",
+      description:
+        "合計金額の数字のみ。例：'1,280' や '680'。通貨記号やカンマ以外の文字は含めない。読み取れない場合は null。",
     },
     currency: {
       type: Type.STRING,
@@ -21,17 +22,20 @@ const RESPONSE_SCHEMA = {
     occurredOn: {
       type: Type.STRING,
       nullable: true,
-      description: "YYYY-MM-DD 形式の日付。令和は西暦に換算（令和=2018+年）。読み取れない場合は null。",
+      description:
+        "YYYY-MM-DD 形式の日付。令和は西暦に換算（令和=2018+年）。読み取れない場合は null。",
     },
     categoryId: {
       type: Type.STRING,
       nullable: true,
-      description: "提供されたカテゴリ一覧から最も近い id をひとつ選ぶ。確信が持てなければ親カテゴリの id、それも難しければ null。一覧にない値は絶対に返さない。",
+      description:
+        "提供されたカテゴリ一覧から最も近い id をひとつ選ぶ。確信が持てなければ親カテゴリの id、それも難しければ null。一覧にない値は絶対に返さない。",
     },
     note: {
       type: Type.STRING,
       nullable: true,
-      description: "店名と主要な商品を1-2語でまとめる。例：'ローソン カフェラテ'、'セブン-イレブン お弁当'。最大200文字。",
+      description:
+        "店名と主要な商品を1-2語でまとめる。例：'ローソン カフェラテ'、'セブン-イレブン お弁当'。最大200文字。",
     },
   },
   required: ["amount", "currency", "occurredOn", "categoryId", "note"],
@@ -127,9 +131,7 @@ export class GeminiOcrProvider implements OcrProvider {
 }
 
 function buildPrompt(categories: OcrExtractInput["categories"]): string {
-  const categoryList = categories
-    .map((c) => `- ${c.id} | ${c.label}`)
-    .join("\n");
+  const categoryList = categories.map((c) => `- ${c.id} | ${c.label}`).join("\n");
 
   return [
     "あなたは家計簿アプリのアシスタントです。レシート画像から構造化データを抽出します。",
