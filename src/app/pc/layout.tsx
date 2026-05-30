@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { DesktopShell } from "./desktop-shell";
+import { PCShell } from "./pc-shell";
 
 export const metadata: Metadata = {
   title: "桌面工作台 | FlowLedger",
 };
 
-export default function DesktopLayout({
+export default function PCLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <DesktopShell>{children}</DesktopShell>;
+  return <PCShell>{children}</PCShell>;
 }

@@ -29,7 +29,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { label: "总览", href: "/desktop", icon: HomeIcon },
+  { label: "总览", href: "/", icon: HomeIcon },
   { label: "交易", href: "/transactions", icon: ListIcon },
   { label: "账户", href: "/accounts", icon: WalletIcon },
   { label: "信用卡", href: "/credit-cards", icon: CreditCardIcon },
@@ -43,14 +43,14 @@ const navigation = [
   { label: "汇率", href: "/manage/rates", icon: SettingsIcon },
 ];
 
-export function DesktopShell({ children }: { children: React.ReactNode }) {
+export function PCShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
     <div className="min-h-dvh bg-muted/35 text-foreground">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-background/95 px-3 py-4 shadow-sm backdrop-blur xl:flex">
         <Link
-          href="/desktop"
+          href="/"
           className="mb-5 flex h-11 items-center gap-3 rounded-lg px-2 text-sm font-semibold tracking-tight hover:bg-muted"
         >
           <span className="flex size-9 items-center justify-center rounded-lg border border-border bg-white p-1.5">
@@ -70,7 +70,7 @@ export function DesktopShell({ children }: { children: React.ReactNode }) {
           {navigation.map((item) => {
             const Icon = item.icon;
             const active =
-              item.href === "/desktop" ? pathname === "/desktop" : pathname.startsWith(item.href);
+              item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
 
             return (
               <Link
@@ -94,7 +94,7 @@ export function DesktopShell({ children }: { children: React.ReactNode }) {
         <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
           <div className="flex h-14 items-center gap-3 px-4 md:px-6">
             <Link
-              href="/desktop"
+              href="/"
               className="flex shrink-0 items-center gap-2 text-sm font-semibold xl:hidden"
             >
               <span className="flex size-8 items-center justify-center rounded-lg border border-border bg-white p-1">
@@ -109,7 +109,7 @@ export function DesktopShell({ children }: { children: React.ReactNode }) {
               </span>
               <span>Desktop</span>
             </Link>
-            <DesktopSearch />
+            <PCSearch />
             <div className="ml-auto flex items-center gap-2">
               <Link
                 href="/entry"
@@ -128,7 +128,7 @@ export function DesktopShell({ children }: { children: React.ReactNode }) {
               </Link>
               <ThemeToggle />
               <Link
-                href="/desktop#work-queue"
+                href="/#work-queue"
                 aria-label="待办"
                 className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
               >
@@ -146,7 +146,7 @@ export function DesktopShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function DesktopSearch() {
+function PCSearch() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") ?? "";
@@ -161,7 +161,7 @@ function DesktopSearch() {
       params.delete("q");
     }
     const suffix = params.toString();
-    return suffix ? `/desktop?${suffix}` : "/desktop";
+    return suffix ? `/?${suffix}` : "/";
   }, [query, searchParams]);
 
   return (
