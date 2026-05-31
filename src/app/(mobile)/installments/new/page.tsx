@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { InstallmentForm } from "../installment-form";
 import { createInstallmentPlan } from "@/app/actions/installments";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatMinorForInput, formatMoney, transactionTypeLabels } from "@/domain/finance";
+import { formatMinorForInput, transactionTypeLabels } from "@/domain/finance";
 import { getTransaction } from "@/features/transactions/data";
 
 export const dynamic = "force-dynamic";
@@ -34,10 +35,7 @@ export default async function NewInstallmentPage({ searchParams }: NewInstallmen
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">新建分期计划</h1>
         <p className="text-sm text-muted-foreground tabular-nums">
           原始交易：{transactionTypeLabels[originalTx.type]} ·{" "}
-          {formatMoney({
-            amountMinor: originalTx.amountMinor,
-            currency: originalTx.currency,
-          })}{" "}
+          <MoneyText amountMinor={originalTx.amountMinor} currency={originalTx.currency} />{" "}
           · {originalTx.occurredOn}
         </p>
       </header>

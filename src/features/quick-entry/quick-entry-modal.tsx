@@ -18,6 +18,7 @@ export type QuickEntryModalTemplate = {
   meta: string;
   context: string;
   amountHint: string;
+  amountMinor?: number | null;
   amountDefault?: string;
   usageCount?: number;
   theme: ActionTileTheme;
@@ -48,6 +49,8 @@ export function QuickEntryModal({ templates, categories = [] }: QuickEntryModalP
             title={template.title}
             meta={template.meta}
             amountHint={template.amountHint}
+            amountMinor={template.amountMinor}
+            currency={template.currency}
             usageCount={template.usageCount}
             theme={template.theme}
             categoryIconKey={template.categoryIconKey}

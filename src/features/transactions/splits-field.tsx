@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PlusIcon, XIcon } from "lucide-react";
+import { MoneyText } from "@/components/privacy/money-text";
 import { MoneyInput } from "@/components/ui/money-input";
-import { formatMoney, parseMoneyToMinor, type Currency } from "@/domain/finance";
+import { parseMoneyToMinor, type Currency } from "@/domain/finance";
 import { CategoryPicker, type CategoryPickerOption } from "@/features/categories/category-picker";
 import type { SplitEntry } from "@/lib/transaction-splits";
 import { validateSplits } from "@/lib/transaction-splits";
@@ -205,7 +206,7 @@ function SplitsSummary({
     <p className="text-center text-xs text-muted-foreground">
       剩余{" "}
       <span className="font-semibold tabular-nums text-foreground">
-        {formatMoney({ amountMinor: validation.mainAmountMinor, currency })}
+        <MoneyText amountMinor={validation.mainAmountMinor} currency={currency} />
       </span>{" "}
       → {mainName}
     </p>

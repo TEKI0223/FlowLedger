@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronRightIcon, LayersIcon, ReceiptIcon } from "lucide-react";
-import { formatMoney } from "@/domain/finance";
+import { MoneyText } from "@/components/privacy/money-text";
 import { CategoryIcon } from "@/features/categories/category-icon-label";
 import type { StatementSummary } from "./data";
 
@@ -45,7 +45,7 @@ export function StatementTransactionList({ statement, currency, label = "消费�
               <p className="text-xs text-muted-foreground tabular-nums">{tx.occurredOn}</p>
             </div>
             <span className="shrink-0 font-semibold tabular-nums text-expense">
-              {formatMoney({ amountMinor: tx.amountMinor, currency })}
+              <MoneyText amountMinor={tx.amountMinor} currency={currency} />
             </span>
             <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/60" />
           </Link>
@@ -77,7 +77,7 @@ export function StatementTransactionList({ statement, currency, label = "消费�
               <p className="text-xs text-muted-foreground tabular-nums">{entry.dueDate}</p>
             </div>
             <span className="shrink-0 font-semibold tabular-nums text-expense">
-              {formatMoney({ amountMinor: entry.amountMinor, currency })}
+              <MoneyText amountMinor={entry.amountMinor} currency={currency} />
             </span>
             <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/60" />
           </Link>

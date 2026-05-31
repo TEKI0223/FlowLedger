@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { formatMoney } from "@/domain/finance";
+import { MoneyText } from "@/components/privacy/money-text";
 import type { DashboardSummary } from "./data";
 
 type DashboardHeroProps = {
@@ -60,15 +60,9 @@ export function DashboardHero({ summary }: DashboardHeroProps) {
           </div>
           <p className="text-xs text-muted-foreground">
             已过 {progress.elapsed}/{progress.total} 天，已花 JPY{" "}
-            {formatMoney(
-              { amountMinor: summary.expense.JPY, currency: "JPY" },
-              { showCurrencyCode: false },
-            )}{" "}
+            <MoneyText amountMinor={summary.expense.JPY} currency="JPY" showCurrencyCode={false} />{" "}
             / CNY{" "}
-            {formatMoney(
-              { amountMinor: summary.expense.CNY, currency: "CNY" },
-              { showCurrencyCode: false },
-            )}
+            <MoneyText amountMinor={summary.expense.CNY} currency="CNY" showCurrencyCode={false} />
           </p>
         </div>
       </Card>
@@ -98,7 +92,7 @@ function MoneyLine({
     <div className="min-w-0">
       <p className="text-[0.7rem] font-medium text-muted-foreground">{currency}</p>
       <p className={`truncate text-xl font-semibold tabular-nums ${className}`}>
-        {formatMoney({ amountMinor, currency }, { showCurrencyCode: false })}
+        <MoneyText amountMinor={amountMinor} currency={currency} showCurrencyCode={false} />
       </p>
     </div>
   );

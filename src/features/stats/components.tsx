@@ -1,11 +1,13 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { AlertTriangleIcon, CreditCardIcon } from "lucide-react";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatMoney, type Currency } from "@/domain/finance";
+import type { Currency } from "@/domain/finance";
 import { CategoryIconLabel } from "@/features/categories/category-icon-label";
 import { cn } from "@/lib/utils";
 import { CurrencySwitch } from "./controls";
-import { formatJpy, type StatsRange, type StatsSummary } from "./data";
+import type { StatsRange, StatsSummary } from "./data";
 
 export function MonthlyComparison({
   comparison,
@@ -75,13 +77,13 @@ export function MonthlyComparison({
                 </span>
               </div>
               <p className={cn("text-2xl font-semibold tabular-nums", row.tone)}>
-                {formatCurrency(row.current, currency)}
+                <MoneyText amountMinor={row.current} currency={currency} />
               </p>
               <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                <MetricMini label="上月" value={formatCurrency(row.last, currency)} />
+                <MetricMini label="上月" value={<MoneyText amountMinor={row.last} currency={currency} />} />
                 <MetricMini
                   label="三月均"
-                  value={formatCurrency(row.average, currency)}
+                  value={<MoneyText amountMinor={row.average} currency={currency} />}
                   note={formatPercentDiff(row.current, row.average)}
                 />
               </div>
@@ -109,10 +111,19 @@ export function CategoryRanking({ summary, range }: { summary: StatsSummary; ran
               <CardDescription>{ranking.label}支出排行，分别统计 JPY / CNY。</CardDescription>
             </div>
             <div className="grid shrink-0 justify-items-end text-xs tabular-nums">
-              <span>{formatCurrency(ranking.totalByCurrency.JPY, "JPY")}</span>
-              <span>{formatCurrency(ranking.totalByCurrency.CNY, "CNY")}</span>
+              <span>
+                <MoneyText amountMinor={ranking.totalByCurrency.JPY} currency="JPY" />
+              </span>
+              <span>
+                <MoneyText amountMinor={ranking.totalByCurrency.CNY} currency="CNY" />
+              </span>
               <span className="text-muted-foreground">
-                折算 {formatJpy(ranking.totalJpyEquivalentMinor)}
+                折算{" "}
+                {ranking.totalJpyEquivalentMinor === null ? (
+                  "缺少汇率"
+                ) : (
+                  <MoneyText amountMinor={ranking.totalJpyEquivalentMinor} currency="JPY" />
+                )}
               </span>
             </div>
           </div>
@@ -152,10 +163,10 @@ export function CategoryRanking({ summary, range }: { summary: StatsSummary; ran
                     />
                     <span className="shrink-0 text-right text-xs font-semibold tabular-nums">
                       <span className="block">
-                        {formatCurrency(item.amountByCurrency.JPY, "JPY")}
+                        <MoneyText amountMinor={item.amountByCurrency.JPY} currency="JPY" />
                       </span>
                       <span className="block">
-                        {formatCurrency(item.amountByCurrency.CNY, "CNY")}
+                        <MoneyText amountMinor={item.amountByCurrency.CNY} currency="CNY" />
                       </span>
                     </span>
                   </div>
@@ -204,7 +215,7 @@ export function MonthlyTrend({ summary, currency }: { summary: StatsSummary; cur
               <details key={item.month} className="group grid gap-2 text-center">
                 <summary className="grid cursor-pointer list-none gap-2 marker:hidden">
                   <span
-                    title={`${item.month} ${formatCurrency(item.expenseByCurrency[currency], currency)}`}
+                    title={item.month}
                     className="flex h-40 items-end rounded-md bg-muted"
                   >
                     <span
@@ -220,7 +231,7 @@ export function MonthlyTrend({ summary, currency }: { summary: StatsSummary; cur
                   <span className="text-[0.65rem] text-muted-foreground">{item.label}</span>
                 </summary>
                 <p className="text-[0.65rem] font-medium tabular-nums">
-                  {formatCurrency(item.expenseByCurrency[currency], currency)}
+                  <MoneyText amountMinor={item.expenseByCurrency[currency]} currency={currency} />
                 </p>
               </details>
             ))}
@@ -245,25 +256,46 @@ export function NetWorth({ summary }: { summary: StatsSummary }) {
           <div className="grid gap-3 md:grid-cols-3">
             <MetricBox
               label="JPY"
-              value={formatMoney(
-                { amountMinor: net.currentByCurrency.JPY, currency: "JPY" },
-                { showCurrencyCode: false },
-              )}
+              value={
+                <MoneyText
+                  amountMinor={net.currentByCurrency.JPY}
+                  currency="JPY"
+                  showCurrencyCode={false}
+                />
+              }
             />
             <MetricBox
               label="CNY"
-              value={formatMoney(
-                { amountMinor: net.currentByCurrency.CNY, currency: "CNY" },
-                { showCurrencyCode: false },
-              )}
+              value={
+                <MoneyText
+                  amountMinor={net.currentByCurrency.CNY}
+                  currency="CNY"
+                  showCurrencyCode={false}
+                />
+              }
             />
             <MetricBox
               label="折算总"
-              value={formatJpyPlain(net.totalJpyMinor)}
+              value={
+                net.totalJpyMinor === null ? (
+                  "缺少汇率"
+                ) : (
+                  <MoneyText amountMinor={net.totalJpyMinor} currency="JPY" showCurrencyCode={false} />
+                )
+              }
               note={
                 net.delta30dJpyMinor === null
                   ? "缺少汇率"
-                  : `30 天 ${signedMoney(net.delta30dJpyMinor)}`
+                  : (
+                      <>
+                        30 天 {net.delta30dJpyMinor >= 0 ? "+" : ""}
+                        <MoneyText
+                          amountMinor={net.delta30dJpyMinor}
+                          currency="JPY"
+                          showCurrencyCode={false}
+                        />
+                      </>
+                    )
               }
             />
           </div>
@@ -274,10 +306,11 @@ export function NetWorth({ summary }: { summary: StatsSummary }) {
                 <div className="flex items-center justify-between gap-3 text-sm">
                   <span className="min-w-0 truncate font-medium">{account.name}</span>
                   <span className="shrink-0 font-semibold tabular-nums">
-                    {formatMoney(
-                      { amountMinor: account.balanceMinor, currency: account.currency },
-                      { showCurrencyCode: false },
-                    )}
+                    <MoneyText
+                      amountMinor={account.balanceMinor}
+                      currency={account.currency}
+                      showCurrencyCode={false}
+                    />
                   </span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-muted">
@@ -326,14 +359,11 @@ export function CreditCardOverview({ summary }: { summary: StatsSummary }) {
                 </div>
                 <CardStat
                   label="本期消费"
-                  value={formatMoney({
-                    amountMinor: card.currentSpendMinor,
-                    currency: card.currency,
-                  })}
+                  value={<MoneyText amountMinor={card.currentSpendMinor} currency={card.currency} />}
                 />
                 <CardStat
                   label="待还"
-                  value={formatMoney({ amountMinor: card.pendingMinor, currency: card.currency })}
+                  value={<MoneyText amountMinor={card.pendingMinor} currency={card.currency} />}
                   danger={card.isOverdue}
                 />
                 <CardStat label="扣款日" value={card.dueDate ?? "未设置"} danger={card.isOverdue} />
@@ -346,7 +376,7 @@ export function CreditCardOverview({ summary }: { summary: StatsSummary }) {
   );
 }
 
-function MetricMini({ label, value, note }: { label: string; value: string; note?: string }) {
+function MetricMini({ label, value, note }: { label: string; value: ReactNode; note?: string }) {
   return (
     <div className="rounded-md bg-muted/50 px-2 py-1.5">
       <p>{label}</p>
@@ -356,7 +386,15 @@ function MetricMini({ label, value, note }: { label: string; value: string; note
   );
 }
 
-function MetricBox({ label, value, note }: { label: string; value: string; note?: string }) {
+function MetricBox({
+  label,
+  value,
+  note,
+}: {
+  label: string;
+  value: ReactNode;
+  note?: ReactNode;
+}) {
   return (
     <div className="rounded-lg bg-muted/50 px-3 py-2.5">
       <p className="text-xs font-medium text-muted-foreground">{label}</p>
@@ -372,7 +410,7 @@ function CardStat({
   danger = false,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   danger?: boolean;
 }) {
   return (
@@ -385,21 +423,8 @@ function CardStat({
   );
 }
 
-function formatCurrency(amountMinor: number, currency: Currency): string {
-  return formatMoney({ amountMinor, currency });
-}
-
-function formatJpyPlain(amountMinor: number | null): string {
-  if (amountMinor === null) return "缺少汇率";
-  return formatMoney({ amountMinor, currency: "JPY" }, { showCurrencyCode: false });
-}
-
 function formatPercentDiff(current: number, baseline: number): string {
   if (baseline === 0) return current === 0 ? "0%" : "+∞";
   const percent = ((current - baseline) / Math.abs(baseline)) * 100;
   return `${percent >= 0 ? "+" : ""}${percent.toFixed(0)}%`;
-}
-
-function signedMoney(amountMinor: number): string {
-  return `${amountMinor >= 0 ? "+" : ""}${formatJpyPlain(amountMinor)}`;
 }

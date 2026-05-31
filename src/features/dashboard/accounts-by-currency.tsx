@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ArrowRightIcon } from "lucide-react";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { accountTypeLabels, currencyLabels, formatMoney, type Currency } from "@/domain/finance";
+import { accountTypeLabels, currencyLabels, type Currency } from "@/domain/finance";
 import type { listAccounts } from "@/features/accounts/data";
 import { formatAccountName } from "@/features/accounts/labels";
 import { cn } from "@/lib/utils";
@@ -55,7 +56,7 @@ function CurrencyAccountCard({ currency, accounts }: { currency: Currency; accou
             {currency} · {currencyLabels[currency]}
           </span>
           <span className="text-sm font-semibold tabular-nums">
-            {formatMoney({ amountMinor: total, currency })}
+            <MoneyText amountMinor={total} currency={currency} />
           </span>
         </CardTitle>
       </CardHeader>
@@ -75,10 +76,7 @@ function CurrencyAccountCard({ currency, accounts }: { currency: Currency; accou
                   <div className="mb-1.5 flex items-baseline justify-between text-xs text-muted-foreground">
                     <span>{accountTypeLabels[type]}</span>
                     <span className="tabular-nums">
-                      {formatMoney(
-                        { amountMinor: subtotal, currency },
-                        { showCurrencyCode: false },
-                      )}
+                      <MoneyText amountMinor={subtotal} currency={currency} showCurrencyCode={false} />
                     </span>
                   </div>
                   <ul className="space-y-0.5">
@@ -103,10 +101,11 @@ function CurrencyAccountCard({ currency, accounts }: { currency: Currency; accou
                             ) : null}
                           </Link>
                           <span className="shrink-0 font-medium tabular-nums">
-                            {formatMoney(
-                              { amountMinor: account.balanceMinor, currency },
-                              { showCurrencyCode: false },
-                            )}
+                            <MoneyText
+                              amountMinor={account.balanceMinor}
+                              currency={currency}
+                              showCurrencyCode={false}
+                            />
                           </span>
                         </li>
                       ))}

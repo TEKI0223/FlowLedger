@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import type { InstallmentActionState } from "@/app/actions/installments";
+import { MoneyText } from "@/components/privacy/money-text";
 import { DatePicker } from "@/components/ui/date-picker";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,6 @@ import {
   currencies,
   currencyLabels,
   formatMinorForInput,
-  formatMoney,
   parseMoneyToMinor,
   type Currency,
 } from "@/domain/finance";
@@ -169,17 +169,11 @@ export function InstallmentForm({ action, defaults = {}, submitLabel }: Installm
                 <span className="text-muted-foreground">利息：</span>
                 <span className="font-semibold tabular-nums text-adjustment">
                   每期 +
-                  {formatMoney({
-                    amountMinor: interestSummary.perPeriodMinor,
-                    currency,
-                  })}
+                  <MoneyText amountMinor={interestSummary.perPeriodMinor} currency={currency} />
                 </span>
                 <span className="text-muted-foreground">{" · "}总 </span>
                 <span className="font-semibold tabular-nums text-adjustment">
-                  {formatMoney({
-                    amountMinor: interestSummary.totalMinor,
-                    currency,
-                  })}
+                  <MoneyText amountMinor={interestSummary.totalMinor} currency={currency} />
                 </span>
               </p>
             ) : (
@@ -187,17 +181,11 @@ export function InstallmentForm({ action, defaults = {}, submitLabel }: Installm
                 <span className="text-muted-foreground">回扣 / 折让：</span>
                 <span className="font-semibold tabular-nums text-income">
                   每期 −
-                  {formatMoney({
-                    amountMinor: interestSummary.perPeriodMinor,
-                    currency,
-                  })}
+                  <MoneyText amountMinor={interestSummary.perPeriodMinor} currency={currency} />
                 </span>
                 <span className="text-muted-foreground">{" · "}总 </span>
                 <span className="font-semibold tabular-nums text-income">
-                  {formatMoney({
-                    amountMinor: interestSummary.totalMinor,
-                    currency,
-                  })}
+                  <MoneyText amountMinor={interestSummary.totalMinor} currency={currency} />
                 </span>
               </p>
             )}

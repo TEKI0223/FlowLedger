@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { BarChart3Icon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatMoney, type Currency } from "@/domain/finance";
+import type { Currency } from "@/domain/finance";
 import type { MonthlyExpenseRanking } from "./data";
 import { cn } from "@/lib/utils";
 
@@ -110,7 +111,7 @@ function RankingBar({
           {index + 1}. {label}
         </span>
         <span className="shrink-0 text-xs font-semibold tabular-nums text-expense">
-          {formatMoney({ amountMinor, currency }, { showCurrencyCode: false })}
+          <MoneyText amountMinor={amountMinor} currency={currency} showCurrencyCode={false} />
         </span>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full bg-muted">

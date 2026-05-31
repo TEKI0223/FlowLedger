@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarIcon, CreditCardIcon, PencilIcon } from "lucide-react";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Separator } from "@/components/ui/separator";
-import { formatMoney } from "@/domain/finance";
 import { formatAccountName } from "@/features/accounts/labels";
 import {
   getCreditCard,
@@ -155,10 +155,7 @@ function CurrentStatementCard({
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">本期消费</p>
             <p className="text-2xl font-semibold tabular-nums text-expense">
-              {formatMoney({
-                amountMinor: statement.totalAmountMinor,
-                currency: card.account.currency,
-              })}
+              <MoneyText amountMinor={statement.totalAmountMinor} currency={card.account.currency} />
             </p>
             <p className="text-xs text-muted-foreground">
               {statement.transactions.length + statement.installmentEntries.length} 笔
@@ -170,10 +167,10 @@ function CurrentStatementCard({
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">已还款</p>
             <p className="text-2xl font-semibold tabular-nums text-income">
-              {formatMoney({
-                amountMinor: statement.repaidAmountMinor,
-                currency: card.account.currency,
-              })}
+              <MoneyText
+                amountMinor={statement.repaidAmountMinor}
+                currency={card.account.currency}
+              />
             </p>
             <p className="text-xs text-muted-foreground">
               {statement.repaymentTransactions.length} 笔
@@ -187,10 +184,7 @@ function CurrentStatementCard({
                 remaining > 0 ? "text-adjustment" : "text-muted-foreground",
               )}
             >
-              {formatMoney({
-                amountMinor: Math.max(0, remaining),
-                currency: card.account.currency,
-              })}
+              <MoneyText amountMinor={Math.max(0, remaining)} currency={card.account.currency} />
             </p>
           </div>
         </div>
@@ -263,19 +257,16 @@ function HistoricalStatementCard({
           <div>
             <p className="text-xs text-muted-foreground">消费</p>
             <p className="font-semibold tabular-nums text-expense">
-              {formatMoney({
-                amountMinor: statement.totalAmountMinor,
-                currency: card.account.currency,
-              })}
+              <MoneyText amountMinor={statement.totalAmountMinor} currency={card.account.currency} />
             </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">已还</p>
             <p className="font-semibold tabular-nums text-income">
-              {formatMoney({
-                amountMinor: statement.repaidAmountMinor,
-                currency: card.account.currency,
-              })}
+              <MoneyText
+                amountMinor={statement.repaidAmountMinor}
+                currency={card.account.currency}
+              />
             </p>
           </div>
           <div>
@@ -286,10 +277,7 @@ function HistoricalStatementCard({
                 remaining > 0 ? "text-adjustment" : "text-muted-foreground",
               )}
             >
-              {formatMoney({
-                amountMinor: Math.max(0, remaining),
-                currency: card.account.currency,
-              })}
+              <MoneyText amountMinor={Math.max(0, remaining)} currency={card.account.currency} />
             </p>
           </div>
         </div>

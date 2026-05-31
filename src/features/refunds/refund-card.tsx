@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRightIcon, ReceiptIcon } from "lucide-react";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Badge } from "@/components/ui/badge";
-import { formatMoney } from "@/domain/finance";
 import { refundRemainingMinor, refundStatusLabels, type RefundStatus } from "@/domain/refund";
 import { cn } from "@/lib/utils";
 import type { HydratedRefundTracker } from "./data";
@@ -39,13 +39,13 @@ export function RefundCard({ tracker }: RefundCardProps) {
         <p className="truncate text-xs text-muted-foreground">
           {tracker.expectedOn ? `预计 ${tracker.expectedOn} · ` : ""}
           {tracker.expectedAccount ? `${tracker.expectedAccount.name} · ` : ""}
-          应退 {formatMoney({ amountMinor: tracker.amountMinor, currency: tracker.currency })}
-          {tracker.receivedAmountMinor > 0
-            ? ` · 已收 ${formatMoney({
-                amountMinor: tracker.receivedAmountMinor,
-                currency: tracker.currency,
-              })}`
-            : ""}
+          应退 <MoneyText amountMinor={tracker.amountMinor} currency={tracker.currency} />
+          {tracker.receivedAmountMinor > 0 ? (
+            <>
+              {" · 已收 "}
+              <MoneyText amountMinor={tracker.receivedAmountMinor} currency={tracker.currency} />
+            </>
+          ) : null}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
@@ -55,9 +55,11 @@ export function RefundCard({ tracker }: RefundCardProps) {
             remaining > 0 && status !== "cancelled" ? "text-adjustment" : "text-muted-foreground",
           )}
         >
-          {remaining > 0 && status !== "cancelled"
-            ? formatMoney({ amountMinor: remaining, currency: tracker.currency })
-            : "—"}
+          {remaining > 0 && status !== "cancelled" ? (
+            <MoneyText amountMinor={remaining} currency={tracker.currency} />
+          ) : (
+            "—"
+          )}
         </span>
         <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground" />
       </div>

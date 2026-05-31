@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRightIcon } from "lucide-react";
-import { formatMoney, transactionTypeLabels } from "@/domain/finance";
+import { MoneyText } from "@/components/privacy/money-text";
+import { transactionTypeLabels } from "@/domain/finance";
 import { CategoryIcon } from "@/features/categories/category-icon-label";
 import type { listTransactions } from "@/features/transactions/data";
 import { cn } from "@/lib/utils";
@@ -58,10 +59,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
             transactionToneClass[transaction.type],
           )}
         >
-          {formatMoney({
-            amountMinor: transaction.amountMinor,
-            currency: transaction.currency,
-          })}
+          <MoneyText amountMinor={transaction.amountMinor} currency={transaction.currency} />
         </span>
         <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground" />
       </div>

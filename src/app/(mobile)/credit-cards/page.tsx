@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { ArrowRightIcon, CreditCardIcon, PlusIcon } from "lucide-react";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatMoney } from "@/domain/finance";
 import { listCardStatements, listCreditCards } from "@/features/credit-cards/data";
 import { cn } from "@/lib/utils";
 
@@ -79,10 +79,10 @@ export default async function CreditCardsPage() {
                           本期消费
                         </p>
                         <p className="text-2xl font-semibold tabular-nums">
-                          {formatMoney({
-                            amountMinor: currentStatement.totalAmountMinor,
-                            currency: card.account.currency,
-                          })}
+                          <MoneyText
+                            amountMinor={currentStatement.totalAmountMinor}
+                            currency={card.account.currency}
+                          />
                         </p>
                         <p className="text-xs text-muted-foreground">
                           截止 {currentStatement.periodEnd} · 扣款 {currentStatement.dueDate}
@@ -104,10 +104,10 @@ export default async function CreditCardsPage() {
                         <div className="flex items-center justify-between gap-2">
                           <span>上期 {previousStatement.periodEnd}</span>
                           <span className="font-semibold tabular-nums">
-                            {formatMoney({
-                              amountMinor: previousStatement.totalAmountMinor,
-                              currency: card.account.currency,
-                            })}
+                            <MoneyText
+                              amountMinor={previousStatement.totalAmountMinor}
+                              currency={card.account.currency}
+                            />
                           </span>
                         </div>
                         <div className="mt-1 flex items-center justify-between gap-2">

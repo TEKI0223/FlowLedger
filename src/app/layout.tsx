@@ -1,4 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
+import { PrivacyProvider } from "@/components/privacy/privacy-provider";
+import { PrivacyToggle } from "@/components/privacy/privacy-toggle";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
@@ -82,11 +85,13 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const initialPrivacyMode = (await cookies()).get("flowledger_privacy_mode")?.value === "1";
+
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <body>
@@ -96,7 +101,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <PrivacyProvider initialPrivacyMode={initialPrivacyMode}>
+            {children}
+            <PrivacyToggle />
+          </PrivacyProvider>
         </ThemeProvider>
       </body>
     </html>

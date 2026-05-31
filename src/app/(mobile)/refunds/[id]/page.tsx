@@ -7,11 +7,12 @@ import { DeleteTrackerButton } from "../delete-tracker-button";
 import { ReceiptForm } from "../receipt-form";
 import { RefundTrackerForm } from "../refund-tracker-form";
 import { updateRefundTracker } from "@/app/actions/refunds";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Separator } from "@/components/ui/separator";
-import { formatMinorForInput, formatMoney, transactionTypeLabels } from "@/domain/finance";
+import { formatMinorForInput, transactionTypeLabels } from "@/domain/finance";
 import { refundRemainingMinor, refundStatusLabels, type RefundStatus } from "@/domain/refund";
 import { getTransactionLookups } from "@/features/lookups/data";
 import { getRefundTracker, listRefundReceipts } from "@/features/refunds/data";
@@ -82,16 +83,16 @@ export default async function RefundDetailPage({ params, searchParams }: RefundD
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">应退</p>
               <p className="text-xl font-semibold tabular-nums">
-                {formatMoney({ amountMinor: tracker.amountMinor, currency: tracker.currency })}
+                <MoneyText amountMinor={tracker.amountMinor} currency={tracker.currency} />
               </p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">已收</p>
               <p className="text-xl font-semibold tabular-nums text-income">
-                {formatMoney({
-                  amountMinor: tracker.receivedAmountMinor,
-                  currency: tracker.currency,
-                })}
+                <MoneyText
+                  amountMinor={tracker.receivedAmountMinor}
+                  currency={tracker.currency}
+                />
               </p>
             </div>
             <div>
@@ -104,7 +105,7 @@ export default async function RefundDetailPage({ params, searchParams }: RefundD
                     : "text-muted-foreground",
                 )}
               >
-                {formatMoney({ amountMinor: remaining, currency: tracker.currency })}
+                <MoneyText amountMinor={remaining} currency={tracker.currency} />
               </p>
             </div>
           </div>
@@ -144,10 +145,10 @@ export default async function RefundDetailPage({ params, searchParams }: RefundD
                 </p>
               </div>
               <span className="font-semibold tabular-nums text-expense">
-                {formatMoney({
-                  amountMinor: tracker.originalTransaction.amountMinor,
-                  currency: tracker.originalTransaction.currency,
-                })}
+                <MoneyText
+                  amountMinor={tracker.originalTransaction.amountMinor}
+                  currency={tracker.originalTransaction.currency}
+                />
               </span>
               <ArrowRightIcon className="size-3 text-muted-foreground" />
             </Link>
@@ -173,10 +174,7 @@ export default async function RefundDetailPage({ params, searchParams }: RefundD
                   <div className="min-w-0 flex-1">
                     <p className="font-medium tabular-nums text-income">
                       +
-                      {formatMoney({
-                        amountMinor: receipt.amountMinor,
-                        currency: receipt.currency,
-                      })}
+                      <MoneyText amountMinor={receipt.amountMinor} currency={receipt.currency} />
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {receipt.occurredOn}

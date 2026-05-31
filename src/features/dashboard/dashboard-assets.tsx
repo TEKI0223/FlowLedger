@@ -1,10 +1,12 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowRightIcon, ChevronDownIcon, ChevronUpIcon, SettingsIcon } from "lucide-react";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatMoney, type Currency } from "@/domain/finance";
+import type { Currency } from "@/domain/finance";
 import type { AccountRow } from "@/features/accounts/data";
 import type { DashboardSummary } from "./data";
 import { cn } from "@/lib/utils";
@@ -36,26 +38,26 @@ export function DashboardAssets({ summary, accounts }: DashboardAssetsProps) {
           <div className="grid grid-cols-2 gap-3">
             <AssetMetric
               label="JPY"
-              value={formatMoney(
-                { amountMinor: summary.assets.JPY, currency: "JPY" },
-                { showCurrencyCode: false },
-              )}
+              value={
+                <MoneyText amountMinor={summary.assets.JPY} currency="JPY" showCurrencyCode={false} />
+              }
             />
             <AssetMetric
               label="CNY"
-              value={formatMoney(
-                { amountMinor: summary.assets.CNY, currency: "CNY" },
-                { showCurrencyCode: false },
-              )}
+              value={
+                <MoneyText amountMinor={summary.assets.CNY} currency="CNY" showCurrencyCode={false} />
+              }
             />
           </div>
 
           <AssetMetric
             label="折算净资产"
-            value={formatMoney({
-              amountMinor: summary.netWorth.amountMinor,
-              currency: summary.netWorth.baseCurrency,
-            })}
+            value={
+              <MoneyText
+                amountMinor={summary.netWorth.amountMinor}
+                currency={summary.netWorth.baseCurrency}
+              />
+            }
             note={
               summary.netWorth.rateCnyToJpy === null
                 ? "缺少汇率"
@@ -98,7 +100,7 @@ function AssetMetric({
   emphasized = false,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   note?: string;
   emphasized?: boolean;
 }) {
@@ -145,10 +147,11 @@ function AccountCurrencyGroup({
             >
               <span className="truncate text-sm">{account.name}</span>
               <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold tabular-nums">
-                {formatMoney(
-                  { amountMinor: account.balanceMinor, currency: account.currency },
-                  { showCurrencyCode: false },
-                )}
+                <MoneyText
+                  amountMinor={account.balanceMinor}
+                  currency={account.currency}
+                  showCurrencyCode={false}
+                />
                 <ArrowRightIcon className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
               </span>
             </Link>

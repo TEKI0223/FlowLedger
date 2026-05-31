@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { ArrowRightIcon } from "lucide-react";
+import { MoneyText } from "@/components/privacy/money-text";
 import {
   accountTypeLabels,
   currencyLabels,
-  formatMoney,
   type AccountType,
   type Currency,
 } from "@/domain/finance";
@@ -45,10 +45,7 @@ export function AccountCard({ account }: AccountCardProps) {
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <span className="text-right text-sm font-semibold tabular-nums">
-          {formatMoney({
-            amountMinor: account.balanceMinor,
-            currency: account.currency,
-          })}
+          <MoneyText amountMinor={account.balanceMinor} currency={account.currency} />
         </span>
         <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground" />
       </div>

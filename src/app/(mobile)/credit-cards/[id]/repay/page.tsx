@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { TransactionForm } from "@/features/transactions/transaction-form";
 import { createTransaction } from "@/app/actions/transactions";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatMinorForInput, formatMoney } from "@/domain/finance";
+import { formatMinorForInput } from "@/domain/finance";
 import {
   getStatementPeriod,
   type CycleBoundary,
@@ -82,7 +83,7 @@ export default async function CreditCardRepayPage({ params, searchParams }: Repa
           周期 {targetStatement.periodStart} ~ {targetStatement.periodEnd} · 扣款日{" "}
           {targetStatement.dueDate} · 待还{" "}
           <span className="font-semibold tabular-nums text-adjustment">
-            {formatMoney({ amountMinor: remaining, currency: card.account.currency })}
+            <MoneyText amountMinor={remaining} currency={card.account.currency} />
           </span>
         </p>
       </header>

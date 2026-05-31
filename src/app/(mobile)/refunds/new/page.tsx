@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { RefundTrackerForm } from "../refund-tracker-form";
 import { createRefundTracker } from "@/app/actions/refunds";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatMinorForInput, formatMoney, transactionTypeLabels } from "@/domain/finance";
+import { formatMinorForInput, transactionTypeLabels } from "@/domain/finance";
 import { getTransactionLookups } from "@/features/lookups/data";
 import { getTransaction } from "@/features/transactions/data";
 
@@ -38,10 +39,7 @@ export default async function NewRefundPage({ searchParams }: NewRefundPageProps
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">新建退款追踪</h1>
         <p className="text-sm text-muted-foreground tabular-nums">
           原始交易：{transactionTypeLabels[originalTx.type]} ·{" "}
-          {formatMoney({
-            amountMinor: originalTx.amountMinor,
-            currency: originalTx.currency,
-          })}{" "}
+          <MoneyText amountMinor={originalTx.amountMinor} currency={originalTx.currency} />{" "}
           · {originalTx.occurredOn}
         </p>
       </header>

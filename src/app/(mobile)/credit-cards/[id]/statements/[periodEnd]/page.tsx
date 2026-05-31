@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeftIcon, CalendarIcon, CreditCardIcon } from "lucide-react";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { formatMoney } from "@/domain/finance";
 import { formatAccountName } from "@/features/accounts/labels";
 import { getCardStatement, getCreditCard } from "@/features/credit-cards/data";
 import { StatementTransactionList } from "@/features/credit-cards/statement-transaction-list";
@@ -76,7 +76,7 @@ export default async function StatementDetailPage({ params }: Props) {
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">本期消费</p>
               <p className="text-2xl font-semibold tabular-nums text-expense">
-                {formatMoney({ amountMinor: statement.totalAmountMinor, currency })}
+                <MoneyText amountMinor={statement.totalAmountMinor} currency={currency} />
               </p>
               <p className="text-xs text-muted-foreground">
                 {statement.transactions.length + statement.installmentEntries.length} 笔
@@ -88,7 +88,7 @@ export default async function StatementDetailPage({ params }: Props) {
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">已还款</p>
               <p className="text-2xl font-semibold tabular-nums text-income">
-                {formatMoney({ amountMinor: statement.repaidAmountMinor, currency })}
+                <MoneyText amountMinor={statement.repaidAmountMinor} currency={currency} />
               </p>
               <p className="text-xs text-muted-foreground">
                 {statement.repaymentTransactions.length} 笔
@@ -102,7 +102,7 @@ export default async function StatementDetailPage({ params }: Props) {
                   remaining > 0 ? "text-adjustment" : "text-muted-foreground",
                 )}
               >
-                {formatMoney({ amountMinor: Math.max(0, remaining), currency })}
+                <MoneyText amountMinor={Math.max(0, remaining)} currency={currency} />
               </p>
             </div>
           </div>
@@ -156,7 +156,7 @@ export default async function StatementDetailPage({ params }: Props) {
                     <p className="text-xs text-muted-foreground tabular-nums">{tx.occurredOn}</p>
                   </div>
                   <span className="shrink-0 font-semibold tabular-nums text-income">
-                    {formatMoney({ amountMinor: tx.amountMinor, currency })}
+                    <MoneyText amountMinor={tx.amountMinor} currency={currency} />
                   </span>
                 </Link>
               </li>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRightIcon, LayersIcon } from "lucide-react";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Badge } from "@/components/ui/badge";
-import { formatMoney } from "@/domain/finance";
 import { installmentStatusLabels, type InstallmentStatus } from "@/domain/installment";
 import { cn } from "@/lib/utils";
 import type { HydratedInstallmentPlan } from "./data";
@@ -41,10 +41,7 @@ export function InstallmentCard({ plan }: InstallmentCardProps) {
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <span className="text-right text-sm font-semibold tabular-nums text-expense">
-          {formatMoney({
-            amountMinor: plan.totalAmountMinor,
-            currency: plan.currency,
-          })}
+          <MoneyText amountMinor={plan.totalAmountMinor} currency={plan.currency} />
         </span>
         <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground" />
       </div>

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ArrowRightIcon } from "lucide-react";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { formatMoney, transactionTypeLabels } from "@/domain/finance";
+import { transactionTypeLabels } from "@/domain/finance";
 import { transactionTypeColorClass } from "@/domain/transaction-style";
 import { CategoryIconLabel } from "@/features/categories/category-icon-label";
 import type { HydratedQuickEntryTemplate } from "./data";
@@ -46,10 +47,7 @@ export function TemplateCard({ template }: TemplateCardProps) {
             </div>
             {template.amountMinor !== null && template.amountMinor !== undefined ? (
               <p className="truncate text-xs font-semibold tabular-nums text-foreground/80">
-                {formatMoney({
-                  amountMinor: template.amountMinor,
-                  currency: template.currency,
-                })}
+                <MoneyText amountMinor={template.amountMinor} currency={template.currency} />
               </p>
             ) : null}
             <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">

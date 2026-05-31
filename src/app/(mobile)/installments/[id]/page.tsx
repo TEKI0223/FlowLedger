@@ -6,10 +6,11 @@ import { DeleteInstallmentButton } from "../delete-installment-button";
 import { InstallmentForm } from "../installment-form";
 import { PeriodButtons } from "../period-buttons";
 import { updateInstallmentPlan } from "@/app/actions/installments";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { formatMinorForInput, formatMoney, transactionTypeLabels } from "@/domain/finance";
+import { formatMinorForInput, transactionTypeLabels } from "@/domain/finance";
 import {
   classifyInstallmentFee,
   computeInstallmentDueDates,
@@ -74,21 +75,21 @@ export default async function InstallmentDetailPage({ params }: Props) {
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">总金额</p>
               <p className="text-xl font-semibold tabular-nums">
-                {formatMoney({ amountMinor: plan.totalAmountMinor, currency: plan.currency })}
+                <MoneyText amountMinor={plan.totalAmountMinor} currency={plan.currency} />
               </p>
               {(() => {
                 const fee = classifyInstallmentFee(plan.feeAmountMinor ?? 0, plan.periods);
                 if (fee.kind === "interest") {
                   return (
                     <p className="text-xs text-adjustment">
-                      含利息 {formatMoney({ amountMinor: fee.totalMinor, currency: plan.currency })}
+                      含利息 <MoneyText amountMinor={fee.totalMinor} currency={plan.currency} />
                     </p>
                   );
                 }
                 if (fee.kind === "rebate") {
                   return (
                     <p className="text-xs text-income">
-                      回扣 {formatMoney({ amountMinor: fee.totalMinor, currency: plan.currency })}
+                      回扣 <MoneyText amountMinor={fee.totalMinor} currency={plan.currency} />
                     </p>
                   );
                 }
@@ -98,7 +99,7 @@ export default async function InstallmentDetailPage({ params }: Props) {
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">已扣</p>
               <p className="text-xl font-semibold tabular-nums text-income">
-                {formatMoney({ amountMinor: paidMinor, currency: plan.currency })}
+                <MoneyText amountMinor={paidMinor} currency={plan.currency} />
               </p>
               <p className="text-xs text-muted-foreground tabular-nums">
                 {plan.completedPeriods} / {plan.periods} 期
@@ -114,11 +115,11 @@ export default async function InstallmentDetailPage({ params }: Props) {
                     : "text-muted-foreground",
                 )}
               >
-                {formatMoney({ amountMinor: remainingMinor, currency: plan.currency })}
+                <MoneyText amountMinor={remainingMinor} currency={plan.currency} />
               </p>
               <p className="text-xs text-muted-foreground tabular-nums">
                 每期{" "}
-                {formatMoney({ amountMinor: plan.amountPerPeriodMinor, currency: plan.currency })}
+                <MoneyText amountMinor={plan.amountPerPeriodMinor} currency={plan.currency} />
               </p>
             </div>
           </div>
@@ -183,10 +184,7 @@ export default async function InstallmentDetailPage({ params }: Props) {
                       isPaid ? "text-muted-foreground" : "text-expense",
                     )}
                   >
-                    {formatMoney({
-                      amountMinor: plan.amountPerPeriodMinor,
-                      currency: plan.currency,
-                    })}
+                    <MoneyText amountMinor={plan.amountPerPeriodMinor} currency={plan.currency} />
                   </span>
                 </li>
               );
@@ -217,10 +215,10 @@ export default async function InstallmentDetailPage({ params }: Props) {
                 </p>
               </div>
               <span className="font-semibold tabular-nums text-expense">
-                {formatMoney({
-                  amountMinor: plan.originalTransaction.amountMinor,
-                  currency: plan.originalTransaction.currency,
-                })}
+                <MoneyText
+                  amountMinor={plan.originalTransaction.amountMinor}
+                  currency={plan.originalTransaction.currency}
+                />
               </span>
               <ArrowRightIcon className="size-3 text-muted-foreground" />
             </Link>

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { EditAccountForm } from "./edit-account-form";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatMoney } from "@/domain/finance";
 import { getAccount } from "@/features/accounts/data";
 import { formatAccountName } from "@/features/accounts/labels";
 
@@ -29,7 +29,7 @@ export default async function AccountEditPage({ params }: AccountEditPageProps) 
         </h1>
         <p className="text-sm text-muted-foreground tabular-nums">
           当前余额：
-          {formatMoney({ amountMinor: account.balanceMinor, currency: account.currency })}
+          <MoneyText amountMinor={account.balanceMinor} currency={account.currency} />
         </p>
       </header>
 

@@ -12,6 +12,7 @@ export function toQuickEntryModalTemplate(
     meta: templateMeta(template),
     context: templateContext(template),
     amountHint: amountHint(template),
+    amountMinor: template.amountMinor,
     amountDefault: amountDefault(template),
     usageCount: template.usageCount,
     theme: templateTheme(template),

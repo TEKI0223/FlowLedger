@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatMoney } from "@/domain/finance";
 import type { listTransactions } from "@/features/transactions/data";
 import { toJpySingle } from "./utils";
 import { cn } from "@/lib/utils";
@@ -48,11 +48,11 @@ export function CashflowCard({
           <span className="flex items-center gap-3 text-xs font-normal text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               <span className="size-2 rounded-sm bg-income" />
-              收入 {formatMoney({ amountMinor: totalIncome, currency: "JPY" })}
+              收入 <MoneyText amountMinor={totalIncome} currency="JPY" />
             </span>
             <span className="inline-flex items-center gap-1">
               <span className="size-2 rounded-sm bg-expense" />
-              支出 {formatMoney({ amountMinor: totalExpense, currency: "JPY" })}
+              支出 <MoneyText amountMinor={totalExpense} currency="JPY" />
             </span>
           </span>
         </CardTitle>
@@ -69,7 +69,7 @@ export function CashflowCard({
                 <div
                   key={d.date}
                   className="flex flex-1 flex-col items-stretch justify-end gap-[2px]"
-                  title={`${d.date} · 收 ${formatMoney({ amountMinor: d.incomeJpy, currency: "JPY" })} · 支 ${formatMoney({ amountMinor: d.expenseJpy, currency: "JPY" })}`}
+                  title={d.date}
                 >
                   <div
                     className={cn("min-h-[1px] rounded-sm bg-income/80", isFuture && "opacity-20")}
@@ -106,7 +106,7 @@ export function CashflowCard({
                     <span className="min-w-0 truncate">{cat.label}</span>
                     <span className="flex shrink-0 items-baseline gap-2 text-muted-foreground tabular-nums">
                       <span className="font-medium text-foreground">
-                        {formatMoney({ amountMinor: cat.jpy, currency: "JPY" })}
+                        <MoneyText amountMinor={cat.jpy} currency="JPY" />
                       </span>
                       <span className="text-xs">{Math.round(cat.share * 100)}%</span>
                     </span>

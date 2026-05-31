@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { TransactionForm } from "@/features/transactions/transaction-form";
 import { createTransaction } from "@/app/actions/transactions";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatMoney } from "@/domain/finance";
 import { getAccount } from "@/features/accounts/data";
 import { getTransactionLookups } from "@/features/lookups/data";
 import { todayIsoDate } from "@/lib/dates";
@@ -32,7 +32,7 @@ export default async function AccountCalibratePage({ params }: CalibratePageProp
         </h1>
         <p className="text-sm text-muted-foreground tabular-nums">
           当前系统余额：
-          {formatMoney({ amountMinor: account.balanceMinor, currency: account.currency })}
+          <MoneyText amountMinor={account.balanceMinor} currency={account.currency} />
         </p>
       </header>
 

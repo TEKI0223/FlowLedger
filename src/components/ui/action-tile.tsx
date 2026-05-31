@@ -1,6 +1,7 @@
 "use client";
 
-import type { TransactionType } from "@/domain/finance";
+import { MoneyText } from "@/components/privacy/money-text";
+import type { Currency, TransactionType } from "@/domain/finance";
 import { transactionTypeColorClass } from "@/domain/transaction-style";
 import { CategoryIconLabel } from "@/features/categories/category-icon-label";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,8 @@ type ActionTileProps = {
   title: string;
   meta: string;
   amountHint: string;
+  amountMinor?: number | null;
+  currency?: Currency;
   usageCount?: number;
   theme?: ActionTileTheme;
   categoryIconKey?: string | null;
@@ -29,6 +32,8 @@ export function ActionTile({
   title,
   meta,
   amountHint,
+  amountMinor,
+  currency,
   usageCount,
   categoryIconKey,
   type,
@@ -76,9 +81,13 @@ export function ActionTile({
               "min-w-0 max-w-[70%] truncate rounded-md border px-1.5 py-0.5 text-right text-xs font-medium tabular-nums",
               type ? transactionTypeColorClass[type] : "border-transparent text-muted-foreground",
             )}
-            title={amountHint}
+            title={amountMinor !== undefined && amountMinor !== null ? undefined : amountHint}
           >
-            {amountHint}
+            {amountMinor !== undefined && amountMinor !== null && currency ? (
+              <MoneyText amountMinor={amountMinor} currency={currency} />
+            ) : (
+              amountHint
+            )}
           </p>
         ) : null}
       </div>

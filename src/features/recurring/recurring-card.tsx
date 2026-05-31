@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ArrowRightIcon, RepeatIcon } from "lucide-react";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Badge } from "@/components/ui/badge";
 import { getEffectiveRecurringDate } from "@/domain/date-shift";
-import { formatMoney, transactionTypeLabels } from "@/domain/finance";
+import { transactionTypeLabels } from "@/domain/finance";
 import { isRecurringItemPending, recurringFrequencyLabels } from "@/domain/recurring";
 import { CategoryIconLabel } from "@/features/categories/category-icon-label";
 import type { HydratedRecurringItem } from "./data";
@@ -67,9 +68,11 @@ export function RecurringCard({ item }: RecurringCardProps) {
       </div>
       <div className="flex min-w-0 shrink-0 items-center justify-end gap-2 self-center">
         <span className="max-w-[7.5rem] truncate text-right text-sm font-semibold tabular-nums sm:max-w-none">
-          {item.amountMinor === null || item.amountMinor === undefined
-            ? "变动"
-            : formatMoney({ amountMinor: item.amountMinor, currency: item.currency })}
+          {item.amountMinor === null || item.amountMinor === undefined ? (
+            "变动"
+          ) : (
+            <MoneyText amountMinor={item.amountMinor} currency={item.currency} />
+          )}
         </span>
         <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground" />
       </div>

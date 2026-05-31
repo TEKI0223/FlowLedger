@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -5,7 +6,7 @@ type MetricTone = "income" | "expense" | "transfer" | "adjustment";
 
 type MetricCellProps = {
   label: string;
-  value: string;
+  value: ReactNode;
   note?: string;
   tone?: MetricTone;
 };

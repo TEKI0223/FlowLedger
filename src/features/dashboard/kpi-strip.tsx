@@ -1,8 +1,10 @@
+import type { ReactNode } from "react";
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Card } from "@/components/ui/card";
-import { formatMoney, type Currency } from "@/domain/finance";
+import type { Currency } from "@/domain/finance";
 import type { DashboardSummary, PriorMonthTotals } from "./data";
-import { formatCurrencyPair, toJpy } from "./utils";
+import { toJpy } from "./utils";
 import { cn } from "@/lib/utils";
 
 export function KPIStrip({
@@ -27,21 +29,25 @@ export function KPIStrip({
     <section className="grid gap-3 md:grid-cols-3" aria-label="关键指标">
       <KPICard
         label="折算净资产"
-        primary={formatMoney({
-          amountMinor: summary.netWorth.amountMinor,
-          currency: summary.netWorth.baseCurrency,
-        })}
-        secondary={[
-          `JPY ${formatMoney({ amountMinor: summary.assets.JPY, currency: "JPY" }, { showCurrencyCode: false })}`,
-          `CNY ${formatMoney({ amountMinor: summary.assets.CNY, currency: "CNY" }, { showCurrencyCode: false })}`,
-        ]}
+        primary={
+          <MoneyText
+            amountMinor={summary.netWorth.amountMinor}
+            currency={summary.netWorth.baseCurrency}
+          />
+        }
+        secondary={
+          <>
+            JPY <MoneyText amountMinor={summary.assets.JPY} currency="JPY" showCurrencyCode={false} />
+            {" · "}
+            CNY <MoneyText amountMinor={summary.assets.CNY} currency="CNY" showCurrencyCode={false} />
+          </>
+        }
         footer={rate === null ? "缺少 CNY → JPY 汇率" : `1 CNY = ${rate.toFixed(2)} JPY`}
         tone="primary"
       />
       <KPICard
         label="本月支出"
-        primary={formatCurrencyPair(summary.expense)}
-        secondary={[]}
+        primary={<CurrencyPairText values={summary.expense} />}
         footer={
           <DeltaLine
             current={summary.expense}
@@ -55,8 +61,7 @@ export function KPIStrip({
       />
       <KPICard
         label="本月结余"
-        primary={formatCurrencyPair(thisMonthBalance)}
-        secondary={[]}
+        primary={<CurrencyPairText values={thisMonthBalance} />}
         footer={
           <DeltaLine
             current={thisMonthBalance}
@@ -79,9 +84,9 @@ function KPICard({
   tone,
 }: {
   label: string;
-  primary: string;
-  secondary: string[];
-  footer: React.ReactNode;
+  primary: ReactNode;
+  secondary?: ReactNode;
+  footer: ReactNode;
   tone: "primary" | "expense" | "transfer";
 }) {
   return (
@@ -96,8 +101,8 @@ function KPICard({
       >
         {primary}
       </p>
-      {secondary.length > 0 ? (
-        <p className="mt-1 text-xs text-muted-foreground tabular-nums">{secondary.join(" · ")}</p>
+      {secondary ? (
+        <p className="mt-1 text-xs text-muted-foreground tabular-nums">{secondary}</p>
       ) : null}
       <div className="mt-2 text-xs text-muted-foreground">{footer}</div>
     </Card>
@@ -126,7 +131,11 @@ function DeltaLine({
   const goodWhenUp = !invertColors;
   const isGood = diff === 0 ? null : up === goodWhenUp;
   const Icon = up ? TrendingUpIcon : TrendingDownIcon;
-  const priorLabel = `${referenceLabel} ${formatCurrencyPair(prior).replace("\n", " · ")}`;
+  const priorLabel = (
+    <>
+      {referenceLabel} <CurrencyPairText values={prior} inline />
+    </>
+  );
 
   if (priorAbs === 0) {
     return <span className="text-muted-foreground">{priorLabel}</span>;
@@ -146,5 +155,21 @@ function DeltaLine({
       </span>
       <span>{priorLabel}</span>
     </span>
+  );
+}
+
+function CurrencyPairText({
+  values,
+  inline = false,
+}: {
+  values: Record<Currency, number>;
+  inline?: boolean;
+}) {
+  return (
+    <>
+      JPY <MoneyText amountMinor={values.JPY} currency="JPY" showCurrencyCode={false} />
+      {inline ? " · " : "\n"}
+      CNY <MoneyText amountMinor={values.CNY} currency="CNY" showCurrencyCode={false} />
+    </>
   );
 }

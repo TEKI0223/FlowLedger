@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import type { TransactionActionState } from "@/app/actions/transactions";
+import { MoneyText } from "@/components/privacy/money-text";
 import { DatePicker } from "@/components/ui/date-picker";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Label } from "@/components/ui/label";
@@ -13,7 +14,6 @@ import {
   currencies,
   currencyLabels,
   formatMinorForInput,
-  formatMoney,
   parseMoneyToMinor,
   transactionTypeLabels,
   type Currency,
@@ -253,12 +253,11 @@ export function TransactionForm({
             <div className="grid gap-1">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">当前系统余额</p>
               <p className="text-lg font-semibold tabular-nums">
-                {targetAccount
-                  ? formatMoney({
-                      amountMinor: currentBalanceMinor,
-                      currency: targetAccount.currency,
-                    })
-                  : "请先选择校准账户"}
+                {targetAccount ? (
+                  <MoneyText amountMinor={currentBalanceMinor} currency={targetAccount.currency} />
+                ) : (
+                  "请先选择校准账户"
+                )}
               </p>
             </div>
             <div className="grid gap-2">
@@ -286,10 +285,10 @@ export function TransactionForm({
                   }
                 >
                   {targetBalanceResult.delta >= 0 ? "+" : ""}
-                  {formatMoney({
-                    amountMinor: targetBalanceResult.delta,
-                    currency: targetAccount.currency,
-                  })}
+                  <MoneyText
+                    amountMinor={targetBalanceResult.delta}
+                    currency={targetAccount.currency}
+                  />
                 </span>
               </p>
             ) : targetAccount && targetBalanceResult && !targetBalanceResult.ok ? (

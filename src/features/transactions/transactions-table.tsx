@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRightIcon, SearchXIcon } from "lucide-react";
+import { MoneyText } from "@/components/privacy/money-text";
 import { formatMoney, transactionTypeLabels } from "@/domain/finance";
 import { formatAccountName } from "@/features/accounts/labels";
 import { cn } from "@/lib/utils";
@@ -58,10 +59,7 @@ export function TransactionsTable({
                 </span>
               </td>
               <td className="whitespace-nowrap px-4 py-2.5 text-right font-semibold tabular-nums">
-                {formatMoney({
-                  amountMinor: transaction.amountMinor,
-                  currency: transaction.currency,
-                })}
+                <MoneyText amountMinor={transaction.amountMinor} currency={transaction.currency} />
               </td>
               <td className="max-w-[12rem] truncate px-4 py-2.5">
                 {transaction.category?.label ?? transaction.category?.name ?? "未分类"}

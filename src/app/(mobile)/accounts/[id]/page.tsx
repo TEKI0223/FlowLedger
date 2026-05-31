@@ -7,6 +7,7 @@ import {
   RepeatIcon,
   ScaleIcon,
 } from "lucide-react";
+import { MoneyText } from "@/components/privacy/money-text";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,7 +16,6 @@ import { getEffectiveRecurringDate } from "@/domain/date-shift";
 import {
   accountTypeLabels,
   currencyLabels,
-  formatMoney,
   transactionTypeLabels,
 } from "@/domain/finance";
 import { getAccountDetail } from "@/features/accounts/data";
@@ -65,18 +65,18 @@ export default async function AccountDetailPage({ params }: AccountDetailPagePro
       <section aria-label="账户概览" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <MetricCell
           label="当前余额"
-          value={formatMoney({ amountMinor: account.balanceMinor, currency: account.currency })}
+          value={<MoneyText amountMinor={account.balanceMinor} currency={account.currency} />}
           note={account.includeInNetWorth ? "计入净资产" : "不计入净资产"}
         />
         <MetricCell
           label="本月流入"
-          value={formatMoney({ amountMinor: monthly.inMinor, currency: account.currency })}
+          value={<MoneyText amountMinor={monthly.inMinor} currency={account.currency} />}
           note="收入、转入、调整加余额"
           tone="income"
         />
         <MetricCell
           label="本月流出"
-          value={formatMoney({ amountMinor: monthly.outMinor, currency: account.currency })}
+          value={<MoneyText amountMinor={monthly.outMinor} currency={account.currency} />}
           note="支出、转出"
           tone="expense"
         />
@@ -202,7 +202,7 @@ export default async function AccountDetailPage({ params }: AccountDetailPagePro
                       )}
                     >
                       {effectiveDirection === "in" ? "+" : "−"}
-                      {formatMoney({ amountMinor: displayMinor, currency: tx.currency })}
+                      <MoneyText amountMinor={displayMinor} currency={tx.currency} />
                     </span>
                   );
                 })()}
