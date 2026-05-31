@@ -1,7 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
   CarIcon,
-  CircleHelpIcon,
   CoffeeIcon,
   Gamepad2Icon,
   GiftIcon,
@@ -9,6 +8,7 @@ import {
   HomeIcon,
   PackageIcon,
   PartyPopperIcon,
+  PiggyBankIcon,
   PlaneIcon,
   RadioTowerIcon,
   ReceiptTextIcon,
@@ -56,7 +56,7 @@ const iconByKey: Record<CategoryIconKey, LucideIcon> = {
   "fees-tax": ReceiptTextIcon,
   income: TrendingUpIcon,
   refund: Undo2Icon,
-  other: CircleHelpIcon,
+  other: PiggyBankIcon,
 };
 
 const badgeByKey: Record<CategoryIconKey, string> = {
