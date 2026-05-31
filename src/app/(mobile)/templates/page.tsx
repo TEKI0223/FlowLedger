@@ -13,15 +13,15 @@ export default async function TemplatesPage() {
   const enabledCount = templates.filter((t) => t.enabled).length;
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
-      <section>
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
+    <main className="mx-auto w-full max-w-xl px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-4 md:px-6 md:pt-6">
+      <section className="min-w-0">
+        <div className="mb-3 flex min-w-0 flex-wrap items-center justify-between gap-2">
+          <h2 className="flex min-w-0 items-center gap-2 text-lg font-semibold">
             <ZapIcon className="size-4 text-muted-foreground" />
             快捷模板
           </h2>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-xs text-muted-foreground">
               {templates.length} 个模板 · {enabledCount} 个启用
             </span>
             <Link
@@ -39,7 +39,7 @@ export default async function TemplatesPage() {
             还没有模板。先新建一个模板。
           </Card>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid min-w-0 gap-3">
             {templates.map((template) => (
               <TemplateCard template={template} key={template.id} />
             ))}

@@ -19,20 +19,20 @@ export function TemplateCard({ template }: TemplateCardProps) {
   return (
     <Link
       href={`/templates/${template.id}`}
-      className="block rounded-xl outline-none transition-transform focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
+      className="block min-w-0 rounded-xl outline-none transition-transform focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
     >
       <Card
         size="sm"
         className="px-4 py-3 text-card-foreground transition-colors hover:bg-muted/60"
       >
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center justify-between gap-3">
           <div className="min-w-0 space-y-1.5">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <p
                 className={
                   template.enabled
-                    ? "truncate text-sm font-semibold"
-                    : "truncate text-sm font-semibold text-muted-foreground line-through"
+                    ? "min-w-0 truncate text-sm font-semibold"
+                    : "min-w-0 truncate text-sm font-semibold text-muted-foreground line-through"
                 }
               >
                 {template.name}
@@ -56,10 +56,14 @@ export function TemplateCard({ template }: TemplateCardProps) {
               <CategoryIconLabel
                 iconKey={template.category?.resolvedIconKey}
                 name={categoryPath}
-                className="max-w-[55%]"
+                className="max-w-[45%] shrink-0 sm:max-w-[55%]"
                 labelClassName="text-xs"
               />
-              {paymentRoute ? <span className="truncate">· {paymentRoute}</span> : null}
+              {paymentRoute ? (
+                <span className="min-w-0 flex-1 truncate">
+                  · {paymentRoute}
+                </span>
+              ) : null}
             </div>
             {template.note ? (
               <p className="truncate text-xs text-muted-foreground/90">{template.note}</p>
