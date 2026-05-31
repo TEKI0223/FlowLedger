@@ -60,9 +60,7 @@ export function TemplateCard({ template }: TemplateCardProps) {
                 labelClassName="text-xs"
               />
               {paymentRoute ? (
-                <span className="min-w-0 flex-1 truncate">
-                  · {paymentRoute}
-                </span>
+                <span className="min-w-0 flex-1 truncate">· {paymentRoute}</span>
               ) : null}
             </div>
             {template.note ? (

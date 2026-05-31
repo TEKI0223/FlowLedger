@@ -1,12 +1,7 @@
 import Link from "next/link";
 import { ArrowRightIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  accountTypeLabels,
-  currencyLabels,
-  formatMoney,
-  type Currency,
-} from "@/domain/finance";
+import { accountTypeLabels, currencyLabels, formatMoney, type Currency } from "@/domain/finance";
 import type { listAccounts } from "@/features/accounts/data";
 import { formatAccountName } from "@/features/accounts/labels";
 import { cn } from "@/lib/utils";
@@ -34,24 +29,14 @@ export function AccountsByCurrency({ accounts }: { accounts: Account[] }) {
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {currencies.map((currency) => (
-          <CurrencyAccountCard
-            key={currency}
-            currency={currency}
-            accounts={byCurrency[currency]}
-          />
+          <CurrencyAccountCard key={currency} currency={currency} accounts={byCurrency[currency]} />
         ))}
       </div>
     </section>
   );
 }
 
-function CurrencyAccountCard({
-  currency,
-  accounts,
-}: {
-  currency: Currency;
-  accounts: Account[];
-}) {
+function CurrencyAccountCard({ currency, accounts }: { currency: Currency; accounts: Account[] }) {
   const grouped = new Map<Account["type"], Account[]>();
   for (const account of accounts) {
     const list = grouped.get(account.type) ?? [];

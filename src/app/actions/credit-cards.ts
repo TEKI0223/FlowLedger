@@ -32,9 +32,12 @@ const creditCardSchema = z.object({
   paymentMonthOffset: z.coerce
     .number()
     .int()
-    .refine((v): v is PaymentMonthOffset => (paymentMonthOffsets as readonly number[]).includes(v), {
-      message: "扣款月偏移必须为 0、1 或 2",
-    }),
+    .refine(
+      (v): v is PaymentMonthOffset => (paymentMonthOffsets as readonly number[]).includes(v),
+      {
+        message: "扣款月偏移必须为 0、1 或 2",
+      },
+    ),
   cycleBoundary: z.enum(["inclusive", "exclusive"]),
   repaymentAccountId: z.string().trim().optional(),
   enabled: z.boolean(),

@@ -245,9 +245,7 @@ export async function listCardStatements(
   );
 
   if (!filterEmpty) return summaries;
-  return summaries.filter(
-    (s) => s.isCurrent || s.totalAmountMinor > 0 || s.repaidAmountMinor > 0,
-  );
+  return summaries.filter((s) => s.isCurrent || s.totalAmountMinor > 0 || s.repaidAmountMinor > 0);
 }
 
 /**

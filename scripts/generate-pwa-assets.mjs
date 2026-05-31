@@ -45,7 +45,10 @@ async function writeSplash({ path, width, height }) {
   mkdirSync(dirname(path), { recursive: true });
 
   const iconSize = Math.round(Math.min(width, height) * 0.24);
-  const icon = await sharp(regularIcon).resize(iconSize, iconSize, { fit: "contain" }).png().toBuffer();
+  const icon = await sharp(regularIcon)
+    .resize(iconSize, iconSize, { fit: "contain" })
+    .png()
+    .toBuffer();
 
   await sharp({
     create: {

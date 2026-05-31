@@ -155,9 +155,7 @@ export function CreditCardForm({
               id="paymentMonthOffset"
               name="paymentMonthOffset"
               required
-              defaultValue={String(
-                values?.paymentMonthOffset ?? defaults?.paymentMonthOffset ?? 1,
-              )}
+              defaultValue={String(values?.paymentMonthOffset ?? defaults?.paymentMonthOffset ?? 1)}
             >
               {paymentMonthOffsets.map((offset) => (
                 <option value={String(offset)} key={offset}>

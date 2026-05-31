@@ -8,11 +8,7 @@ export function toJpy(values: Record<Currency, number>, rate: number | null): nu
   return values.JPY + cnyAsJpy;
 }
 
-export function toJpySingle(
-  amountMinor: number,
-  currency: Currency,
-  rate: number | null,
-): number {
+export function toJpySingle(amountMinor: number, currency: Currency, rate: number | null): number {
   if (currency === "JPY") return amountMinor;
   if (rate === null) return 0;
   return convertToCurrency({ amountMinor, currency }, "JPY", rate);

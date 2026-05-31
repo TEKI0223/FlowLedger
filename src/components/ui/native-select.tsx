@@ -124,8 +124,7 @@ export function NativeSelect({
             const key = current == null ? "" : String(current);
             const label = labelByValue.get(key);
             if (label !== undefined && label !== "" && label !== null) return label;
-            if (placeholder)
-              return <span className="text-muted-foreground">{placeholder}</span>;
+            if (placeholder) return <span className="text-muted-foreground">{placeholder}</span>;
             return null;
           }}
         </SelectPrimitive.Value>

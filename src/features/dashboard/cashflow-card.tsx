@@ -127,10 +127,7 @@ export function CashflowCard({
   );
 }
 
-function buildDailyCashflow(
-  txs: HydratedTransaction[],
-  rate: number | null,
-): DailyCashflowPoint[] {
+function buildDailyCashflow(txs: HydratedTransaction[], rate: number | null): DailyCashflowPoint[] {
   const today = dayjs();
   const start = today.startOf("month");
   const end = today.endOf("month");

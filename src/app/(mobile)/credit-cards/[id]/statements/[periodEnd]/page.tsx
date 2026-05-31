@@ -126,11 +126,7 @@ export default async function StatementDetailPage({ params }: Props) {
 
       {statement.transactions.length > 0 || statement.installmentEntries.length > 0 ? (
         <section className="mt-5 space-y-3">
-          <StatementTransactionList
-            statement={statement}
-            currency={currency}
-            label="消费明细"
-          />
+          <StatementTransactionList statement={statement} currency={currency} label="消费明细" />
         </section>
       ) : (
         <section className="mt-5">

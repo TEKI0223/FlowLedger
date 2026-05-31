@@ -3,13 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BarChart3Icon,
-  CirclePlusIcon,
-  HomeIcon,
-  ListIcon,
-  SettingsIcon,
-} from "lucide-react";
+import { BarChart3Icon, CirclePlusIcon, HomeIcon, ListIcon, SettingsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [

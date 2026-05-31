@@ -62,8 +62,5 @@ export async function deletePushSubscriptionByEndpoint(endpoint: string) {
 export async function listPushSubscriptionsForUser(
   ownerUserId: string,
 ): Promise<StoredPushSubscription[]> {
-  return db
-    .select()
-    .from(pushSubscriptions)
-    .where(eq(pushSubscriptions.ownerUserId, ownerUserId));
+  return db.select().from(pushSubscriptions).where(eq(pushSubscriptions.ownerUserId, ownerUserId));
 }

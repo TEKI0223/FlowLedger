@@ -69,8 +69,7 @@ export function PCShell({ children }: { children: React.ReactNode }) {
         <nav aria-label="桌面导航" className="grid gap-1">
           {navigation.map((item) => {
             const Icon = item.icon;
-            const active =
-              item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
 
             return (
               <Link
