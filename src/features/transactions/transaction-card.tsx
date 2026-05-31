@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRightIcon } from "lucide-react";
 import { formatMoney, transactionTypeLabels } from "@/domain/finance";
+import { CategoryIcon } from "@/features/categories/category-icon-label";
 import type { listTransactions } from "@/features/transactions/data";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +37,14 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
       </div>
 
       <div className="min-w-0 space-y-1">
-        <p className="truncate text-sm font-semibold">{categoryLabel}</p>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <CategoryIcon
+            iconKey={transaction.category?.resolvedIconKey}
+            className="size-5 rounded-md"
+            iconClassName="size-3"
+          />
+          <p className="min-w-0 truncate text-sm font-semibold">{categoryLabel}</p>
+        </div>
         <p className="truncate text-xs text-muted-foreground">{accountLine}</p>
         {transaction.note ? (
           <p className="truncate text-xs text-muted-foreground/90">{transaction.note}</p>

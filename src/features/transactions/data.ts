@@ -2,6 +2,7 @@ import { and, desc, eq, gte, inArray, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db/client";
 import { accounts, categories, paymentMethods, transactions } from "@/db/schema";
 import { buildCategoryOptions } from "@/features/categories/data";
+import { buildResolvedCategoryIconKeyMap } from "@/features/categories/icon-utils";
 import { getCurrentUserId } from "@/lib/auth";
 import { addDays, addMonths, todayIsoDate } from "@/lib/dates";
 import type { TransactionFilters } from "./filters";
@@ -185,6 +186,7 @@ async function hydrateTransactions(transactionRows: Array<typeof transactions.$i
   const categoryLabelById = new Map(
     buildCategoryOptions(categoryRows).map((category) => [category.id, category.label]),
   );
+  const categoryIconKeyById = buildResolvedCategoryIconKeyMap(categoryRows);
   const paymentMethodById = new Map(
     paymentMethodRows.map((paymentMethod) => [paymentMethod.id, paymentMethod]),
   );
@@ -201,6 +203,7 @@ async function hydrateTransactions(transactionRows: Array<typeof transactions.$i
       ? addCategoryLabel(
           categoryById.get(transaction.categoryId) ?? null,
           categoryLabelById.get(transaction.categoryId),
+          categoryIconKeyById.get(transaction.categoryId),
         )
       : null,
     paymentMethod: transaction.paymentMethodId
@@ -212,7 +215,8 @@ async function hydrateTransactions(transactionRows: Array<typeof transactions.$i
 function addCategoryLabel<T extends { id: string }>(
   category: T | null,
   label: string | undefined,
-): (T & { label: string }) | null {
+  resolvedIconKey: string | undefined,
+): (T & { label: string; resolvedIconKey: string }) | null {
   if (!category) return null;
-  return { ...category, label: label ?? "" };
+  return { ...category, label: label ?? "", resolvedIconKey: resolvedIconKey ?? "other" };
 }
