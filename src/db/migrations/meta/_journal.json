@@ -29,6 +29,13 @@
       "when": 1780137461614,
       "tag": "0003_outgoing_gideon",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1780192067712,
+      "tag": "0004_familiar_tarot",
+      "breakpoints": true
     }
   ]
 }

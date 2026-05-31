@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   ArrowRightIcon,
+  BellIcon,
   CreditCardIcon,
   FolderTreeIcon,
   LayersIcon,
@@ -70,6 +71,12 @@ const manageItems = [
     description: "S2.3 接入手动汇率编辑",
     href: "/manage/rates",
     icon: SettingsIcon,
+  },
+  {
+    label: "通知提醒",
+    description: "开启 PWA 手机待办推送",
+    href: "/manage/notifications",
+    icon: BellIcon,
   },
   // 图像识别入口暂时隐藏（/manage/ocr 仍可直接访问，代码保留）。
   // {

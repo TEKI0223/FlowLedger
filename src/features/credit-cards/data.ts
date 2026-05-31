@@ -17,7 +17,7 @@ import {
 import type { Currency, TransactionType } from "@/domain/finance";
 import { computeInstallmentDueDates, type InstallmentStatus } from "@/domain/installment";
 import { getCurrentUserId } from "@/lib/auth";
-import { todayIsoDate } from "@/lib/dates";
+import { addDays, todayIsoDate } from "@/lib/dates";
 
 type CreditCardRow = typeof creditCards.$inferSelect;
 type AccountRow = typeof accounts.$inferSelect;
@@ -29,13 +29,17 @@ export type HydratedCreditCard = CreditCardRow & {
 
 export async function listCreditCards(): Promise<HydratedCreditCard[]> {
   const ownerUserId = await getCurrentUserId();
+  return listCreditCardsForUser(ownerUserId);
+}
+
+async function listCreditCardsForUser(ownerUserId: string): Promise<HydratedCreditCard[]> {
   const cardRows = await db
     .select()
     .from(creditCards)
     .where(eq(creditCards.ownerUserId, ownerUserId))
     .orderBy(desc(creditCards.enabled), asc(creditCards.id));
 
-  return hydrate(cardRows);
+  return hydrate(cardRows, ownerUserId);
 }
 
 export async function getCreditCard(id: string): Promise<HydratedCreditCard | null> {
@@ -45,9 +49,16 @@ export async function getCreditCard(id: string): Promise<HydratedCreditCard | nu
     .from(creditCards)
     .where(and(eq(creditCards.id, id), eq(creditCards.ownerUserId, ownerUserId)))
     .limit(1);
-  const [card] = await hydrate(rows);
+  const [card] = await hydrate(rows, ownerUserId);
   return card ?? null;
 }
+
+export type PendingCardRepayment = {
+  cardId: string;
+  cardName: string;
+  periodEnd: string;
+  dueDate: string;
+};
 
 /**
  * 统计有多少张启用的信用卡有"已关期但仍未还清"的账单（用于待办计数）。
@@ -55,19 +66,38 @@ export async function getCreditCard(id: string): Promise<HydratedCreditCard | nu
  * 每张卡最多回看 6 期，足够覆盖一般场景。
  */
 export async function countPendingCardRepayments(): Promise<number> {
-  const cards = await listCreditCards();
-  let count = 0;
+  const ownerUserId = await getCurrentUserId();
+  return countPendingCardRepaymentsForUser(ownerUserId);
+}
+
+export async function countPendingCardRepaymentsForUser(ownerUserId: string): Promise<number> {
+  return (await listPendingCardRepaymentsForUser(ownerUserId)).length;
+}
+
+export async function listPendingCardRepaymentsForUser(
+  ownerUserId: string,
+  today: string = todayIsoDate(),
+): Promise<PendingCardRepayment[]> {
+  const cards = await listCreditCardsForUser(ownerUserId);
+  const reminderDate = addDays(today, 7);
+  const pending: PendingCardRepayment[] = [];
   for (const card of cards) {
     if (!card.enabled) continue;
-    const statements = await listCardStatements(card, 6);
+    const statements = await listCardStatements(card, 6, {}, ownerUserId, today);
     for (const s of statements) {
       if (s.isCurrent) continue;
       if (s.isPaid) continue;
       if (s.totalAmountMinor <= 0) continue;
-      count += 1;
+      if (s.dueDate > reminderDate) continue;
+      pending.push({
+        cardId: card.id,
+        cardName: card.account.name,
+        periodEnd: s.periodEnd,
+        dueDate: s.dueDate,
+      });
     }
   }
-  return count;
+  return pending;
 }
 
 export type CreditCardStatementOption = {
@@ -180,6 +210,8 @@ export async function listCardStatements(
   card: HydratedCreditCard,
   count: number = 2,
   options: { filterEmpty?: boolean } = {},
+  ownerUserId?: string,
+  todayOverride?: string,
 ): Promise<StatementSummary[]> {
   // 默认过滤掉「关期但金额为 0」的幻影账单：用户刚初始化时往前的几期都是空的，
   // 显示出来会让人误以为这些都是未付的账单。当期（isCurrent）永远显示，
@@ -192,7 +224,8 @@ export async function listCardStatements(
     cycleBoundary: card.cycleBoundary as CycleBoundary,
   };
 
-  const today = todayIsoDate();
+  const resolvedOwnerUserId = ownerUserId ?? (await getCurrentUserId());
+  const today = todayOverride ?? todayIsoDate();
   const currentPeriod = getStatementPeriod(today, config);
 
   // 当期 + 过去 count-1 期
@@ -208,6 +241,7 @@ export async function listCardStatements(
     periodEnds,
     today,
     currentPeriod.periodEnd,
+    resolvedOwnerUserId,
   );
 
   if (!filterEmpty) return summaries;
@@ -236,8 +270,9 @@ export async function getCardStatement(
 
   const today = todayIsoDate();
   const currentPeriodEnd = getStatementPeriod(today, config).periodEnd;
+  const ownerUserId = await getCurrentUserId();
   const [results] = await Promise.all([
-    listCardStatementsByPeriodEnds(card, config, [periodEnd], today, currentPeriodEnd),
+    listCardStatementsByPeriodEnds(card, config, [periodEnd], today, currentPeriodEnd, ownerUserId),
   ]);
   return results[0] ?? null;
 }
@@ -252,8 +287,8 @@ async function listCardStatementsByPeriodEnds(
   periodEnds: string[],
   today: string,
   currentPeriodEnd: string,
+  ownerUserId: string,
 ): Promise<StatementSummary[]> {
-  const ownerUserId = await getCurrentUserId();
   const earliestStart = periodEnds
     .map((pe) => getStatementPeriod(pe, config).periodStart)
     .reduce((min, s) => (s < min ? s : min));
@@ -409,8 +444,10 @@ async function listCardStatementsByPeriodEnds(
   });
 }
 
-async function hydrate(cardRows: CreditCardRow[]): Promise<HydratedCreditCard[]> {
-  const ownerUserId = await getCurrentUserId();
+async function hydrate(
+  cardRows: CreditCardRow[],
+  ownerUserId: string,
+): Promise<HydratedCreditCard[]> {
   const accountIds = new Set<string>();
   for (const card of cardRows) {
     accountIds.add(card.accountId);

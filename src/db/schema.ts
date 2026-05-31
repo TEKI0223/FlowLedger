@@ -1,4 +1,4 @@
-import { integer, primaryKey, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, primaryKey, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const accounts = sqliteTable("accounts", {
   id: text("id").primaryKey(),
@@ -195,3 +195,30 @@ export const installmentPlans = sqliteTable("installment_plans", {
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
+
+export const pushSubscriptions = sqliteTable(
+  "push_subscriptions",
+  {
+    id: text("id").primaryKey(),
+    ownerUserId: text("owner_user_id").notNull(),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    userAgent: text("user_agent"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+    lastSeenAt: text("last_seen_at").notNull(),
+  },
+  (table) => [uniqueIndex("push_subscriptions_endpoint_unique").on(table.endpoint)],
+);
+
+export const pushReminderDeliveries = sqliteTable(
+  "push_reminder_deliveries",
+  {
+    ownerUserId: text("owner_user_id").notNull(),
+    reminderKey: text("reminder_key").notNull(),
+    stage: text("stage", { enum: ["first_seen", "due_today"] }).notNull(),
+    sentAt: text("sent_at").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.ownerUserId, table.reminderKey, table.stage] })],
+);
