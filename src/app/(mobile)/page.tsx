@@ -4,7 +4,8 @@ import { countPendingCardRepayments } from "@/features/credit-cards/data";
 import { DashboardAssets } from "@/features/dashboard/dashboard-assets";
 import { DashboardHero } from "@/features/dashboard/dashboard-hero";
 import { DashboardTodos } from "@/features/dashboard/dashboard-todos";
-import { getDashboardSummary } from "@/features/dashboard/data";
+import { getDashboardSummary, getMonthlyExpenseRanking } from "@/features/dashboard/data";
+import { MonthlyExpenseRankingCard } from "@/features/dashboard/monthly-expense-ranking";
 import { countPendingRecurringItems } from "@/features/recurring/data";
 import { countPendingRefunds } from "@/features/refunds/data";
 
@@ -20,6 +21,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const [
     { saved },
     summary,
+    monthlyExpenseRanking,
     accounts,
     pendingRecurringCount,
     pendingRefundCount,
@@ -27,6 +29,7 @@ export default async function Home({ searchParams }: HomeProps) {
   ] = await Promise.all([
     searchParams,
     getDashboardSummary(),
+    getMonthlyExpenseRanking(),
     listAccounts(),
     countPendingRecurringItems(),
     countPendingRefunds(),
@@ -42,6 +45,7 @@ export default async function Home({ searchParams }: HomeProps) {
         pendingRefundCount={pendingRefundCount}
         pendingCardRepaymentCount={pendingCardRepaymentCount}
       />
+      <MonthlyExpenseRankingCard ranking={monthlyExpenseRanking} />
       <DashboardHero summary={summary} />
       <DashboardAssets summary={summary} accounts={accounts} />
     </main>

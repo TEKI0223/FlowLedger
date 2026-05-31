@@ -1,7 +1,8 @@
 import { and, eq, gte, lt, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { accounts, transactions } from "@/db/schema";
+import { accounts, categories, transactions } from "@/db/schema";
 import { convertToCurrency, type Currency } from "@/domain/finance";
+import { buildCategoryOptions } from "@/features/categories/data";
 import { getExchangeRate } from "@/features/exchange-rates/data";
 import { getCurrentUserId } from "@/lib/auth";
 
@@ -25,6 +26,14 @@ export type DashboardSummary = {
     rateCnyToJpy: number | null;
   };
 };
+
+export type MonthlyExpenseRankingItem = {
+  id: string;
+  label: string;
+  amountMinor: number;
+};
+
+export type MonthlyExpenseRanking = Record<Currency, MonthlyExpenseRankingItem[]>;
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
   const ownerUserId = await getCurrentUserId();
@@ -91,6 +100,52 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   };
 }
 
+export async function getMonthlyExpenseRanking(): Promise<MonthlyExpenseRanking> {
+  const ownerUserId = await getCurrentUserId();
+  const { start, next } = monthBounds();
+
+  const [transactionRows, categoryRows] = await Promise.all([
+    db
+      .select({
+        currency: transactions.currency,
+        categoryId: transactions.categoryId,
+        totalMinor: sql<number>`coalesce(sum(abs(${transactions.amountMinor})), 0)`,
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.type, "expense"),
+          eq(transactions.ownerUserId, ownerUserId),
+          eq(transactions.includeInExpenseStats, true),
+          gte(transactions.occurredOn, start),
+          lt(transactions.occurredOn, next),
+        ),
+      )
+      .groupBy(transactions.currency, transactions.categoryId),
+    db.select().from(categories),
+  ]);
+
+  const categoryOptions = buildCategoryOptions(categoryRows);
+  const labelById = new Map(categoryOptions.map((category) => [category.id, category.label]));
+  const totals = new Map<string, MonthlyExpenseRankingItem>();
+
+  for (const row of transactionRows) {
+    const categoryId = row.categoryId ?? "uncategorized";
+    const key = `${row.currency}:${categoryId}`;
+    const current = totals.get(key) ?? {
+      id: categoryId,
+      label: row.categoryId ? (labelById.get(row.categoryId) ?? "未分类") : "未分类",
+      amountMinor: row.totalMinor,
+    };
+    totals.set(key, current);
+  }
+
+  return {
+    JPY: sortRankingItems([...totals.entries()], "JPY"),
+    CNY: sortRankingItems([...totals.entries()], "CNY"),
+  };
+}
+
 function totalsByCurrency(
   rows: Array<{ currency: Currency; totalMinor: number }>,
 ): Record<Currency, number> {
@@ -98,6 +153,16 @@ function totalsByCurrency(
     JPY: rows.find((row) => row.currency === "JPY")?.totalMinor ?? 0,
     CNY: rows.find((row) => row.currency === "CNY")?.totalMinor ?? 0,
   };
+}
+
+function sortRankingItems(
+  entries: Array<[string, MonthlyExpenseRankingItem]>,
+  currency: Currency,
+): MonthlyExpenseRankingItem[] {
+  return entries
+    .filter(([key]) => key.startsWith(`${currency}:`))
+    .map(([, item]) => item)
+    .sort((a, b) => b.amountMinor - a.amountMinor);
 }
 
 export type PriorMonthTotals = {
