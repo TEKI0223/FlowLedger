@@ -58,6 +58,7 @@ export default async function QuickEntryPage({ params }: QuickEntryPageProps) {
             templateId={template.id}
             currency={template.currency}
             amountDefault={amountDefault}
+            noteDefault={template.note ?? undefined}
             noteHint={template.note ?? "可选"}
             autoFocusAmount
           />

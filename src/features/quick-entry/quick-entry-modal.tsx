@@ -20,6 +20,7 @@ export type QuickEntryModalTemplate = {
   amountHint: string;
   amountMinor?: number | null;
   amountDefault?: string;
+  noteDefault?: string;
   usageCount?: number;
   theme: ActionTileTheme;
   categoryIconKey?: string | null;
@@ -87,6 +88,7 @@ export function QuickEntryModal({ templates, categories = [] }: QuickEntryModalP
                   templateId={selectedTemplate.id}
                   currency={selectedTemplate.currency}
                   amountDefault={selectedTemplate.amountDefault}
+                  noteDefault={selectedTemplate.noteDefault}
                   autoFocusAmount
                   templateType={selectedTemplate.type}
                   templateCategoryId={selectedTemplate.categoryId ?? null}

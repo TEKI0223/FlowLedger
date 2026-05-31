@@ -14,6 +14,7 @@ export function toQuickEntryModalTemplate(
     amountHint: amountHint(template),
     amountMinor: template.amountMinor,
     amountDefault: amountDefault(template),
+    noteDefault: template.note ?? undefined,
     usageCount: template.usageCount,
     theme: templateTheme(template),
     categoryIconKey: template.category?.resolvedIconKey,

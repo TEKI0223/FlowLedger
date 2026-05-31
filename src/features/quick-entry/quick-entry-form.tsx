@@ -28,6 +28,7 @@ type QuickEntryFormProps =
       templateId: string;
       currency: Currency;
       amountDefault?: string;
+      noteDefault?: string;
       noteHint?: string;
       autoFocusAmount?: boolean;
       submitLabel?: string;
@@ -74,7 +75,10 @@ export function QuickEntryForm(props: QuickEntryFormProps) {
     props.mode === "template"
       ? (state.values?.amount ?? props.amountDefault ?? "")
       : (state.values?.amount ?? "");
-  const noteDefault = state.values?.note ?? "";
+  const noteDefault =
+    props.mode === "template"
+      ? (state.values?.note ?? props.noteDefault ?? "")
+      : (state.values?.note ?? "");
   const occurredOnDefault = state.values?.occurredOn ?? todayIsoDate();
   const showTemplateEditLink =
     props.mode === "template" ? (props.showTemplateEditLink ?? true) : false;
